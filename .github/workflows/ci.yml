@@ -38,6 +38,40 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: leak check on public d.ts
+        run: |
+          set -e
+          PUBLIC_DTS="packages/core/dist/index.d.ts"
+          [ -f "$PUBLIC_DTS" ] || { echo "missing $PUBLIC_DTS"; exit 1; }
+
+          if grep -E "from ['\"]hono(/|['\"])" "$PUBLIC_DTS"; then
+            echo "::error::hono leaked into $PUBLIC_DTS"
+            exit 1
+          fi
+          if grep -E "import\(['\"]hono(/|['\"])" "$PUBLIC_DTS"; then
+            echo "::error::hono dynamic import leaked into $PUBLIC_DTS"
+            exit 1
+          fi
+          if grep -E "import \{[^}]*\bContainer\b[^}]*\} from ['\"]@needle-di/core['\"]" "$PUBLIC_DTS"; then
+            echo "::error::@needle-di/core.Container leaked into $PUBLIC_DTS"
+            exit 1
+          fi
+          echo "OK: no hono / Container leak in $PUBLIC_DTS"
+
+      - name: verify leak check detects real leaks (positive control)
+        run: |
+          set -e
+          PROBE="packages/core/dist/__leak_probe.d.ts"
+          echo 'export * from "hono";' > "$PROBE"
+          if grep -E "from ['\"]hono(/|['\"])" "$PROBE"; then
+            rm "$PROBE"
+            echo "OK: leak detection working"
+          else
+            rm "$PROBE"
+            echo "::error::leak detection regression (probe not detected)"
+            exit 1
+          fi
+
       - name: Test
         run: pnpm test
 
