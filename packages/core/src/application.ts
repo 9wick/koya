@@ -1,6 +1,7 @@
-import { Container, type Provider } from '@needle-di/core';
+import type { Provider } from '@needle-di/core';
 
 import { createHttpRuntime, type HttpRuntime, type HttpRuntimeOptions } from './http/runtime';
+import { createContainer } from './internal/container';
 
 export type Application = {
   readonly http: (options: HttpRuntimeOptions) => HttpRuntime;
@@ -11,10 +12,7 @@ export type CreateAppOptions = {
 };
 
 export const createApp = (options: CreateAppOptions): Application => {
-  const container = new Container();
-  for (const provider of options.providers) {
-    container.bind(provider);
-  }
+  const container = createContainer(options.providers);
   return {
     http: (httpOptions) => createHttpRuntime(container, httpOptions),
   };

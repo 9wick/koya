@@ -1,7 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-import type { Container } from '@needle-di/core';
-
 export type EntryInput = {
   readonly body: unknown;
   readonly pathParams: Readonly<Record<string, string>>;
@@ -9,7 +7,6 @@ export type EntryInput = {
 
 export type EntryContext = {
   readonly input: EntryInput;
-  readonly container: Container;
 };
 
 const storage = new AsyncLocalStorage<EntryContext>();

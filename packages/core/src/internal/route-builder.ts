@@ -1,8 +1,8 @@
-import type { Container, Token } from '@needle-di/core';
 import type { Hono } from 'hono';
 
 import { toErrorResponse } from '../http/error-handler';
 
+import type { ResolverHandle } from './container';
 import { runInEntryContext } from './entry-context';
 import { getControllerMetadata, getRouteMetadata, type HttpMethod } from './metadata';
 
@@ -67,17 +67,14 @@ const parseRequestBody = async (c: Parameters<Parameters<Hono['on']>[2]>[0]): Pr
   return c.req.json<unknown>().catch(() => undefined);
 };
 
-const registerRoute = (hono: Hono, container: Container, route: Route): void => {
-  const token: Token<object> = route.controllerClass;
-  const instance = container.get(token);
+const registerRoute = (hono: Hono, resolver: ResolverHandle, route: Route): void => {
+  const instance = resolver.get(route.controllerClass);
   const invoke = resolveHandler(instance, route.methodName);
   hono.on(route.method, route.fullPath, async (c) => {
     try {
       const body = await parseRequestBody(c);
       const pathParams: Readonly<Record<string, string>> = c.req.param();
-      const result = await runInEntryContext({ input: { body, pathParams }, container }, async () =>
-        invoke(),
-      );
+      const result = await runInEntryContext({ input: { body, pathParams } }, async () => invoke());
       return Response.json(result);
     } catch (error) {
       return toErrorResponse(error);
@@ -88,9 +85,9 @@ const registerRoute = (hono: Hono, container: Container, route: Route): void => 
 export const buildRoutes = (
   hono: Hono,
   controllers: readonly ControllerClass[],
-  container: Container,
+  resolver: ResolverHandle,
 ): void => {
   for (const route of collectRoutes(controllers)) {
-    registerRoute(hono, container, route);
+    registerRoute(hono, resolver, route);
   }
 };

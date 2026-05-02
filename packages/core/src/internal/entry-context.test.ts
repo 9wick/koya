@@ -6,7 +6,6 @@ describe('entry-context', () => {
   it('returns the running context inside runInEntryContext', () => {
     const ctx: EntryContext = {
       input: { body: { hello: 'world' }, pathParams: {} },
-      container: {} as never,
     };
     const got = runInEntryContext(ctx, () => getEntryContext());
     expect(got).toBe(ctx);
@@ -17,8 +16,8 @@ describe('entry-context', () => {
   });
 
   it('isolates concurrent contexts', async () => {
-    const ctxA: EntryContext = { input: { body: 'A', pathParams: {} }, container: {} as never };
-    const ctxB: EntryContext = { input: { body: 'B', pathParams: {} }, container: {} as never };
+    const ctxA: EntryContext = { input: { body: 'A', pathParams: {} } };
+    const ctxB: EntryContext = { input: { body: 'B', pathParams: {} } };
     const [a, b] = await Promise.all([
       runInEntryContext(ctxA, async () => {
         await new Promise((r) => setTimeout(r, 10));

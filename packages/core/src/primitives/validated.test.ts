@@ -12,7 +12,6 @@ describe('validated()', () => {
     const result = runInEntryContext(
       {
         input: { body: { name: 'Ada', age: 36 }, pathParams: {} },
-        container: {} as never,
       },
       () => validated(Schema),
     );
@@ -21,9 +20,8 @@ describe('validated()', () => {
 
   it('throws ValiError when schema does not match', () => {
     expect(() =>
-      runInEntryContext(
-        { input: { body: { name: 'Ada' }, pathParams: {} }, container: {} as never },
-        () => validated(Schema),
+      runInEntryContext({ input: { body: { name: 'Ada' }, pathParams: {} } }, () =>
+        validated(Schema),
       ),
     ).toThrow(v.ValiError);
   });
