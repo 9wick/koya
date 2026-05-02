@@ -1,0 +1,552 @@
+# koya Phase 2: @koya/core API 設計
+
+> Phase 1 (skeleton scaffolding, commit 8fa478a) の完了を前提に、`@koya/core` の公開 API を設計する。本 spec は Phase 2 (1) App + Routing 基盤を対象とし、(2) DI binding API / (3) Error handling + Validation contract / (4) Testing utility は別 phase で扱う。
+
+## 1. コンセプト
+
+TypeScript で、Laravel/FuelPHP のように「アプリケーションを書く」ための高速・型安全なフレームワーク。
+
+Hono の速度、Needle-DI の小さな依存集約、Valibot のスキーマ駆動な型安全性を土台にして、HTTP・DI・validation・lifecycle・testing・worker/CLI を一貫したアプリケーション体験として扱う。
+
+> A fast, type-safe application framework for TypeScript, bringing Laravel/FuelPHP-like productivity to edge and serverless runtimes.
+
+### 中核価値
+
+- **Fast**: Cloudflare Workers や serverless cold start でも実用的な起動速度・実行速度。小さく起動し、必要なものだけを組み立てる。
+- **Type-safe**: schema、request、controller、response、DI、test double が型でつながる。実行時 validation と TypeScript 型が同じ契約から導かれる。
+- **Application-oriented**: HTTP toolkit ではなく、Laravel/FuelPHP 的にアプリケーションの骨格を提供する。Entry、service、repository、config、lifecycle、error handling、testing、CLI/worker を同じ設計思想で扱う。
+
+---
+
+## 2. 概念モデル
+
+koya のアプリケーションは 2 つの構成要素からなる。
+
+### 2.1 Provider
+
+DI で解決される依存。Service、Repository、Database client、外部 API クライアントなど。アプリケーションのビジネスロジックの本体はここに集約される。Application 単位で登録され、Entry をまたいで共有される。
+
+### 2.2 Entry
+
+**アプリケーションの外部から内部への入口**。トリガーの種類によって複数の種類がある。
+
+| Entry 種別 | トリガー | decorator | MVP (Phase 2 (1)) |
+|---|---|---|---|
+| HttpController | HTTP request | `@Controller` | ✓ |
+| CronEntry | スケジュール | `@Cron` | 将来 |
+| QueueEntry | queue message | `@Queue` | 将来 |
+| CliCommand | プロセス起動 | `@Command` | 将来 |
+
+すべての Entry は同じ DI container / Entry-scoped context / error pipeline の上で動く。違うのは「トリガーの種類」と「入力の取り方」だけ。
+
+この抽象により:
+
+- HTTP / Cron / Queue / CLI を同格に扱える (edge/serverless 時代の現実に整合)
+- Entry をまたいで Provider を共有できる (例: 同じ `Database` を HTTP と Cron で使う)
+- Entry 単位で bundle を分けられる (Fast の担保)
+
+> 注: Entry はクラス継承を強制しない概念モデル。ユーザーが書くのは普通のクラス + decorator。
+
+---
+
+## 3. 技術スタック
+
+| レイヤ | 採用 | バージョン |
+|---|---|---|
+| HTTP | Hono | 4.12.16 |
+| DI | @needle-di/core | 1.1.2 |
+| Validation | Valibot | 1.3.1 |
+| Decorator | TypeScript legacy decorator (`experimentalDecorators: true` / **reflect-metadata なし**) | TS 6.0.2 |
+| Bundler | tsdown | 0.21.10 (oxc decorate helper inline 対応版) |
+| Request Context | AsyncLocalStorage | Node 22 / Workers `nodejs_compat` |
+
+### 採用しないもの
+
+- **reflect-metadata**: bundle size と cold start にネガティブ。`@needle-di/core` は reflect-metadata を要求しないため、`experimentalDecorators` を有効にしても reflect-metadata は import しない (Phase 2 開始時の spike で確認、§10 #11)
+- **TC39 Stage 3 decorator (構文)**: 当初採用予定だったが、koya の toolchain (vite 8 / tsdown / rolldown / oxc) が Stage 3 decorator 構文を transpile せず、Node.js v22/v24 がネイティブにパースできないため `SyntaxError` になる。実装上は legacy decorator を採用 (§10 #11)
+- **codegen / TypeScript Compiler API**: TS バージョン依存が個人プロジェクトのメンテ負荷として重く、本仕様の設計では不要にできる
+
+なお、neverthrow は framework として定義しない（§4.9）。利用者が任意で使うのは妨げず、Phase 1 spec section 8 で公開 API の `Result`/`ResultAsync` 露出も許容済み（§9.4）。
+
+---
+
+## 4. 設計上の重要な判断
+
+### 4.1 Hono は内部実装、ユーザーには露出させない
+
+ユーザーが書くのは Entry クラスと Provider。Hono の `Context` には直接触らせない。AdonisJS が Express/Fastify を内部で使うのと同じ路線。
+
+公開 API として `hono.Context` / `Hono` / `@needle-di/core.Container` 等を露出してはならない（Phase 1 spec section 8 を継承）。型定義レベルでも `dist/*.d.ts` から hono 型が見えてはいけない（§9.3 で CI 検証）。
+
+### 4.2 引数のデフォルト値で「値の出所」を宣言する
+
+NestJS 的なパラメータデコレーター (`@Body() body: CreateUserBody`) は採用しない。理由:
+
+- Stage 3 decorator はパラメータデコレーターを未サポート
+- デコレーターと引数型注釈の二重定義は型安全ではない (片方を変えても TypeScript が検出できない)
+
+代わりに、**引数のデフォルト値**で値の出所を宣言する:
+
+```ts
+async create(body = validated(CreateUserBody)) { }
+```
+
+`validated()` の戻り値型が `InferOutput<typeof CreateUserBody>` になるため、`body` の型は schema から完全に推論される。schema は 1 箇所のみ、識別子の参照も 1 箇所のみ。乖離不可能。
+
+### 4.3 validation は handler 内で lazy に行う
+
+Hono の middleware パターンとは異なり、koya は handler 内で `validated()` が呼ばれた時点で validate する。
+
+- validation エラーは `validated()` が throw する
+- framework の global error handler でキャッチして 400 を返す
+- middleware 事前検証を不要にすることで codegen が不要になる
+
+### 4.4 codegen は不要
+
+handler 内 lazy validation により、framework がメソッドのシグネチャを事前に知る必要が消える。AST 解析・TypeScript Compiler API・reflect-metadata のいずれも不要で、純粋に Stage 3 decorator + 関数呼び出しのデフォルト値だけで成立する。
+
+### 4.5 Entry は明示列挙で登録する
+
+side-effect import 方式や barrel export 方式は採用しない。理由:
+
+- tree-shaking が確実に効かない (グローバル副作用)
+- entry 別 bundle が原理的に成立しない
+
+代わりに、Application と Entry を明示的に列挙する。これにより:
+
+- entry 別に bundle を分けられる (HTTP bundle / CLI bundle / Cron bundle)
+- 各 bundle に必要なコードだけが含まれる
+- bundler が dependency graph を正確に辿れる
+- 何が登録されているか一目で分かる
+- IDE の jump-to-definition が効く
+
+NestJS の Module 概念は採用しない。Module は monolithic Node.js を前提にした抽象で、entry が複数ある edge/serverless の現実に合わない。Application + Entry の 2 階建てで足りる。
+
+### 4.6 DI container は Application が持つ
+
+Entry ごとに container を作るのではなく、Application が container を持ち、各 Entry はそれを共有する。これにより:
+
+- 同じ `Database` インスタンスを HTTP / Cron / Queue で共有できる
+- Entry 別 bundle でも、必要な Provider だけ Application に登録すれば最小化される
+- Laravel の `Application` クラスと同じ構造
+
+DI scope は 3 種類:
+
+- **Application scope** (singleton): アプリケーション起動から終了まで生存
+- **Entry scope**: Entry の 1 回の起動 (1 request / 1 cron tick / 1 queue message / 1 CLI 実行) の間生存
+- **Transient**: 注入のたびに新規生成
+
+### 4.7 `@injectable()` は不要、Entry decorator が兼ねる
+
+`@Controller` / `@Cron` / `@Queue` / `@Command` は内部で `@needle-di/core` の `@injectable()` 機能を兼ねる。Provider も普通の class として書けばよく、`createApp({ providers: [...] })` で渡された時点で Application が裏で needle-di に bind する。
+
+ユーザーは任意の class に `@injectable()` を明示的に付けることもできる（NestJS で `@Injectable()` を service に付けるのと同じ感覚）。framework が強制するのは「DI 登録単位は class」というルールのみ（§9.2）。
+
+### 4.8 testing は HTTP integration invoke を提供
+
+`controller.create(testBody)` のような直接呼び出しは TypeScript 引数デフォルト値の挙動上、validation を bypass する（hono の `c.req.json()` を呼ばない、nestjs の `@Body()` decorator が走らないのと同じ）。これは framework 共通の挙動として受け入れる。
+
+外部リクエストをフル検証する unit/integration test 用に、`@koya/testing` から `app.request(path, body)` 相当の HTTP integration invoke API を提供する。これは §8 で「testing utility は (1) スコープ外」とした例外として、Phase 2 (1) で最小限提供する（DI override + simple `request()` のみ）。本格的な testing utility は Phase 2 (4) で扱う。
+
+### 4.9 エラー戦略は throw + global error handler
+
+Provider/Controller は throw で error を伝播する。framework の global error handler が catch して response 化（validation error → 400 等）。
+
+neverthrow は framework として定義しない。ただし、利用者が任意で使うのは妨げない。Phase 1 spec section 8 で「`Result`/`ResultAsync` は露出 OK」と決めたのは、利用者が public API 境界で Result を返す/受け取ることを framework が阻害しない、という意味であって、framework 自身が Result 駆動になるという意味ではない。
+
+公開 API は Result 型を要求しない。Phase 2 (3) で error handling + validation contract を再設計する際に、この方針を再評価する余地は残す。
+
+---
+
+## 5. ユーザー向け API
+
+### 5.1 HTTP Entry の基本形
+
+```ts
+import { Controller, Post, inject, validated } from '@koya/core'
+import * as v from 'valibot'
+
+const CreateUserBody = v.object({
+  name: v.string(),
+  age: v.number(),
+})
+
+@Controller('/users')
+export class UserController {
+  constructor(private users = inject(Users)) {}
+
+  @Post('/')
+  async create(body = validated(CreateUserBody)) {
+    return this.users.create(body)
+  }
+}
+```
+
+### 5.2 入力 primitive (MVP)
+
+引数のデフォルト値で使う primitive 関数。Phase 2 (1) では以下 3 つのみ提供。すべて型推論可能。
+
+責務分離:
+
+- `inject` は **constructor 引数 default 専用**。`@needle-di/core` の `inject` を re-export する。`container.get(X)` の resolve スタック内で立つ needle-di context に乗る (§7.1)。
+- `validated` / `pathParam` など **request scope の値** を取る primitive は **method 引数 default 専用**。内部実装は AsyncLocalStorage (§7.1)。
+
+| primitive | 用途 | 引数 default 位置 | 戻り値型 |
+|---|---|---|---|
+| `inject(Class)` | DI コンテナから取得 (`@needle-di/core` の re-export) | constructor | `Class` のインスタンス型 |
+| `validated(schema)` | request body を validate | method | `InferOutput<typeof schema>` |
+| `pathParam(name)` | URL path parameter | method | `string` |
+
+複数 primitive を組み合わせた例:
+
+```ts
+@Controller('/users')
+export class PostController {
+  // request 非依存の依存は constructor で DI 解決
+  constructor(private posts = inject(Posts)) {}
+
+  // request scope の値は method 引数 default で取得
+  @Post('/:id/posts')
+  async create(
+    id = pathParam('id'),
+    body = validated(CreatePostBody),
+  ) {
+    return this.posts.create({ userId: id, ...body })
+  }
+}
+```
+
+`CurrentUser` のような **request scope の値** (= 認証済 user 等) を method 引数 default で取りたい場合は、`inject(CurrentUser)` ではなく専用 primitive (`currentUser()` 等、将来追加) で表現する。これは「DI コンテナ取得」と「request scope の値取得」の責務を分けるため。
+
+#### 将来追加候補（Phase 2 (1) スコープ外）
+
+| primitive | 用途 | 引数 default 位置 | 戻り値型 | 追加タイミング |
+|---|---|---|---|---|
+| `query(schema)` | query string を validate | method | `InferOutput<typeof schema>` | HTTP 拡張 |
+| `header(name)` | request header | method | `string \| undefined` | HTTP 拡張 |
+| `currentUser()` 等 | 認証済 user など request scope の値 | method | 利用者定義型 | request scope DI が必要になった時 |
+| `cronContext()` | Cron 実行時の context | method | Cron トリガー情報 | Cron Entry 導入時 |
+| `queueMessage(schema)` | Queue メッセージ | method | `InferOutput<typeof schema>` | Queue Entry 導入時 |
+| `cliArg(name)` `cliFlag(name)` | CLI 引数・フラグ | method | string / boolean 等 | CLI Entry 導入時 |
+
+### 5.3 各 Entry の Decorator
+
+#### HTTP (MVP)
+
+```ts
+@Controller('/users')
+export class UserController {
+  @Get('/')      list() { }
+  @Get('/:id')   show() { }
+  @Post('/')     create() { }
+  @Put('/:id')   update() { }
+  @Patch('/:id') patch() { }
+  @Delete('/:id') destroy() { }
+}
+```
+
+#### Cron / Queue / CLI (将来)
+
+将来追加候補。仕様は元案として残すが、Phase 2 (1) では実装しない。
+
+```ts
+// 将来
+@Cron('0 * * * *')
+export class HourlyReportCron {
+  constructor(private reports = inject(Reports)) {}
+  async run(ctx = cronContext()) {
+    await this.reports.generateHourly()
+  }
+}
+
+@Queue('emails')
+export class EmailQueueConsumer {
+  constructor(private mailer = inject(Mailer)) {}
+  async handle(message = queueMessage(EmailMessageSchema)) {
+    await this.mailer.send(message)
+  }
+}
+
+@Command('migrate')
+export class MigrateCommand {
+  constructor(private db = inject(Database)) {}
+  async run(fresh = cliFlag('fresh')) {
+    if (fresh) await this.db.dropAll()
+    await this.db.migrate()
+  }
+}
+```
+
+decorator が持つ情報は **トリガー条件のみ** (path, method, cron 表現, queue 名, command 名)。引数情報は含めない。
+
+---
+
+## 6. アプリケーション起動
+
+### 6.1 Application の生成
+
+DI container と Provider の登録は Application のレイヤーで行う。
+
+```ts
+import { createApp } from '@koya/core'
+
+export const app = createApp({
+  providers: [Database, Users, Posts, Mailer],
+})
+```
+
+Application 自体は entry を持たない。entry の登録は Runtime adapter で行う。
+
+### 6.2 Runtime adapter (MVP は HTTP のみ)
+
+各 Entry 種別を実行可能な形に変換する。Phase 2 (1) では HTTP のみ。
+
+```ts
+const http = app.http({ controllers: [UserController, PostController] })
+// 将来:
+// const cron  = app.cron({  crons: [HourlyReportCron] })
+// const queue = app.queue({ consumers: [EmailQueueConsumer] })
+// const cli   = app.cli({   commands: [MigrateCommand] })
+```
+
+### 6.3 Entry 別 bundle (推奨パターン)
+
+各 entry を別ファイルに分け、bundler が dependency graph で必要なコードだけ含める。
+
+```ts
+// entries/http.ts
+import { createApp } from '@koya/core'
+import { UserController } from '../controllers/user.controller'
+
+const app = createApp({
+  providers: [Database, Users],
+})
+
+export default app.http({
+  controllers: [UserController],
+}).toWorker()
+```
+
+将来 CLI を導入した場合:
+
+```ts
+// entries/cli.ts (将来)
+import { createApp } from '@koya/core'
+import { MigrateCommand } from '../commands/migrate'
+
+const app = createApp({
+  providers: [Database],
+})
+
+app.cli({
+  commands: [MigrateCommand],
+}).run(process.argv)
+```
+
+HTTP bundle に CLI コードは含まれず、CLI bundle に HTTP controller は含まれない。各 bundle が最小化される。
+
+### 6.4 統合 entry (将来: Workers の複数 handler 対応)
+
+Cloudflare Workers では 1 つの worker file が `fetch` / `scheduled` / `queue` を同時に export することがある。この場合は複数の adapter を合成する（Phase 2 (1) では対応しない）。
+
+```ts
+// 将来
+const http  = app.http({  controllers: [UserController] })
+const cron  = app.cron({  crons: [HourlyReportCron] })
+const queue = app.queue({ consumers: [EmailQueueConsumer] })
+
+export default app.toWorker({ http, cron, queue })
+// ↑ { fetch, scheduled, queue } を export
+```
+
+DI container は Application で 1 つなので、`Database` のインスタンスは fetch / scheduled / queue で共有される。
+
+---
+
+## 7. 実装メモ
+
+### 7.1 request-scoped context
+
+method 引数 default で使う primitive (`validated()` / `pathParam()` 等) は AsyncLocalStorage で「現在処理中の Entry 実行」にアクセスする。`inject()` はこの仕組みに乗らず、`@needle-di/core` の constructor injection 機構 (`container.get(X)` の resolve スタック内で立つ context) で動く。
+
+```ts
+// 概念実装
+const entryStorage = new AsyncLocalStorage<EntryContext>()
+
+export function validated<S extends BaseSchema>(schema: S): InferOutput<S> {
+  const ctx = entryStorage.getStore()
+  if (!ctx) throw new Error('validated() called outside entry execution')
+  return v.parse(schema, ctx.input.body)
+}
+
+// inject は @needle-di/core から re-export するだけ (独自 ALS 実装はしない)
+export { inject } from '@needle-di/core'
+```
+
+Cloudflare Workers では `nodejs_compat` flag で AsyncLocalStorage が利用可能。
+
+### 7.2 Entry の登録と DI
+
+- Entry は Stage 3 decorator が実行されたタイミングでクラスにメタデータが付与される (decorator 引数のみ)
+- Application 起動時、`app.http()` 等の adapter に渡された Entry クラスを走査してルートを構築
+- Entry のインスタンスは Needle-DI の container から Entry scope で生成
+- `constructor(private users = inject(Users))` の形で書かれた依存も同じ container から解決
+- Entry decorator が `@needle-di/core` の `@injectable()` 機能を兼ねるため、ユーザーが追加で `@injectable()` を書く必要はない（§4.7）
+
+### 7.3 各 Runtime adapter の出力
+
+| adapter | 出力 | MVP |
+|---|---|---|
+| `app.http(...).toWorker()` | `{ fetch: (req, env, ctx) => Response }` | ✓ |
+| `app.http(...).toNode()` | Node.js HTTP server | 将来 |
+| `app.cron(...).toWorker()` | `{ scheduled: (event, env, ctx) => void }` | 将来 |
+| `app.queue(...).toWorker()` | `{ queue: (batch, env, ctx) => void }` | 将来 |
+| `app.toWorker({ http, cron, queue })` | 上記をマージした worker handler | 将来 |
+| `app.cli(...).run(argv)` | プロセス実行 | 将来 |
+
+---
+
+## 8. スコープ
+
+### 8.1 MVP (Phase 2 (1)) に含めるもの
+
+- Application + Provider 登録 (`createApp({ providers })`)
+- HTTP Entry: `@Controller`, `@Get`, `@Post`, `@Put`, `@Patch`, `@Delete`
+- 入力 primitive: `inject()`, `validated()`, `pathParam()` の 3 つ
+- Hono ベースの HTTP Runtime adapter (`app.http().toWorker()`)
+- AsyncLocalStorage ベースの Entry-scoped context
+- global error handler (validation error → 400 等)
+- Needle-DI 統合 (Application / Entry scope)
+- `@koya/testing` から最小限の HTTP integration invoke (`testApp.request(path, body)` 相当 + DI override)
+
+### 8.2 Phase 2 後続フェーズで扱うもの
+
+| Phase | スコープ |
+|---|---|
+| (2) DI binding API | `useFactory` / `useValue` / scope 制御 / Provider バインディング DSL |
+| (3) Error handling + Validation contract | error → response mapping、validation error の構造化、Result 型の再評価可否 |
+| (4) Testing utility | request mocking、time/clock mock、in-memory database、HTTP fixture |
+
+### 8.3 当面採用しないもの (将来検討)
+
+- Cron / Queue / CLI の Entry 種別
+- 統合 worker entry (`app.toWorker({...})`)
+- 追加 primitive: `query()`, `header()`, `cronContext()`, `queueMessage()`, `cliArg()`, `cliFlag()`
+- middleware 抽象
+- config 抽象、env 管理
+- response の型付け抽象
+- OpenAPI 生成
+- Feature 単位の Entry グループ化
+
+---
+
+## 9. 制約事項
+
+### 9.1 環境制約
+
+- TypeScript 6.0+ を前提とする
+- 実行環境は Cloudflare Workers / Node.js / Bun / Deno を想定
+- `reflect-metadata` を import してはならない (`@needle-di/core` も要求しない)。CI で `grep` 検証 (§9.3)
+- `experimentalDecorators: true` を **有効にする** (§3 / §10 #11、Stage 3 syntax は toolchain 制約で不採用)
+- `tsdown` は 0.20.x 以降 (oxc decorate helper inline 対応版) を使う。0.9.x では `__decorate` helper が external 参照のまま残り `ERR_MODULE_NOT_FOUND` になる
+- AsyncLocalStorage が利用可能な環境を前提とする (Workers では `nodejs_compat` 必要)
+
+### 9.2 class 使用ルール
+
+CLAUDE.md ルール「class 禁止、DI コンテナのみ例外」と本spec の class 多用パターンを整合させる。「class が許される = `@needle-di/core` の DI 登録単位として bind されるもの」と定義する。
+
+| 種別 | class | 関数+readonly |
+|---|---|---|
+| Entry (`@Controller` / `@Cron` / `@Queue` / `@Command`) | ✓ | × |
+| Provider (DI 登録単位、`@injectable()` 含む) | ✓ | × |
+| ドメインオブジェクト / 値オブジェクト | × | ✓ |
+| pure logic / utility | × | ✓ |
+| 設定オブジェクト / data record | × | ✓ |
+
+framework の内部実装も同じルールに従う。Entry/Provider 以外で class を使う設計提案は本spec の方針に反する。
+
+### 9.3 Hono 型隠蔽 (CI 検証)
+
+framework の dist 出力に hono 由来の型が含まれてはならない。CI で以下相当を検証する:
+
+```bash
+grep -RE "from ['\"]hono" packages/core/dist/*.d.ts && exit 1 || true
+```
+
+`hono.Context` / `Hono` 等の型が利用者の TypeScript 型解決経路に現れたら fail。Phase 1 申し送り (b) として GitHub Actions に追加する（Phase 2 plan のタスク）。
+
+### 9.4 公開 API 禁止リスト（Phase 1 spec section 8 継承）
+
+以下は公開 API として export してはならない:
+
+- `Context` (hono)
+- `Hono` (hono)
+- `Container` (`@needle-di/core`)
+
+以下は公開 API で受け取ってよい / 露出してよい:
+
+- valibot の `BaseSchema` 系（`validated()` 等の引数）
+- neverthrow の `Result` / `ResultAsync`（利用者が return 値として使う場合のみ。framework 自身は Result を要求しない）
+
+---
+
+## 10. 検討経緯の要約
+
+1. **NestJS 風 `@Body() body: CreateUserBody`** → Stage 3 でパラメータデコレーター未対応、legacy + reflect-metadata は cold start に響くため不採用
+2. **decorator option + 型注釈** (`@Post('/', { body: schema })` + `InferRequest<...>`) → 二重定義は乖離検出不能で型安全ではないため不採用
+3. **関数型 route** (`route.post('/', { body, handler })`) → クラス構造が壊れる、`this` 問題、DI との相性が悪く不採用
+4. **codegen による AST 解析** → TypeScript Compiler API 依存で TS バージョンが固定され、個人プロジェクトのメンテ負荷として重く不採用
+5. **引数のデフォルト値で値の出所を宣言** (`body = validated(schema)`) → schema 単一定義、型完全推論、decorator 不要、codegen 不要、reflect-metadata 不要、クラス構造保持。**採用**
+6. **Entry 抽象の導入** → HTTP / Cron / Queue / CLI を同格に扱うため、「プレゼンテーション層」ではなく「外部からの入口 = Entry」として再定義。hexagonal architecture の driving adapter に相当
+7. **Application + Entry の 2 階建て** → NestJS の Module は monolithic 前提のため不採用。Entry 別 bundle (Fast) と DI 共有 (統合 worker) の両立のため、DI container は Application が持つ構造に
+8. **`@injectable()` を Entry decorator が兼ねる** → ユーザー記述量を最小化。NestJS の `@Controller` が `@Injectable()` を兼ねるのと同じ感覚
+9. **neverthrow を framework として定義しない** → Phase 1 spec section 8 の「Result 露出 OK」は利用者の自由を保証する意であり、framework が Result 駆動になる意ではないと整理。Phase 2 (3) で再評価の余地は残す
+10. **`inject` の責務分離** → 当初 `inject(CurrentUser)` を method 引数 default で使う想定 (`@needle-di/core` 由来か koya 独自 ALS-based か、設計が割れる) だったが、「DI コンテナ取得は `inject` で constructor 引数 default 専用 (needle-di 標準 re-export)、request scope の値は専用 primitive (`pathParam` / `validated` / 将来 `currentUser` 等) で method 引数 default」と責務分離する形に整理。`inject` の独自実装は不要
+11. **decorator 実装方式 (Stage 3 → legacy)** → Phase 2 開始時の spike で、koya の toolchain (vite 8 / vitest 4.1.5 / tsdown 0.9.3 / rolldown / oxc) が Stage 3 decorator 構文を transpile せず、Node.js v22/v24 がネイティブにパースできないため、`@deco class X {}` を書いた瞬間に build/test が `SyntaxError` になることが判明。**Stage 3 構文を諦めて legacy decorator (`experimentalDecorators: true`) を採用**する。reflect-metadata は引き続き要求しない (`@needle-di/core` が reflect-metadata 非依存設計のため)。tsdown は 0.20.x 以降 (oxc decorate helper inline 対応版) が必要 (`tsdown@0.21.10` に bump)。jexer-reserve (sibling project) で同パターンが実証済
+
+---
+
+## 11. brainstorming 確定事項 (2026-05-02)
+
+| # | 論点 | 確定 |
+|---|---|---|
+| 1 | controller 直接呼び出しでの validation skip | framework 共通の挙動として許容。`app.request(path, body)` 相当の HTTP integration invoke を `@koya/testing` で提供（§4.8） |
+| 2 | neverthrow との整合 | framework として定義しない。利用者が任意で使う。本spec で import なし（§4.9） |
+| 3 | Phase 1 申し送り (init-design spec section 13.5) 取り込み | (a) class ルール → §9.2 / (b) Hono 型隠蔽 grep CI → §9.3 / (c) 逸脱 #1〜#3 逆転 → §12 |
+| 4 | needle-di `@injectable()` 関係 | Entry/Provider に `@injectable()` 不要、Entry decorator が兼ねる。任意の class への `@injectable()` 付与は許容（§4.7） |
+| 5 | MVP スコープ | §8.1 = Phase 2 (1)、(2)(3)(4) は (1) 完了後の拡張 |
+| 6 | `inject` の責務 | constructor 引数 default 専用、`@needle-di/core` の re-export。method 引数 default で DI したい用途は専用 primitive (`pathParam` / `validated` / 将来 `currentUser` 等) で表現 (§5.2 / §7.1 / §10 #10) |
+
+---
+
+## 12. Phase 1 逸脱事項の逆転
+
+Phase 1 init-design spec section 13.5 で Phase 2 に申し送られた逸脱 #1〜#3 を、本 phase の実装段階で逆転する:
+
+| # | Phase 1 逸脱状態 | Phase 2 で逆転後 |
+|---|---|---|
+| 1 | `packages/testing/tsconfig.json` から core への `references` を削除（dogfood test の循環参照回避） | core の API が確定したら、testing が core に依存する形で `references: [{ path: "../core" }]` を testing 側に追加 |
+| 2 | `packages/testing/package.json` の `dependencies` から `@koya/core` を削除（Nx 循環依存回避） | testing が core の testing utility を提供するため、`peerDependencies` または `devDependencies` として `@koya/core: workspace:*` を追加 |
+| 3 | `packages/core/src/index.test.ts` の dogfood が `@koya/testing` の `__version` import に逆向きで依存 | core が API を提供する側に変わるため、`@koya/testing` 側の test で `@koya/core` の API を直接利用する形に書き直す |
+
+詳細手順は Phase 2 plan で対応タスク化する。
+
+---
+
+## 13. Phase 2 plan で扱う作業項目
+
+本spec 完成後、`writing-plans` skill で `docs/superpowers/plans/2026-05-02-koya-phase2-api.md` を起草する。plan に含める主要タスク:
+
+1. `@koya/core` 公開 API 実装 (§5–6)
+   - `createApp` / `Application` 型
+   - `@Controller` / `@Get` / `@Post` / `@Put` / `@Patch` / `@Delete` decorator
+   - `inject` / `validated` / `pathParam` primitive
+   - Hono ベース runtime adapter (`app.http().toWorker()`)
+   - AsyncLocalStorage Entry-scoped context
+   - global error handler
+2. `@koya/testing` の最小 HTTP integration invoke API (§4.8 / §8.1)
+3. CI に Hono 型隠蔽 grep check 追加 (§9.3)
+4. 逸脱 #1〜#3 の逆転 (§12)
+5. `examples/hello` を Phase 2 API でリライトし dogfood として動作確認
+
+---

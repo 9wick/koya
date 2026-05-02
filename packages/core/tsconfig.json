@@ -7,7 +7,10 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "experimentalDecorators": true,
+    "erasableSyntaxOnly": false,
+    "types": ["node"]
   },
   "include": ["src/**/*"],
   "references": [{ "path": "../testing" }]
