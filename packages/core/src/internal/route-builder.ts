@@ -1,6 +1,8 @@
 import type { Container, Token } from '@needle-di/core';
 import type { Hono } from 'hono';
 
+import { toErrorResponse } from '../http/error-handler';
+
 import { runInEntryContext } from './entry-context';
 import { getControllerMetadata, getRouteMetadata, type HttpMethod } from './metadata';
 
@@ -70,12 +72,16 @@ const registerRoute = (hono: Hono, container: Container, route: Route): void => 
   const instance = container.get(token);
   const invoke = resolveHandler(instance, route.methodName);
   hono.on(route.method, route.fullPath, async (c) => {
-    const body = await parseRequestBody(c);
-    const pathParams: Readonly<Record<string, string>> = c.req.param();
-    const result = await runInEntryContext({ input: { body, pathParams }, container }, async () =>
-      invoke(),
-    );
-    return Response.json(result);
+    try {
+      const body = await parseRequestBody(c);
+      const pathParams: Readonly<Record<string, string>> = c.req.param();
+      const result = await runInEntryContext({ input: { body, pathParams }, container }, async () =>
+        invoke(),
+      );
+      return Response.json(result);
+    } catch (error) {
+      return toErrorResponse(error);
+    }
   });
 };
 

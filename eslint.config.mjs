@@ -80,6 +80,7 @@ export default tseslint.config(
     files: ['packages/core/src/**/*.{ts,tsx}'],
     rules: {
       '@9wick/strict-type-rules/no-throw': 'off',
+      '@9wick/strict-type-rules/no-try-catch': 'off',
     },
   },
   {

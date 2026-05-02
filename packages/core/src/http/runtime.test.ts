@@ -88,3 +88,43 @@ describe('app.http().toWorker()', () => {
     );
   });
 });
+
+describe('error paths', () => {
+  it('returns 400 when validated() rejects the body', async () => {
+    const worker = buildWorker();
+    const res = await worker.fetch(
+      new Request('https://example.com/echo/', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ msg: 42 }),
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for malformed JSON body (validated() sees undefined)', async () => {
+    const worker = buildWorker();
+    const res = await worker.fetch(
+      new Request('https://example.com/echo/', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: 'not-json',
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 500 when pathParam() asks for a missing parameter', async () => {
+    @Controller('/x')
+    class BrokenController {
+      @Get('/')
+      run() {
+        return { v: pathParam('id') };
+      }
+    }
+    const app = createApp({ providers: [BrokenController] });
+    const w = app.http({ controllers: [BrokenController] }).toWorker();
+    const res = await w.fetch(new Request('https://example.com/x/'));
+    expect(res.status).toBe(500);
+  });
+});
