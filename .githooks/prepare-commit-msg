@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -euo pipefail
+npx prepush-hash verify-footer "$1" "${2:-}"

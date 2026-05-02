@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {},
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/testing" },
+    { "path": "packages/adapter-node" }
+  ],
+  "files": []
+}
