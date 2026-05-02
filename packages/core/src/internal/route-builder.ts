@@ -20,7 +20,7 @@ export const joinPath = (base: string, sub: string): string => {
 
 type ControllerClass = new (...args: never[]) => object;
 
-export type Route = {
+type Route = {
   readonly method: HttpMethod;
   readonly fullPath: string;
   readonly methodName: string | symbol;

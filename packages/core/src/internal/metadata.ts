@@ -1,10 +1,10 @@
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-export type ControllerMetadata = {
+type ControllerMetadata = {
   readonly basePath: string;
 };
 
-export type RouteMetadata = {
+type RouteMetadata = {
   readonly method: HttpMethod;
   readonly path: string;
   readonly methodName: string | symbol;

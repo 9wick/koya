@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-export type EntryInput = {
+type EntryInput = {
   readonly body: unknown;
   readonly pathParams: Readonly<Record<string, string>>;
 };

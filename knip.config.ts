@@ -1,10 +1,10 @@
 import type { KnipConfig } from 'knip';
 
-// Runtime deps will be consumed in later phases; keep ignored until imports land.
 const config: KnipConfig = {
   workspaces: {
     'packages/core': {
-      ignoreDependencies: ['@needle-di/core', 'hono', 'neverthrow', 'valibot'],
+      // neverthrow は今後 Result wrapper に使う想定で keep。
+      ignoreDependencies: ['neverthrow'],
     },
     'packages/adapter-node': {
       ignoreDependencies: ['@hono/node-server', '@koya/core'],

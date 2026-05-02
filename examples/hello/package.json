@@ -4,9 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node --experimental-strip-types src/main.ts"
+    "start": "tsx src/main.ts"
   },
   "dependencies": {
     "@koya/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "4.21.0"
   }
 }

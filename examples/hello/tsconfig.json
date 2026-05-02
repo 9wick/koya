@@ -1,7 +1,9 @@
 {
   "extends": "@9wick/eslint-plugin-strict-type-rules/tsconfig/strictest.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    "experimentalDecorators": true,
+    "erasableSyntaxOnly": false
   },
   "include": ["src/**/*"]
 }
