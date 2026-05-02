@@ -1,3 +1,10 @@
 packages:
   - 'packages/*'
   - 'examples/*'
+ignoredBuiltDependencies:
+  - unrs-resolver
+
+onlyBuiltDependencies:
+  - "@9wick/eslint-plugin-strict-type-rules"
+  - esbuild
+  - nx
