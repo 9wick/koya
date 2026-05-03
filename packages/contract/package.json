@@ -29,7 +29,8 @@
     "typecheck": "tsc -b"
   },
   "peerDependencies": {
-    "@koya/core": "workspace:*"
+    "@koya/core": "workspace:*",
+    "hono": "4.12.16"
   },
   "dependencies": {
     "cac": "7.0.0",

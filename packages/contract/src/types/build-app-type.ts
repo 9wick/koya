@@ -24,12 +24,23 @@ type ResponseToEndpointOutput<R> =
 // Route['response'] may be a union; distribute over it
 type RouteResponseEndpoints<R> = R extends unknown ? ResponseToEndpointOutput<R> : never;
 
+// hc<T> distinguishes "no field" from "field of empty type". Routes without path
+// parameters (params = Record<string, never>) or without a request body (body = never)
+// must omit those input keys entirely so hc does not require callers to pass
+// `param: {}` / `json: undefined`.
+// ExtractPathParams returns Record<string, never> for param-less paths; we treat
+// any P whose value type is never (i.e. Record<string, never>) as "no params".
+type IsEmptyRecord<P> = P extends Record<string, never> ? true : false;
+type ParamInput<P> = IsEmptyRecord<P> extends true ? Record<never, never> : { param: P };
+type BodyInput<B> = [B] extends [never] ? Record<never, never> : { json: B };
+type RouteInput<P, B> = ParamInput<P> & BodyInput<B>;
+
 // Build a single method endpoint entry for a Route-shaped object
 type RouteMethodEntry<
   R extends { method: string; params: unknown; body: unknown; response: unknown },
 > = {
   [K in MethodKey<R['method'] & string>]: {
-    input: { param: R['params']; json: R['body'] };
+    input: RouteInput<R['params'], R['body']>;
   } & RouteResponseEndpoints<R['response']>;
 };
 
