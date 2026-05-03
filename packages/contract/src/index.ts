@@ -7,3 +7,6 @@ export type {
   ExtractValidationErrors,
 } from './types/extract';
 export type { ValidatedMarker, UnwrapValidated } from './types/validated-marker';
+
+export { defineConfig } from './config/options';
+export type { GenerateClientOptions } from './config/options';
