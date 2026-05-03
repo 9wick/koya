@@ -69,7 +69,7 @@ type StatusCode =
   | 511
   | -1;
 
-type RedirectStatusCode = 300 | 301 | 302 | 303 | 304 | 305 | 306 | 307 | 308;
+type KoyaRedirectStatusCode = 301 | 302 | 303 | 307 | 308;
 
 // Mirrors hono's ContentfulStatusCode = Exclude<StatusCode, 101 | 204 | 205 | 304>.
 type ContentfulStatusCode = Exclude<StatusCode, 101 | 204 | 205 | 304>;
@@ -81,7 +81,7 @@ export type ResponseBuilder = {
     headers?: Record<string, string>,
   ): TypedResponse<T, S, 'json'>;
 
-  redirect<S extends RedirectStatusCode = 302>(
+  redirect<S extends KoyaRedirectStatusCode = 302>(
     url: string,
     status?: S,
   ): TypedResponse<undefined, S, 'redirect'>;
@@ -118,11 +118,11 @@ function makeJson(c: ResponseContext): ResponseBuilder['json'] {
 }
 
 function makeRedirect(c: ResponseContext): ResponseBuilder['redirect'] {
-  function redirect<S extends RedirectStatusCode = 302>(
+  function redirect<S extends KoyaRedirectStatusCode = 302>(
     url: string,
     status?: S,
   ): TypedResponse<undefined, S, 'redirect'>;
-  function redirect(url: string, status?: RedirectStatusCode) {
+  function redirect(url: string, status?: KoyaRedirectStatusCode) {
     return c.redirect(url, status);
   }
   return redirect;
