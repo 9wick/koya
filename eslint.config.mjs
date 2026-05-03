@@ -98,6 +98,7 @@ export default tseslint.config(
       'packages/contract/src/emit/**/*.{ts,tsx}',
       'packages/contract/src/generate-client.ts',
       'packages/contract/src/watch.ts',
+      'packages/contract/src/load-config.ts',
       'packages/contract/src/cli.ts',
     ],
     rules: {
@@ -111,6 +112,14 @@ export default tseslint.config(
     rules: {
       'no-console': 'off',
       '@9wick/strict-type-rules/no-try-catch': 'off',
+    },
+  },
+  {
+    // CLI and config loader need process.argv / process.cwd() — these are build-time tools
+    // that run in Node.js directly, not inside an application container.
+    files: ['packages/contract/src/cli.ts', 'packages/contract/src/load-config.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-process-access': 'off',
     },
   },
 );
