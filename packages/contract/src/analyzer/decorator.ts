@@ -8,9 +8,9 @@ const HTTP_METHOD_MAP = {
   Delete: 'DELETE',
 } as const;
 
-export type HttpMethod = (typeof HTTP_METHOD_MAP)[keyof typeof HTTP_METHOD_MAP];
+type HttpMethod = (typeof HTTP_METHOD_MAP)[keyof typeof HTTP_METHOD_MAP];
 
-export type ControllerDecoratorInfo = {
+type ControllerDecoratorInfo = {
   readonly basePath: string;
 };
 

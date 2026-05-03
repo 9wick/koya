@@ -7,7 +7,7 @@ import type { ControllerIR, RouteIR } from '../analyzer/internal-representation'
 import { resolveRequestSchema, type RequestSchemaJson } from './json-schema-input';
 import { resolveResponseSchema, type ResponseSchemaJson } from './json-schema-output';
 
-export type EmitOpenApiOptions = {
+type EmitOpenApiOptions = {
   readonly distDir: string;
   readonly tsconfigPath: string;
 };
@@ -16,7 +16,7 @@ type SchemaMap = Record<string, unknown>;
 type Operation = Record<string, unknown>;
 type PathItem = Record<string, Operation>;
 
-export type OpenApiDoc = {
+type OpenApiDoc = {
   openapi: '3.1.0';
   readonly info: { readonly title: string; readonly version: string };
   readonly paths: Readonly<Record<string, PathItem>>;

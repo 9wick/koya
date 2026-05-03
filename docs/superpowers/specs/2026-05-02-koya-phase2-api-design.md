@@ -496,6 +496,14 @@ grep -RE "from ['\"]hono" packages/core/dist/*.d.ts && exit 1 || true
 
 `hono.Context` / `Hono` 等の型が利用者の TypeScript 型解決経路に現れたら fail。Phase 1 申し送り (b) として GitHub Actions に追加する（Phase 2 plan のタスク）。
 
+**ホワイトリスト (Phase 2 (2) §4.1):** 以下の import 行はリーク検出の対象外とする。CI の grep は当該行を除外した上で残存する hono 参照を検出し、それ以外の hono 参照は引き続き fail となる。
+
+| 許可行 | 理由 |
+|--------|------|
+| `import { HTTPException } from "hono/http-exception";` | Phase 2 (2) の意図的な re-export (§4.1) |
+| `import { TypedResponse } from "hono";` | `ResponseBuilder` の戻り値型として公開 API に必要 |
+| `import { ContentfulStatusCode } from "hono/utils/http-status";` | `ResponseBuilder` のステータスパラメータ型として公開 API に必要 |
+
 ### 9.4 公開 API 禁止リスト（Phase 1 spec section 8 継承）
 
 以下は公開 API として export してはならない:

@@ -2,7 +2,7 @@ import { relative } from 'node:path';
 
 import type { ControllerIR } from '../analyzer/internal-representation';
 
-export type EmitAppGenOptions = {
+type EmitAppGenOptions = {
   readonly distDir: string;
 };
 

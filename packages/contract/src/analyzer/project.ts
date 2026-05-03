@@ -1,6 +1,6 @@
 import { ModuleKind, ModuleResolutionKind, Project, ScriptTarget } from 'ts-morph';
 
-export type CreateProjectOptions = {
+type CreateProjectOptions = {
   readonly tsConfigFilePath?: string;
   readonly controllerFiles: readonly string[];
 };

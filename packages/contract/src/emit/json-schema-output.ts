@@ -18,7 +18,7 @@ export type ResponseSchemaJson =
     }
   | { kind: 'omit' };
 
-export type ResolveResponseOptions = {
+type ResolveResponseOptions = {
   readonly tsconfigPath: string;
 };
 
