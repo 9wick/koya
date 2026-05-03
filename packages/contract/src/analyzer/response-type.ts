@@ -20,8 +20,14 @@ const unwrapPromise = (t: Type): Type => {
   return arg ?? t;
 };
 
+// TypedResponse は type alias なので getTypeArguments() ではなく getAliasTypeArguments() を使う。
+const getTypedResponseArgs = (inner: Type): readonly Type[] => {
+  const aliasArgs = inner.getAliasTypeArguments();
+  return aliasArgs.length > 0 ? aliasArgs : inner.getTypeArguments();
+};
+
 const analyzeTypedResponse = (inner: Type, m: MethodDeclaration): ResponseTypeInfo => {
-  const args = inner.getTypeArguments();
+  const args = getTypedResponseArgs(inner);
   const bodyTypeText = args[0]?.getText(m) ?? 'unknown';
   const statusLit = args[1]?.getLiteralValue();
   const formatLit = args[2]?.getLiteralValue();
@@ -47,12 +53,19 @@ const tryNamedType = (inner: Type): ResponseTypeInfo | undefined => {
   };
 };
 
+// hono の TypedResponse は type alias なので getSymbol() ではなく getAliasSymbol() で名前が取れる。
+// 両方 fallback しておくことで future-proof にする。
+const isTypedResponse = (t: Type): boolean => {
+  if (t.getAliasSymbol()?.getName() === 'TypedResponse') return true;
+  return t.getSymbol()?.getName() === 'TypedResponse';
+};
+
 export const analyzeResponseType = (m: MethodDeclaration): ResponseTypeInfo => {
   const inner = unwrapPromise(m.getReturnType());
 
   if (isUnknownOrAny(inner)) return { kind: 'unresolvable' };
 
-  if (inner.getSymbol()?.getName() === 'TypedResponse') {
+  if (isTypedResponse(inner)) {
     return analyzeTypedResponse(inner, m);
   }
 

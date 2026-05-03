@@ -93,7 +93,10 @@ export default tseslint.config(
   },
   {
     // build-time CLI tool: throw fatal errors that surface to the user via the CLI
-    files: ['packages/contract/src/analyzer/**/*.{ts,tsx}'],
+    files: [
+      'packages/contract/src/analyzer/**/*.{ts,tsx}',
+      'packages/contract/src/emit/**/*.{ts,tsx}',
+    ],
     rules: {
       '@9wick/strict-type-rules/no-throw': 'off',
     },
