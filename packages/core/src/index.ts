@@ -7,4 +7,6 @@ export { Injectable } from './decorators/injectable';
 
 export { inject } from './primitives/inject';
 export { pathParam } from './primitives/path-param';
+export { response } from './primitives/response';
+export type { ResponseBuilder } from './primitives/response';
 export { validated } from './primitives/validated';
