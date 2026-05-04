@@ -12,7 +12,11 @@ const config: KnipConfig = {
       ignoreDependencies: ['neverthrow'],
     },
     'packages/adapter-node': {
-      ignoreDependencies: ['@hono/node-server', '@koya/core'],
+      ignoreDependencies: ['@koya/core'],
+    },
+    website: {
+      // @docusaurus/plugin-content-docs types are re-exported by @docusaurus/preset-classic
+      ignoreDependencies: ['@docusaurus/plugin-content-docs'],
     },
   },
 };
