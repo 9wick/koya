@@ -1,1 +1,2 @@
-export { createTestApp, type TestApp } from './test-app';
+// Phase 2 (4): createTestContainer は Task 3 で追加される。
+export {};
