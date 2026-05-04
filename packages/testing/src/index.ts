@@ -1,1 +1,1 @@
-export { createTestApp, type TestApp } from './test-app';
+export { createTestContainer } from './test-container';

@@ -1,4 +1,4 @@
 import { app } from './app';
 
-app.toWorker();
-// serveNode({app, port});
+export default app;
+// app.fetch が Workers / Bun / Deno runtime に拾われる
