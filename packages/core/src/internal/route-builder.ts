@@ -1,10 +1,20 @@
-import type { Hono } from 'hono';
+import type { Context, Env, Hono, Input, MiddlewareHandler } from 'hono';
+import * as v from 'valibot';
 
-import { toErrorResponse } from '../http/error-handler';
+type MiddlewareContext = Context<Env, string, Input>;
+
+import type { MiddlewareClass, MiddlewareInput } from '../middleware/types';
 
 import type { ResolverHandle } from './container';
 import { runInEntryContext } from './entry-context';
-import { getControllerMetadata, getRouteMetadata, type HttpMethod } from './metadata';
+import {
+  getControllerMetadata,
+  getControllerMiddlewareMetadata,
+  getMethodMiddlewareMetadata,
+  getRouteMetadata,
+  getSkipMiddlewareMetadata,
+  type HttpMethod,
+} from './metadata';
 
 const stripTrailingSlash = (s: string): string =>
   s.length > 1 && s.endsWith('/') ? s.slice(0, -1) : s;
@@ -67,31 +77,133 @@ const parseRequestBody = async (c: Parameters<Parameters<Hono['on']>[2]>[0]): Pr
   return c.req.json<unknown>().catch(() => undefined);
 };
 
-const registerRoute = (hono: Hono, resolver: ResolverHandle, route: Route): void => {
+const hasUseMethod = (proto: unknown): boolean => {
+  if (proto === null || proto === undefined) return false;
+  if (typeof proto !== 'object') return false;
+  return typeof Reflect.get(proto, 'use') === 'function';
+};
+
+const MiddlewareClassSchema = v.custom<MiddlewareClass>(
+  (input) =>
+    typeof input === 'function' && input.prototype !== undefined && hasUseMethod(input.prototype),
+);
+
+const resolveMiddleware = (
+  middleware: MiddlewareInput,
+  resolver: ResolverHandle,
+): MiddlewareHandler => {
+  if (v.is(MiddlewareClassSchema, middleware)) {
+    const instance = resolver.get(middleware);
+    return (c, next) => instance.use(c, next);
+  }
+  return middleware;
+};
+
+const collectRouteMiddlewares = (
+  globalMiddlewares: readonly MiddlewareInput[],
+  controllerClass: ControllerClass,
+  methodName: string | symbol,
+  resolver: ResolverHandle,
+): MiddlewareHandler[] => {
+  const controllerMeta = getControllerMiddlewareMetadata(controllerClass);
+  const methodMetas = getMethodMiddlewareMetadata(controllerClass).filter(
+    (m) => m.methodName === methodName,
+  );
+  const skipMetas = getSkipMiddlewareMetadata(controllerClass).filter(
+    (m) => m.methodName === methodName,
+  );
+
+  const skippedSet = new Set<MiddlewareInput>(skipMetas.flatMap((m) => m.skipped));
+
+  const allMiddlewares: MiddlewareInput[] = [
+    ...globalMiddlewares.filter((m) => !skippedSet.has(m)),
+    ...(controllerMeta?.middlewares.filter((m) => !skippedSet.has(m)) ?? []),
+    ...methodMetas.flatMap((m) => m.middlewares.filter((mw) => !skippedSet.has(mw))),
+  ];
+
+  return allMiddlewares.map((m) => resolveMiddleware(m, resolver));
+};
+
+const composeHandler = (
+  middlewares: readonly MiddlewareHandler[],
+  finalHandler: (c: MiddlewareContext) => Promise<Response>,
+): ((c: MiddlewareContext) => Promise<Response>) => {
+  if (middlewares.length === 0) {
+    return finalHandler;
+  }
+
+  return async (c: MiddlewareContext): Promise<Response> => {
+    let index = -1;
+    let response: Response | undefined;
+
+    const dispatch = async (i: number): Promise<void> => {
+      if (i <= index) throw new Error('next() called multiple times');
+      index = i;
+      if (i < middlewares.length) {
+        const mw = middlewares[i];
+        if (mw) {
+          const result = await mw(c, () => dispatch(i + 1));
+          if (result instanceof Response) {
+            response = result;
+          }
+        }
+      } else {
+        response = await finalHandler(c);
+      }
+    };
+
+    await dispatch(0);
+    return response ?? c.res;
+  };
+};
+
+const registerRoute = (
+  hono: Hono,
+  resolver: ResolverHandle,
+  route: Route,
+  globalMiddlewares: readonly MiddlewareInput[],
+): void => {
   const instance = resolver.get(route.controllerClass);
   const invoke = resolveHandler(instance, route.methodName);
-  hono.on(route.method, route.fullPath, async (c) => {
-    try {
-      const body = await parseRequestBody(c);
-      const pathParams: Readonly<Record<string, string>> = c.req.param();
-      const result = await runInEntryContext(
-        { input: { body, pathParams }, honoContext: c },
-        async () => invoke(),
-      );
-      if (result instanceof Response) return result;
-      return c.json(result);
-    } catch (error) {
-      return toErrorResponse(error);
-    }
-  });
+
+  const middlewares = collectRouteMiddlewares(
+    globalMiddlewares,
+    route.controllerClass,
+    route.methodName,
+    resolver,
+  );
+
+  const finalHandler = async (c: MiddlewareContext): Promise<Response> => {
+    const body = await parseRequestBody(c);
+    const pathParams: Readonly<Record<string, string>> = c.req.param();
+    const result = await runInEntryContext(
+      { input: { body, pathParams }, honoContext: c },
+      async () => invoke(),
+    );
+    if (result instanceof Response) return result;
+    return c.json(result);
+  };
+
+  const handler = composeHandler(middlewares, finalHandler);
+
+  const methods = {
+    GET: () => hono.get(route.fullPath, handler),
+    POST: () => hono.post(route.fullPath, handler),
+    PUT: () => hono.put(route.fullPath, handler),
+    PATCH: () => hono.patch(route.fullPath, handler),
+    DELETE: () => hono.delete(route.fullPath, handler),
+  } as const;
+
+  methods[route.method]();
 };
 
 export const buildRoutes = (
   hono: Hono,
   controllers: readonly ControllerClass[],
   resolver: ResolverHandle,
+  globalMiddlewares: readonly MiddlewareInput[] = [],
 ): void => {
   for (const route of collectRoutes(controllers)) {
-    registerRoute(hono, resolver, route);
+    registerRoute(hono, resolver, route, globalMiddlewares);
   }
 };

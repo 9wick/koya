@@ -1,0 +1,78 @@
+import { describe, expect, it } from 'vitest';
+import type { MiddlewareHandler } from 'hono';
+
+import { getControllerMiddlewareMetadata, getMethodMiddlewareMetadata } from '../internal/metadata';
+
+import { Controller } from './controller';
+import { Get } from './http-method';
+import { UseMiddleware } from './use-middleware';
+
+const testMiddleware: MiddlewareHandler = async (_c, next) => next();
+const anotherMiddleware: MiddlewareHandler = async (_c, next) => next();
+
+describe('@UseMiddleware', () => {
+  it('registers middlewares on controller metadata', () => {
+    @UseMiddleware(testMiddleware)
+    @Controller('/test')
+    class TestController {}
+
+    const meta = getControllerMiddlewareMetadata(TestController);
+    expect(meta?.middlewares).toContain(testMiddleware);
+  });
+
+  it('registers multiple middlewares on controller', () => {
+    @UseMiddleware(testMiddleware, anotherMiddleware)
+    @Controller('/test')
+    class TestController {}
+
+    const meta = getControllerMiddlewareMetadata(TestController);
+    expect(meta?.middlewares).toHaveLength(2);
+    expect(meta?.middlewares).toContain(testMiddleware);
+    expect(meta?.middlewares).toContain(anotherMiddleware);
+  });
+
+  it('appends middlewares on method metadata', () => {
+    @Controller('/test')
+    class TestController {
+      @UseMiddleware(testMiddleware)
+      @Get('/')
+      handler() {
+        return {};
+      }
+    }
+
+    const meta = getMethodMiddlewareMetadata(TestController);
+    expect(meta).toHaveLength(1);
+    expect(meta[0]?.methodName).toBe('handler');
+    expect(meta[0]?.middlewares).toContain(testMiddleware);
+  });
+
+  it('appends multiple method-level middlewares', () => {
+    @Controller('/test')
+    class TestController {
+      @UseMiddleware(testMiddleware)
+      @UseMiddleware(anotherMiddleware)
+      @Get('/')
+      handler() {
+        return {};
+      }
+    }
+
+    const meta = getMethodMiddlewareMetadata(TestController);
+    expect(meta).toHaveLength(2);
+  });
+
+  it('throws when applied to static method', () => {
+    expect(() => {
+      @Controller('/test')
+      @Controller('/test')
+      class TestController {
+        @UseMiddleware(testMiddleware)
+        static staticHandler() {
+          return {};
+        }
+      }
+      new TestController();
+    }).toThrow(/cannot be applied to static methods/);
+  });
+});

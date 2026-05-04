@@ -1,14 +1,26 @@
 import { injectable } from '@needle-di/core';
+import type { MiddlewareHandler, Context, Next } from 'hono';
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
 
 import { Controller } from '../decorators/controller';
 import { Get, Post } from '../decorators/http-method';
+import { Middleware } from '../decorators/middleware';
+import { SkipMiddleware } from '../decorators/skip-middleware';
+import { UseMiddleware } from '../decorators/use-middleware';
 import { inject } from '../primitives/inject';
+import { getContext } from '../primitives/get-context';
 import { pathParam } from '../primitives/path-param';
 import { validated } from '../primitives/validated';
 
 import { createHttpApp } from './app';
+
+declare module '@koya/core' {
+  interface KoyaContextSchema {
+    configValue: string;
+    user: { id: number; name: string };
+  }
+}
 
 @injectable()
 class Greeter {
@@ -153,5 +165,210 @@ describe('error paths', () => {
     const app = createHttpApp({ controllers: [BrokenController] });
     const res = await app.fetch(new Request('https://example.com/x/'));
     expect(res.status).toBe(500);
+  });
+});
+
+describe('middleware', () => {
+  it('executes global middleware on all routes', async () => {
+    const executed: string[] = [];
+    const trackMiddleware: MiddlewareHandler = async (_c, next) => {
+      executed.push('global');
+      await next();
+    };
+
+    @Controller('/test')
+    class TestController {
+      @Get('/')
+      get() {
+        return { ok: true };
+      }
+    }
+
+    const app = createHttpApp({
+      controllers: [TestController],
+      middlewares: [trackMiddleware],
+    });
+
+    await app.request('/test/');
+    expect(executed).toContain('global');
+  });
+
+  it('executes middlewares in order: global -> controller -> method', async () => {
+    const order: string[] = [];
+    const globalMiddleware: MiddlewareHandler = async (_c, next) => {
+      order.push('global');
+      await next();
+    };
+    const controllerMiddleware: MiddlewareHandler = async (_c, next) => {
+      order.push('controller');
+      await next();
+    };
+    const methodMiddleware: MiddlewareHandler = async (_c, next) => {
+      order.push('method');
+      await next();
+    };
+
+    @UseMiddleware(controllerMiddleware)
+    @Controller('/test')
+    class TestController {
+      @UseMiddleware(methodMiddleware)
+      @Get('/')
+      get() {
+        order.push('handler');
+        return { ok: true };
+      }
+    }
+
+    const app = createHttpApp({
+      controllers: [TestController],
+      middlewares: [globalMiddleware],
+    });
+
+    await app.request('/test/');
+    expect(order).toEqual(['global', 'controller', 'method', 'handler']);
+  });
+
+  it('skips global middleware with @SkipMiddleware', async () => {
+    const executed: string[] = [];
+    const authMiddleware: MiddlewareHandler = async (_c, next) => {
+      executed.push('auth');
+      await next();
+    };
+
+    @Controller('/test')
+    class TestController {
+      @Get('/protected')
+      protected() {
+        executed.push('protected');
+        return { ok: true };
+      }
+
+      @SkipMiddleware(authMiddleware)
+      @Get('/public')
+      public() {
+        executed.push('public');
+        return { ok: true };
+      }
+    }
+
+    const app = createHttpApp({
+      controllers: [TestController],
+      middlewares: [authMiddleware],
+    });
+
+    executed.length = 0;
+    await app.request('/test/protected');
+    expect(executed).toEqual(['auth', 'protected']);
+
+    executed.length = 0;
+    await app.request('/test/public');
+    expect(executed).toEqual(['public']);
+  });
+
+  it('resolves @Middleware class through DI', async () => {
+    @injectable()
+    class ConfigService {
+      getValue() {
+        return 'injected-value';
+      }
+    }
+
+    @Middleware
+    class DIMiddleware {
+      constructor(private config = inject(ConfigService)) {}
+
+      async use(c: Context, next: Next): Promise<Response | undefined> {
+        c.set('configValue', this.config.getValue());
+        await next();
+        return undefined;
+      }
+    }
+
+    @Controller('/test')
+    @UseMiddleware(DIMiddleware)
+    class TestController {
+      @Get('/')
+      get() {
+        return { value: getContext('configValue') };
+      }
+    }
+
+    const app = createHttpApp({ controllers: [TestController] });
+    const res = await app.request('/test/');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ value: 'injected-value' });
+  });
+
+  it('middleware can set context values accessible in handler via getContext()', async () => {
+    const setUserMiddleware: MiddlewareHandler = async (c, next) => {
+      c.set('user', { id: 123, name: 'alice' });
+      await next();
+    };
+
+    @Controller('/test')
+    class TestController {
+      @Get('/')
+      get() {
+        const user = getContext('user');
+        return { userId: user?.id, userName: user?.name };
+      }
+    }
+
+    const app = createHttpApp({
+      controllers: [TestController],
+      middlewares: [setUserMiddleware],
+    });
+
+    const res = await app.request('/test/');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ userId: 123, userName: 'alice' });
+  });
+
+  it('middleware exception is handled by Koya error handler', async () => {
+    const throwingMiddleware: MiddlewareHandler = async () => {
+      throw new Error('middleware error');
+    };
+
+    @Controller('/test')
+    class TestController {
+      @Get('/')
+      get() {
+        return { ok: true };
+      }
+    }
+
+    const app = createHttpApp({
+      controllers: [TestController],
+      middlewares: [throwingMiddleware],
+    });
+
+    const res = await app.request('/test/');
+    expect(res.status).toBe(500);
+  });
+
+  it('middleware can return Response to short-circuit', async () => {
+    const earlyReturnMiddleware: MiddlewareHandler = async () => {
+      return new Response(JSON.stringify({ blocked: true }), {
+        status: 403,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+
+    @Controller('/test')
+    class TestController {
+      @Get('/')
+      get() {
+        return { ok: true };
+      }
+    }
+
+    const app = createHttpApp({
+      controllers: [TestController],
+      middlewares: [earlyReturnMiddleware],
+    });
+
+    const res = await app.request('/test/');
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ blocked: true });
   });
 });

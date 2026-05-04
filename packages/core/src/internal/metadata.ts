@@ -1,3 +1,5 @@
+import type { MiddlewareIdentifier, MiddlewareInput } from '../middleware/types';
+
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 type ControllerMetadata = {
@@ -10,8 +12,25 @@ type RouteMetadata = {
   readonly methodName: string | symbol;
 };
 
+type ControllerMiddlewareMetadata = {
+  readonly middlewares: readonly MiddlewareInput[];
+};
+
+type MethodMiddlewareMetadata = {
+  readonly methodName: string | symbol;
+  readonly middlewares: readonly MiddlewareInput[];
+};
+
+type SkipMiddlewareMetadata = {
+  readonly methodName: string | symbol;
+  readonly skipped: readonly MiddlewareIdentifier[];
+};
+
 const controllerStore = new WeakMap<object, ControllerMetadata>();
 const routeStore = new WeakMap<object, RouteMetadata[]>();
+const controllerMiddlewareStore = new WeakMap<object, ControllerMiddlewareMetadata>();
+const methodMiddlewareStore = new WeakMap<object, MethodMiddlewareMetadata[]>();
+const skipMiddlewareStore = new WeakMap<object, SkipMiddlewareMetadata[]>();
 
 export const setControllerMetadata = (cls: object, meta: ControllerMetadata): void => {
   controllerStore.set(cls, meta);
@@ -31,3 +50,38 @@ export const appendRouteMetadata = (cls: object, meta: RouteMetadata): void => {
 
 export const getRouteMetadata = (cls: object): readonly RouteMetadata[] =>
   routeStore.get(cls) ?? [];
+
+export const setControllerMiddlewareMetadata = (
+  cls: object,
+  middlewares: readonly MiddlewareInput[],
+): void => {
+  controllerMiddlewareStore.set(cls, { middlewares });
+};
+
+export const getControllerMiddlewareMetadata = (
+  cls: object,
+): ControllerMiddlewareMetadata | undefined => controllerMiddlewareStore.get(cls);
+
+export const appendMethodMiddlewareMetadata = (
+  cls: object,
+  methodName: string | symbol,
+  middlewares: readonly MiddlewareInput[],
+): void => {
+  const existing = methodMiddlewareStore.get(cls) ?? [];
+  methodMiddlewareStore.set(cls, [...existing, { methodName, middlewares }]);
+};
+
+export const getMethodMiddlewareMetadata = (cls: object): readonly MethodMiddlewareMetadata[] =>
+  methodMiddlewareStore.get(cls) ?? [];
+
+export const appendSkipMiddlewareMetadata = (
+  cls: object,
+  methodName: string | symbol,
+  skipped: readonly MiddlewareIdentifier[],
+): void => {
+  const existing = skipMiddlewareStore.get(cls) ?? [];
+  skipMiddlewareStore.set(cls, [...existing, { methodName, skipped }]);
+};
+
+export const getSkipMiddlewareMetadata = (cls: object): readonly SkipMiddlewareMetadata[] =>
+  skipMiddlewareStore.get(cls) ?? [];
