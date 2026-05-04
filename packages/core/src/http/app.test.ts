@@ -35,20 +35,19 @@ class EchoController {
   }
 }
 
-const buildWorker = () =>
-  createHttpApp({ controllers: [HelloController, EchoController] }).toWorker();
+const buildApp = () => createHttpApp({ controllers: [HelloController, EchoController] });
 
-describe('createHttpApp().toWorker()', () => {
+describe('createHttpApp() — fetch', () => {
   it('serves a constructor-injected GET endpoint with pathParam', async () => {
-    const worker = buildWorker();
-    const res = await worker.fetch(new Request('https://example.com/hello/koya'));
+    const app = buildApp();
+    const res = await app.fetch(new Request('https://example.com/hello/koya'));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ message: 'hello, koya' });
   });
 
   it('parses JSON body via validated()', async () => {
-    const worker = buildWorker();
-    const res = await worker.fetch(
+    const app = buildApp();
+    const res = await app.fetch(
       new Request('https://example.com/echo/', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -60,9 +59,9 @@ describe('createHttpApp().toWorker()', () => {
   });
 
   it('mounts multiple controllers under different base paths', async () => {
-    const worker = buildWorker();
-    const a = await worker.fetch(new Request('https://example.com/hello/x'));
-    const b = await worker.fetch(
+    const app = buildApp();
+    const a = await app.fetch(new Request('https://example.com/hello/x'));
+    const b = await app.fetch(
       new Request('https://example.com/echo/', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -79,16 +78,49 @@ describe('createHttpApp().toWorker()', () => {
       list() {}
     }
     new NoDecorator();
-    expect(() => createHttpApp({ controllers: [NoDecorator] }).toWorker()).toThrow(
-      /missing @Controller/,
-    );
+    expect(() => createHttpApp({ controllers: [NoDecorator] })).toThrow(/missing @Controller/);
+  });
+});
+
+describe('createHttpApp() — request', () => {
+  it('accepts a path string with no init (defaults to GET)', async () => {
+    const app = buildApp();
+    const res = await app.request('/hello/koya');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ message: 'hello, koya' });
+  });
+
+  it('accepts a path string with init for POST + JSON body', async () => {
+    const app = buildApp();
+    const res = await app.request('/echo/', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ msg: 'ok' }),
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ msg: 'ok' });
+  });
+
+  it('accepts a raw Request instance', async () => {
+    const app = buildApp();
+    const res = await app.request(new Request('https://x/hello/koya'));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ message: 'hello, koya' });
+  });
+
+  it('ignores init when input is a Request (Request takes precedence)', async () => {
+    const app = buildApp();
+    // Request の method は GET、init で POST を指定しても Request 側が優先される
+    const res = await app.request(new Request('https://x/hello/koya'), { method: 'POST' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ message: 'hello, koya' });
   });
 });
 
 describe('error paths', () => {
   it('returns 400 when validated() rejects the body', async () => {
-    const worker = buildWorker();
-    const res = await worker.fetch(
+    const app = buildApp();
+    const res = await app.fetch(
       new Request('https://example.com/echo/', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -99,8 +131,8 @@ describe('error paths', () => {
   });
 
   it('returns 400 for malformed JSON body (validated() sees undefined)', async () => {
-    const worker = buildWorker();
-    const res = await worker.fetch(
+    const app = buildApp();
+    const res = await app.fetch(
       new Request('https://example.com/echo/', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -118,8 +150,8 @@ describe('error paths', () => {
         return { v: pathParam('id') };
       }
     }
-    const w = createHttpApp({ controllers: [BrokenController] }).toWorker();
-    const res = await w.fetch(new Request('https://example.com/x/'));
+    const app = createHttpApp({ controllers: [BrokenController] });
+    const res = await app.fetch(new Request('https://example.com/x/'));
     expect(res.status).toBe(500);
   });
 });

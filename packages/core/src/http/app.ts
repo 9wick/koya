@@ -9,12 +9,9 @@ export type CreateHttpAppOptions = {
   readonly controllers: readonly ControllerClass[];
 };
 
-export type WorkerHandler = {
-  readonly fetch: (request: Request) => Response | Promise<Response>;
-};
-
 export type HttpApp = {
-  readonly toWorker: () => WorkerHandler;
+  readonly fetch: (request: Request) => Promise<Response>;
+  readonly request: (input: string | Request, init?: RequestInit) => Promise<Response>;
 };
 
 export const createHttpApp = (options: CreateHttpAppOptions): HttpApp => {
@@ -23,9 +20,15 @@ export const createHttpApp = (options: CreateHttpAppOptions): HttpApp => {
   // 利用者が `@Post('/')` と書いた場合でも `/echo/` リクエストにマッチさせる必要がある。
   const hono = new Hono({ strict: false });
   buildRoutes(hono, options.controllers, resolver);
-  return {
-    toWorker: () => ({
-      fetch: (request) => hono.fetch(request),
-    }),
+
+  const fetch = (req: Request): Promise<Response> => Promise.resolve(hono.fetch(req));
+  const request = (input: string | Request, init?: RequestInit): Promise<Response> => {
+    // path 文字列の場合は localhost ベースで Request を組み立てる。テスト用 ergonomic API なので
+    // host/scheme は意味を持たない (hono `app.request` と同じ慣例)。
+    const req =
+      typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
+    return fetch(req);
   };
+
+  return { fetch, request };
 };

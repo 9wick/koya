@@ -5,9 +5,8 @@ import { app } from '../app';
 import type { AppType } from '../../generated/app.gen';
 
 describe('/hello', () => {
-  const worker = app.toWorker();
   const client = hc<AppType>('https://example.local', {
-    fetch: (input: RequestInfo | URL, init?: RequestInit) => worker.fetch(new Request(input, init)),
+    fetch: (input: RequestInfo | URL, init?: RequestInit) => app.fetch(new Request(input, init)),
   });
 
   it('GET narrows response and returns greeting', async () => {
