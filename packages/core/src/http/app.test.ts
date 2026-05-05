@@ -16,7 +16,7 @@ import { validated } from '../primitives/validated';
 import { createHttpApp } from './app';
 
 declare module '@koya/core' {
-  interface KoyaContextSchema {
+  interface RequestContextSchema {
     configValue: string;
     user: { id: number; name: string };
   }

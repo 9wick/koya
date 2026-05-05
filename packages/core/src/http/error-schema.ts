@@ -17,9 +17,9 @@ const internalErrorVariant = v.object({
   message: v.string(),
 });
 
-export const koyaErrorBodySchema = v.variant('code', [validationVariant, internalErrorVariant]);
+export const errorBodySchema = v.variant('code', [validationVariant, internalErrorVariant]);
 
 export const validationErrorBodySchema = validationVariant;
 
-export type KoyaErrorBody = v.InferOutput<typeof koyaErrorBodySchema>;
+export type ErrorBody = v.InferOutput<typeof errorBodySchema>;
 export type ValidationErrorBody = v.InferOutput<typeof validationErrorBodySchema>;

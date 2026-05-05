@@ -108,7 +108,7 @@ Define your context shape using module augmentation:
 
 ```typescript
 declare module '@koya/core' {
-  interface KoyaContextSchema {
+  interface RequestContextSchema {
     user: { id: number; name: string };
   }
 }
@@ -147,7 +147,7 @@ For middleware that requires dependency injection, use `@Middleware`:
 
 ```typescript
 import { Middleware, inject, Injectable } from '@koya/core';
-import type { KoyaContext, KoyaNext } from '@koya/core';
+import type { RequestContext, Next } from '@koya/core';
 
 @Injectable()
 class ConfigService {
@@ -160,7 +160,7 @@ class ConfigService {
 export class AuthMiddleware {
   constructor(private config = inject(ConfigService)) {}
 
-  async use(c: KoyaContext, next: KoyaNext): Promise<Response | undefined> {
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
     const secret = this.config.getSecret();
     // ... authentication logic
     await next();

@@ -3,8 +3,8 @@ export type { CreateHttpAppOptions, HttpApp } from './http/app';
 
 export { validationErrorBodySchema } from './http/error-schema';
 export type { ValidationErrorBody } from './http/error-schema';
-export { koyaErrorBodySchema } from './http/error-schema';
-export type { KoyaErrorBody } from './http/error-schema';
+export { errorBodySchema } from './http/error-schema';
+export type { ErrorBody } from './http/error-schema';
 
 export { HTTPException } from 'hono/http-exception';
 
@@ -17,16 +17,16 @@ export { UseMiddleware } from './decorators/use-middleware';
 
 export type {
   FunctionMiddleware,
-  KoyaContext,
-  KoyaNext,
   MiddlewareClass,
   MiddlewareIdentifier,
   MiddlewareInput,
   MiddlewareInstance,
+  Next,
+  RequestContext,
 } from './middleware/types';
 
 export { getContext, setContext } from './primitives/get-context';
-export type { KoyaContextSchema } from './primitives/get-context';
+export type { RequestContextSchema } from './primitives/get-context';
 export { inject } from './primitives/inject';
 export { pathParam } from './primitives/path-param';
 export { response } from './primitives/response';

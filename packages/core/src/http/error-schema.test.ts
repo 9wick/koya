@@ -2,9 +2,9 @@ import * as v from 'valibot';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import {
-  koyaErrorBodySchema,
+  errorBodySchema,
   validationErrorBodySchema,
-  type KoyaErrorBody,
+  type ErrorBody,
   type ValidationErrorBody,
 } from './error-schema';
 
@@ -33,42 +33,42 @@ describe('validationErrorBodySchema', () => {
   });
 });
 
-describe('koyaErrorBodySchema', () => {
+describe('errorBodySchema', () => {
   it('accepts VALIDATION_FAILED variant', () => {
-    const body: KoyaErrorBody = { code: 'VALIDATION_FAILED', issues: [] };
-    expect(() => v.parse(koyaErrorBodySchema, body)).not.toThrow();
+    const body: ErrorBody = { code: 'VALIDATION_FAILED', issues: [] };
+    expect(() => v.parse(errorBodySchema, body)).not.toThrow();
   });
 
   it('accepts INTERNAL_ERROR variant', () => {
-    const body: KoyaErrorBody = { code: 'INTERNAL_ERROR', message: 'boom' };
-    expect(() => v.parse(koyaErrorBodySchema, body)).not.toThrow();
+    const body: ErrorBody = { code: 'INTERNAL_ERROR', message: 'boom' };
+    expect(() => v.parse(errorBodySchema, body)).not.toThrow();
   });
 
   it('rejects unknown code literal', () => {
-    expect(() => v.parse(koyaErrorBodySchema, { code: 'OTHER_ERROR', message: 'x' })).toThrow();
+    expect(() => v.parse(errorBodySchema, { code: 'OTHER_ERROR', message: 'x' })).toThrow();
   });
 
   it('rejects INTERNAL_ERROR without message', () => {
-    expect(() => v.parse(koyaErrorBodySchema, { code: 'INTERNAL_ERROR' })).toThrow();
+    expect(() => v.parse(errorBodySchema, { code: 'INTERNAL_ERROR' })).toThrow();
   });
 });
 
-describe('KoyaErrorBody — discriminator narrowing (type-level)', () => {
+describe('ErrorBody — discriminator narrowing (type-level)', () => {
   it('narrows INTERNAL_ERROR variant', () => {
-    expectTypeOf<Extract<KoyaErrorBody, { code: 'INTERNAL_ERROR' }>>().toEqualTypeOf<{
+    expectTypeOf<Extract<ErrorBody, { code: 'INTERNAL_ERROR' }>>().toEqualTypeOf<{
       code: 'INTERNAL_ERROR';
       message: string;
     }>();
   });
 
   it('narrows VALIDATION_FAILED variant carrying issues array', () => {
-    type V = Extract<KoyaErrorBody, { code: 'VALIDATION_FAILED' }>;
+    type V = Extract<ErrorBody, { code: 'VALIDATION_FAILED' }>;
     expectTypeOf<V['issues']>().toBeArray();
   });
 
   it('keeps ValidationErrorBody shape-equal to VALIDATION_FAILED variant', () => {
     expectTypeOf<ValidationErrorBody>().toEqualTypeOf<
-      Extract<KoyaErrorBody, { code: 'VALIDATION_FAILED' }>
+      Extract<ErrorBody, { code: 'VALIDATION_FAILED' }>
     >();
   });
 });

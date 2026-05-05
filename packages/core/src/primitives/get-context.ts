@@ -1,18 +1,18 @@
 import { getEntryContext } from '../internal/entry-context';
 
 // biome-ignore lint/suspicious/noEmptyInterface: users extend this interface via module augmentation
-export interface KoyaContextSchema {}
+export interface RequestContextSchema {}
 
-export const getContext = <K extends keyof KoyaContextSchema>(
+export const getContext = <K extends keyof RequestContextSchema>(
   key: K,
-): KoyaContextSchema[K] | undefined => {
+): RequestContextSchema[K] | undefined => {
   const ctx = getEntryContext();
-  return ctx.honoContext.get(key) as KoyaContextSchema[K] | undefined;
+  return ctx.honoContext.get(key) as RequestContextSchema[K] | undefined;
 };
 
-export const setContext = <K extends keyof KoyaContextSchema>(
+export const setContext = <K extends keyof RequestContextSchema>(
   key: K,
-  value: KoyaContextSchema[K],
+  value: RequestContextSchema[K],
 ): void => {
   const ctx = getEntryContext();
   ctx.honoContext.set(key, value);
