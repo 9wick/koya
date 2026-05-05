@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { createHttpApp, Controller, Get, inject, Config } from '../../index';
+
 import { Logger, LoggerConfig } from './index';
 
 describe('Logger integration', () => {

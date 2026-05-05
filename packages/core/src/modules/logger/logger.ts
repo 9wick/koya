@@ -1,5 +1,6 @@
 import { Injectable } from '../../decorators/injectable';
 import { injectConfig } from '../../config';
+
 import { LoggerConfig } from './config';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';

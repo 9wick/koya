@@ -10,13 +10,15 @@ export type ResolverHandle = {
   readonly get: <T extends object>(cls: Class<T>) => T;
 };
 
-const findTokenOwner = (cls: Function): Function | null => {
-  let current: Function | null = cls;
+type AnyClass = new (...args: never[]) => unknown;
+
+const findTokenOwner = (cls: AnyClass): AnyClass | null => {
+  let current: AnyClass | null = cls;
   while (current && current !== Function.prototype) {
     if ('Token' in current) {
-      return (current as { Token: Function }).Token;
+      return (current as { Token: AnyClass }).Token;
     }
-    current = Object.getPrototypeOf(current) as Function | null;
+    current = Object.getPrototypeOf(current) as AnyClass | null;
   }
   return null;
 };

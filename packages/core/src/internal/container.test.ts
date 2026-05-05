@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { injectable } from '@needle-di/core';
+
 import { Config, injectConfig } from '../config';
+
 import { createContainer } from './container';
 
 describe('createContainer with configs', () => {
@@ -8,18 +10,24 @@ describe('createContainer with configs', () => {
     @Config
     class BaseConfig {
       static readonly Token = BaseConfig;
-      get value() { return 'base'; }
+      get value() {
+        return 'base';
+      }
     }
 
     @Config
     class UserConfig extends BaseConfig {
-      override get value() { return 'user'; }
+      override get value() {
+        return 'user';
+      }
     }
 
     @injectable()
     class TestService {
       constructor(private config = injectConfig(BaseConfig)) {}
-      getValue() { return this.config.value; }
+      getValue() {
+        return this.config.value;
+      }
     }
 
     const resolver = createContainer({ configs: [UserConfig] });
@@ -31,13 +39,17 @@ describe('createContainer with configs', () => {
     @Config
     class DefaultConfig {
       static readonly Token = DefaultConfig;
-      get value() { return 'default'; }
+      get value() {
+        return 'default';
+      }
     }
 
     @injectable()
     class TestService {
       constructor(private config = injectConfig(DefaultConfig)) {}
-      getValue() { return this.config.value; }
+      getValue() {
+        return this.config.value;
+      }
     }
 
     const resolver = createContainer({ configs: [] });

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Container, injectable } from '@needle-di/core';
+
 import { Config } from './decorator';
 import { injectConfig } from './inject';
 
@@ -14,7 +15,9 @@ describe('injectConfig', () => {
     @injectable()
     class AppService {
       constructor(private config = injectConfig(AppConfig)) {}
-      getName() { return this.config.name; }
+      getName() {
+        return this.config.name;
+      }
     }
 
     const container = new Container();

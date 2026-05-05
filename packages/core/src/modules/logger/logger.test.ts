@@ -1,6 +1,8 @@
 import { Container } from '@needle-di/core';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { Config } from '../../config';
+
 import { LoggerConfig } from './config';
 import { Logger } from './logger';
 

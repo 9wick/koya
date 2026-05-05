@@ -1,4 +1,5 @@
 import { injectable } from '@needle-di/core';
+
 import type { ConfigClass } from './types';
 
 type AnyConstructor = new (...args: never[]) => unknown;

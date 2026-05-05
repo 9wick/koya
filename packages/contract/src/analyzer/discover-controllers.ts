@@ -1,5 +1,5 @@
 import fg from 'fast-glob';
-import { type Project } from 'ts-morph';
+import type { Project } from 'ts-morph';
 
 import type { ControllerSpec } from './internal-representation';
 import { extractControllerDecorator } from './decorator';
