@@ -86,15 +86,6 @@ export default tseslint.config(
     },
   },
   {
-    // hono/client tests import from generated/ (ignored by eslint) so types cannot be resolved
-    files: ['examples/**/src/test/**/*.{ts,tsx}'],
-    rules: {
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-    },
-  },
-  {
     // framework error strategy: throw + global error handler (spec §4.9 / koya phase2)
     files: ['packages/core/src/**/*.{ts,tsx}'],
     rules: {
