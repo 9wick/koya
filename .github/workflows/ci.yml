@@ -86,6 +86,9 @@ jobs:
       - name: Knip
         run: pnpm knip
 
+      - name: Knip (production)
+        run: pnpm knip --production
+
       - name: Check for uncommitted changes
         run: |
           if [ -n "$(git status --porcelain)" ]; then
