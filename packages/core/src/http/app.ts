@@ -2,11 +2,15 @@ import { Hono } from 'hono';
 
 import { createContainer } from '../internal/container';
 import { buildRoutes } from '../internal/route-builder';
+import type { MiddlewareInput } from '../middleware/types';
+
+import { toErrorResponse } from './error-handler';
 
 type ControllerClass = new (...args: never[]) => object;
 
 export type CreateHttpAppOptions = {
   readonly controllers: readonly ControllerClass[];
+  readonly middlewares?: readonly MiddlewareInput[];
 };
 
 export type HttpApp = {
@@ -19,7 +23,10 @@ export const createHttpApp = (options: CreateHttpAppOptions): HttpApp => {
   // strict:false で `/echo` と `/echo/` を同一視する。joinPath が末尾スラッシュを正規化するため、
   // 利用者が `@Post('/')` と書いた場合でも `/echo/` リクエストにマッチさせる必要がある。
   const hono = new Hono({ strict: false });
-  buildRoutes(hono, options.controllers, resolver);
+
+  hono.onError((err) => toErrorResponse(err));
+
+  buildRoutes(hono, options.controllers, resolver, options.middlewares ?? []);
 
   const fetch = (req: Request): Promise<Response> => Promise.resolve(hono.fetch(req));
   const request = (input: string | Request, init?: RequestInit): Promise<Response> => {

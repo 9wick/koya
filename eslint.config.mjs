@@ -134,4 +134,12 @@ export default tseslint.config(
       '@9wick/strict-type-rules/no-process-access': 'off',
     },
   },
+  {
+    // getContext bridges Hono's Context.get() (returns any) to typed KoyaContextSchema.
+    // Type assertion is unavoidable at this external library boundary.
+    files: ['packages/core/src/primitives/get-context.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
+    },
+  },
 );

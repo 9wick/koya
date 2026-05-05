@@ -5,6 +5,7 @@ import * as v from 'valibot';
 
 import { Controller } from '../decorators/controller';
 import { Get, Post } from '../decorators/http-method';
+import { toErrorResponse } from '../http/error-handler';
 import { validated } from '../primitives/validated';
 
 import { createContainer } from './container';
@@ -102,6 +103,7 @@ describe('route-builder — error path integration', () => {
   }
 
   const hono = new Hono({ strict: false });
+  hono.onError((err) => toErrorResponse(err));
   buildRoutes(hono, [ErrController], createContainer());
 
   it('serializes HTTPException to status + http_exception body via catch', async () => {
