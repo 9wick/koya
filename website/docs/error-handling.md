@@ -135,9 +135,102 @@ Route handler ─── throws HTTPException ──► HTTPException.getResponse
 Success response
 ```
 
+## Custom Error Handlers
+
+For more complex error handling logic, use the `@ErrorHandler` decorator to create reusable error handler classes.
+
+### Creating an Error Handler
+
+```typescript
+import { ErrorHandler, RequestContext } from '@zeltjs/core';
+
+@ErrorHandler
+class DatabaseErrorHandler {
+  onError(error: Error, c: RequestContext): Response | undefined {
+    if (error.name === 'PrismaClientKnownRequestError') {
+      return Response.json(
+        { code: 'DATABASE_ERROR', message: 'Database operation failed' },
+        { status: 409 }
+      );
+    }
+    return undefined;
+  }
+}
+```
+
+The `onError` method receives:
+- `error` — The thrown error
+- `c` — The Hono request context
+
+Return a `Response` to handle the error, or `undefined` to pass it to the next handler.
+
+### Registering Error Handlers
+
+Pass error handlers to `createHttpApp` via the `errorHandlers` option:
+
+```typescript
+import { createHttpApp } from '@zeltjs/core';
+
+const app = createHttpApp({
+  controllers: [UserController],
+  middlewares: [LoggingMiddleware],
+  errorHandlers: [DatabaseErrorHandler, ValidationErrorHandler],
+});
+```
+
+### Handler Chain
+
+Error handlers execute in the order they are registered:
+
+1. First handler's `onError` is called
+2. If it returns `undefined`, the next handler is called
+3. If all handlers return `undefined`, the default error handler runs
+
+```typescript
+@ErrorHandler
+class FirstHandler {
+  onError(error: Error, c: RequestContext) {
+    if (error instanceof CustomError) {
+      return Response.json({ code: 'CUSTOM' }, { status: 400 });
+    }
+    return undefined;
+  }
+}
+
+@ErrorHandler
+class FallbackHandler {
+  onError(error: Error, c: RequestContext) {
+    console.error('Unhandled error:', error);
+    return undefined;
+  }
+}
+
+createHttpApp({
+  controllers: [MyController],
+  errorHandlers: [FirstHandler, FallbackHandler],
+});
+```
+
+### Dependency Injection
+
+Error handlers support dependency injection. Use constructor injection to access services:
+
+```typescript
+@ErrorHandler
+class LoggingErrorHandler {
+  constructor(private logger: LoggerService) {}
+
+  onError(error: Error, c: RequestContext) {
+    this.logger.error('Request failed', { error, path: c.req.path });
+    return undefined;
+  }
+}
+```
+
 ## Best Practices
 
 1. **Use descriptive error codes** — Prefer `USER_NOT_FOUND` over `NOT_FOUND`
 2. **Include actionable messages** — Help API consumers understand what went wrong
 3. **Avoid exposing internal details** — In production, don't include stack traces or internal error messages
 4. **Document error responses** — Use OpenAPI schemas to document all possible error codes
+5. **Order error handlers by specificity** — Place specific handlers before generic ones
