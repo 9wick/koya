@@ -1,6 +1,5 @@
-import fg from 'fast-glob';
-
 import chokidar from 'chokidar';
+import fg from 'fast-glob';
 
 import type { GenerateClientOptions } from './config/options';
 import { generateClient } from './generate-client';
