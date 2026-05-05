@@ -1,1 +1,1 @@
-export { createTestContainer } from './test-container';
+export { resolveWith, type ResolverHandle } from './test-container';
