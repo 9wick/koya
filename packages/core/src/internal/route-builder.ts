@@ -1,9 +1,7 @@
-import type { Context, Env, Hono, Input, MiddlewareHandler } from 'hono';
+import type { Context, Env, Hono, Input } from 'hono';
 import * as v from 'valibot';
 
-type MiddlewareContext = Context<Env, string, Input>;
-
-import type { MiddlewareClass, MiddlewareInput } from '../middleware/types';
+import type { FunctionMiddleware, MiddlewareClass, MiddlewareInput } from '../middleware/types';
 
 import type { ResolverHandle } from './container';
 import { runInEntryContext } from './entry-context';
@@ -15,6 +13,8 @@ import {
   getSkipMiddlewareMetadata,
   type HttpMethod,
 } from './metadata';
+
+type MiddlewareContext = Context<Env, string, Input>;
 
 const stripTrailingSlash = (s: string): string =>
   s.length > 1 && s.endsWith('/') ? s.slice(0, -1) : s;
@@ -91,7 +91,7 @@ const MiddlewareClassSchema = v.custom<MiddlewareClass>(
 const resolveMiddleware = (
   middleware: MiddlewareInput,
   resolver: ResolverHandle,
-): MiddlewareHandler => {
+): FunctionMiddleware => {
   if (v.is(MiddlewareClassSchema, middleware)) {
     const instance = resolver.get(middleware);
     return (c, next) => instance.use(c, next);
@@ -104,7 +104,7 @@ const collectRouteMiddlewares = (
   controllerClass: ControllerClass,
   methodName: string | symbol,
   resolver: ResolverHandle,
-): MiddlewareHandler[] => {
+): FunctionMiddleware[] => {
   const controllerMeta = getControllerMiddlewareMetadata(controllerClass);
   const methodMetas = getMethodMiddlewareMetadata(controllerClass).filter(
     (m) => m.methodName === methodName,
@@ -125,7 +125,7 @@ const collectRouteMiddlewares = (
 };
 
 const composeHandler = (
-  middlewares: readonly MiddlewareHandler[],
+  middlewares: readonly FunctionMiddleware[],
   finalHandler: (c: MiddlewareContext) => Promise<Response>,
 ): ((c: MiddlewareContext) => Promise<Response>) => {
   if (middlewares.length === 0) {

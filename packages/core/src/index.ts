@@ -17,6 +17,8 @@ export { UseMiddleware } from './decorators/use-middleware';
 
 export type {
   FunctionMiddleware,
+  KoyaContext,
+  KoyaNext,
   MiddlewareClass,
   MiddlewareIdentifier,
   MiddlewareInput,
