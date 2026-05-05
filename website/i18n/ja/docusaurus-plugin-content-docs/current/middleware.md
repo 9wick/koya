@@ -11,7 +11,7 @@ sidebar_position: 4
 最もシンプルなミドルウェアは、コンテキストとnext関数を受け取る関数です：
 
 ```typescript
-import type { FunctionMiddleware } from '@koya/core';
+import type { FunctionMiddleware } from '@zeltjs/core';
 
 export const loggingMiddleware: FunctionMiddleware = async (c, next) => {
   const start = Date.now();
@@ -23,14 +23,14 @@ export const loggingMiddleware: FunctionMiddleware = async (c, next) => {
 
 ## ミドルウェアのレベル
 
-Koyaは3つのレベルでミドルウェアをサポートし、**グローバル → コントローラー → メソッド**の順序で実行されます。
+Zeltは3つのレベルでミドルウェアをサポートし、**グローバル → コントローラー → メソッド**の順序で実行されます。
 
 ### グローバルミドルウェア
 
 `createHttpApp()`ですべてのルートに適用：
 
 ```typescript
-import { createHttpApp } from '@koya/core';
+import { createHttpApp } from '@zeltjs/core';
 import { loggingMiddleware } from './middlewares/logging';
 
 export const app = createHttpApp({
@@ -44,7 +44,7 @@ export const app = createHttpApp({
 `@UseMiddleware`でコントローラー内のすべてのメソッドに適用：
 
 ```typescript
-import { Controller, Get, UseMiddleware } from '@koya/core';
+import { Controller, Get, UseMiddleware } from '@zeltjs/core';
 
 @UseMiddleware(authMiddleware)
 @Controller('/admin')
@@ -81,7 +81,7 @@ export class PostController {
 `@SkipMiddleware`を使用して特定のメソッドからミドルウェアを除外：
 
 ```typescript
-import { Controller, Get, SkipMiddleware } from '@koya/core';
+import { Controller, Get, SkipMiddleware } from '@zeltjs/core';
 
 @Controller('/api')
 export class ApiController {
@@ -107,7 +107,7 @@ export class ApiController {
 モジュール拡張を使用してコンテキストの型を定義：
 
 ```typescript
-declare module '@koya/core' {
+declare module '@zeltjs/core' {
   interface RequestContextSchema {
     user: { id: number; name: string };
   }
@@ -117,7 +117,7 @@ declare module '@koya/core' {
 ### ミドルウェアでのコンテキスト設定
 
 ```typescript
-import type { FunctionMiddleware } from '@koya/core';
+import type { FunctionMiddleware } from '@zeltjs/core';
 
 export const authMiddleware: FunctionMiddleware = async (c, next) => {
   const token = c.req.header('Authorization');
@@ -130,7 +130,7 @@ export const authMiddleware: FunctionMiddleware = async (c, next) => {
 ### ハンドラーでのコンテキスト読み取り
 
 ```typescript
-import { Controller, Get, getContext } from '@koya/core';
+import { Controller, Get, getContext } from '@zeltjs/core';
 
 @Controller('/profile')
 export class ProfileController {
@@ -146,8 +146,8 @@ export class ProfileController {
 依存性注入が必要なミドルウェアには`@Middleware`を使用：
 
 ```typescript
-import { Middleware, inject, Injectable } from '@koya/core';
-import type { RequestContext, Next } from '@koya/core';
+import { Middleware, inject, Injectable } from '@zeltjs/core';
+import type { RequestContext, Next } from '@zeltjs/core';
 
 @Injectable()
 class ConfigService {
@@ -179,6 +179,30 @@ export class AdminController {
 }
 ```
 
+## リクエストフロー
+
+```
+Request
+    ↓
+グローバルミドルウェア (next前)
+    ↓
+コントローラーミドルウェア (next前)
+    ↓
+メソッドミドルウェア (next前)
+    ↓
+ルートハンドラー
+    ↓
+メソッドミドルウェア (next後)
+    ↓
+コントローラーミドルウェア (next後)
+    ↓
+グローバルミドルウェア (next後)
+    ↓
+Response
+```
+
+ミドルウェアは`await next()`の前後にロジックを配置することで、ルートハンドラーの前後両方で処理を行えます。
+
 ## 実行順序
 
 ミドルウェアは以下の順序で実行されます：
@@ -207,4 +231,71 @@ const methodMw: FunctionMiddleware = async (c, next) => {
   await next();
   console.log('4. method after');
 };
+```
+
+## よくあるパターン
+
+ミドルウェアは関数またはクラスで記述できます。シンプルな場合は関数を、依存性注入や状態が必要な場合はクラスを使用します。
+
+### アクセス制限
+
+サービスを注入する必要がある場合はクラスミドルウェアを使用：
+
+```typescript
+@Middleware
+export class RequireAdmin {
+  constructor(private authService = inject(AuthService)) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const user = c.get('user');
+    if (!this.authService.isAdmin(user)) {
+      return c.json({ error: 'Forbidden' }, 403);
+    }
+    await next();
+    return undefined;
+  }
+}
+```
+
+### レスポンスの変換
+
+シンプルな変換には関数ミドルウェアが適しています：
+
+```typescript
+const wrapResponse: FunctionMiddleware = async (c, next) => {
+  await next();
+  const body = await c.res.json();
+  c.res = c.json({ success: true, data: body });
+};
+```
+
+### レスポンス時間の計測
+
+```typescript
+const timing: FunctionMiddleware = async (c, next) => {
+  const start = Date.now();
+  await next();
+  c.res.headers.set('X-Response-Time', `${Date.now() - start}ms`);
+};
+```
+
+### レスポンスのキャッシュ
+
+状態を保持する必要がある場合はクラスミドルウェアを使用：
+
+```typescript
+@Middleware
+export class CacheResponse {
+  private cache = new Map<string, Response>();
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const key = c.req.url;
+    const cached = this.cache.get(key);
+    if (cached) return cached.clone();
+
+    await next();
+    this.cache.set(key, c.res.clone());
+    return undefined;
+  }
+}
 ```

@@ -179,6 +179,30 @@ export class AdminController {
 }
 ```
 
+## Request Flow
+
+```
+Request
+    ↓
+Global Middleware (before next)
+    ↓
+Controller Middleware (before next)
+    ↓
+Method Middleware (before next)
+    ↓
+Route Handler
+    ↓
+Method Middleware (after next)
+    ↓
+Controller Middleware (after next)
+    ↓
+Global Middleware (after next)
+    ↓
+Response
+```
+
+Middleware can process both before and after the route handler by placing logic before or after `await next()`.
+
 ## Execution Order
 
 Middleware executes in this order:
@@ -207,4 +231,71 @@ const methodMw: FunctionMiddleware = async (c, next) => {
   await next();
   console.log('4. method after');
 };
+```
+
+## Common Patterns
+
+You can write middleware as functions or classes. Use functions for simple cases, and classes when you need dependency injection or state.
+
+### Restrict Access
+
+Use class middleware when you need to inject services:
+
+```typescript
+@Middleware
+export class RequireAdmin {
+  constructor(private authService = inject(AuthService)) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const user = c.get('user');
+    if (!this.authService.isAdmin(user)) {
+      return c.json({ error: 'Forbidden' }, 403);
+    }
+    await next();
+    return undefined;
+  }
+}
+```
+
+### Transform Response
+
+Function middleware works well for simple transformations:
+
+```typescript
+const wrapResponse: FunctionMiddleware = async (c, next) => {
+  await next();
+  const body = await c.res.json();
+  c.res = c.json({ success: true, data: body });
+};
+```
+
+### Measure Response Time
+
+```typescript
+const timing: FunctionMiddleware = async (c, next) => {
+  const start = Date.now();
+  await next();
+  c.res.headers.set('X-Response-Time', `${Date.now() - start}ms`);
+};
+```
+
+### Cache Response
+
+Use class middleware when you need to maintain state:
+
+```typescript
+@Middleware
+export class CacheResponse {
+  private cache = new Map<string, Response>();
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const key = c.req.url;
+    const cached = this.cache.get(key);
+    if (cached) return cached.clone();
+
+    await next();
+    this.cache.set(key, c.res.clone());
+    return undefined;
+  }
+}
 ```
