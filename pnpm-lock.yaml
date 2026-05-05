@@ -73,8 +73,8 @@ importers:
         version: 1.3.1(typescript@6.0.2)
     devDependencies:
       hono:
-        specifier: 4.7.10
-        version: 4.7.10
+        specifier: 4.12.16
+        version: 4.12.16
       tsx:
         specifier: 4.21.0
         version: 4.21.0
@@ -4722,10 +4722,6 @@ packages:
 
   hono@4.12.16:
     resolution: {integrity: sha512-jN0ZewiNAWSe5khM3EyCmBb250+b40wWbwNILNfEvq84VREWwOIkuUsFONk/3i3nqkz7Oe1PcpM2mwQEK2L9Kg==}
-    engines: {node: '>=16.9.0'}
-
-  hono@4.7.10:
-    resolution: {integrity: sha512-QkACju9MiN59CKSY5JsGZCYmPZkA6sIW6OFCUp7qDjZu6S6KHtJHhAc9Uy9mV9F8PJ1/HQ3ybZF2yjCa/73fvQ==}
     engines: {node: '>=16.9.0'}
 
   hookable@6.1.1:
@@ -12821,8 +12817,6 @@ snapshots:
       react-is: 16.13.1
 
   hono@4.12.16: {}
-
-  hono@4.7.10: {}
 
   hookable@6.1.1: {}
 

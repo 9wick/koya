@@ -1,5 +1,6 @@
 import { Container } from '@needle-di/core';
 import { describe, expect, it } from 'vitest';
+
 import { Config } from './decorator';
 
 describe('Config decorator', () => {
@@ -17,6 +18,7 @@ describe('Config decorator', () => {
 
   it('throws if Token is missing', () => {
     expect(() => {
+      // @ts-expect-error Testing runtime error for missing Token
       @Config
       class NoTokenConfig {
         value = 'test';

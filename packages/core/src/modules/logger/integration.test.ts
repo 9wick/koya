@@ -1,16 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { createHttpApp, Controller, Get, inject, Config } from '../../index';
+
 import { Logger, LoggerConfig } from './index';
 
 describe('Logger integration', () => {
-  let consoleSpy: ReturnType<typeof vi.spyOn>;
+  const consoleSpy = vi.spyOn(console, 'log');
 
   beforeEach(() => {
-    consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    consoleSpy.mockImplementation(() => {});
   });
 
   afterEach(() => {
-    consoleSpy.mockRestore();
+    consoleSpy.mockReset();
   });
 
   it('uses default LoggerConfig when no config provided', async () => {

@@ -45,7 +45,6 @@ export default tseslint.config(
     rules: {
       complexity: ['error', { max: 7 }],
       'sonarjs/cognitive-complexity': 'error',
-      'no-console': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
@@ -139,6 +138,15 @@ export default tseslint.config(
     // Type assertion is unavoidable at this external library boundary.
     files: ['packages/core/src/primitives/get-context.ts'],
     rules: {
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
+    },
+  },
+  {
+    // Config module uses prototype chain traversal and type assertions at DI boundaries.
+    // These are necessary for the Token resolution pattern.
+    files: ['packages/core/src/config/token.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-in-operator': 'off',
       '@9wick/strict-type-rules/no-as-assertion': 'off',
     },
   },

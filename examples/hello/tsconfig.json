@@ -5,5 +5,5 @@
     "experimentalDecorators": true,
     "erasableSyntaxOnly": false
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "generated/**/*"]
 }

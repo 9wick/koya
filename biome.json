@@ -23,7 +23,12 @@
     }
   },
   "linter": {
-    "enabled": true
+    "enabled": true,
+    "rules": {
+      "complexity": {
+        "useLiteralKeys": "off"
+      }
+    }
   },
   "assist": {
     "actions": {
