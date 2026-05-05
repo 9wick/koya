@@ -152,7 +152,6 @@ export default tseslint.config(
     rules: {
       '@9wick/strict-type-rules/no-in-operator': 'off',
       '@9wick/strict-type-rules/no-as-assertion': 'off',
-      '@eslint-community/eslint-comments/no-use': 'off',
     },
   },
 );
