@@ -45,7 +45,6 @@ export default tseslint.config(
     rules: {
       complexity: ['error', { max: 7 }],
       'sonarjs/cognitive-complexity': 'error',
-      'no-console': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
@@ -114,13 +113,6 @@ export default tseslint.config(
     rules: {
       'no-console': 'off',
       '@9wick/strict-type-rules/no-try-catch': 'off',
-    },
-  },
-  {
-    // Logger writes to console by design
-    files: ['packages/core/src/modules/logger/logger.ts'],
-    rules: {
-      'no-console': 'off',
     },
   },
   {
