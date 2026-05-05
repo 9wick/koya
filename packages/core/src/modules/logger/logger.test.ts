@@ -7,14 +7,14 @@ import { LoggerConfig } from './config';
 import { Logger } from './logger';
 
 describe('Logger', () => {
-  let consoleSpy: ReturnType<typeof vi.spyOn>;
+  const consoleSpy = vi.spyOn(console, 'log');
 
   beforeEach(() => {
-    consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    consoleSpy.mockImplementation(() => {});
   });
 
   afterEach(() => {
-    consoleSpy.mockRestore();
+    consoleSpy.mockReset();
   });
 
   it('logs info by default', () => {

@@ -86,6 +86,15 @@ export default tseslint.config(
     },
   },
   {
+    // hono/client tests import from generated/ (ignored by eslint) so types cannot be resolved
+    files: ['examples/**/src/test/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+    },
+  },
+  {
     // framework error strategy: throw + global error handler (spec §4.9 / koya phase2)
     files: ['packages/core/src/**/*.{ts,tsx}'],
     rules: {
@@ -117,6 +126,13 @@ export default tseslint.config(
     },
   },
   {
+    // Logger writes to console by design
+    files: ['packages/core/src/modules/logger/logger.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
     // CLI and config loader need process.argv / process.cwd() — these are build-time tools
     // that run in Node.js directly, not inside an application container.
     files: ['packages/contract/src/cli.ts', 'packages/contract/src/load-config.ts'],
@@ -140,6 +156,20 @@ export default tseslint.config(
     files: ['packages/core/src/primitives/get-context.ts'],
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
+    },
+  },
+  {
+    // Config module uses prototype chain traversal and type assertions at DI boundaries.
+    // These are necessary for the Token resolution pattern.
+    files: [
+      'packages/core/src/config/decorator.ts',
+      'packages/core/src/config/inject.ts',
+      'packages/core/src/internal/container.ts',
+    ],
+    rules: {
+      '@9wick/strict-type-rules/no-in-operator': 'off',
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
+      '@eslint-community/eslint-comments/no-use': 'off',
     },
   },
 );
