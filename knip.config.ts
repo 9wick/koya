@@ -7,6 +7,11 @@ const config: KnipConfig = {
   // CreateUserBody/User: used by fixture file consumed via ts-morph at runtime, not traceable by static analysis
   ignoreMembers: ['GreetBody', 'GreetResponse', 'CreateUserBody', 'User'],
   workspaces: {
+    'examples/hello': {
+      entry: ['src/main.ts', 'src/entry/node.ts'],
+      ignore: ['generated/**'],
+      ignoreDependencies: ['@koya/contract', '@koya/adapter-node'],
+    },
     'packages/core': {
       // neverthrow は今後 Result wrapper に使う想定で keep。
       ignoreDependencies: ['neverthrow'],
@@ -16,7 +21,8 @@ const config: KnipConfig = {
     },
     website: {
       // @docusaurus/plugin-content-docs types are re-exported by @docusaurus/preset-classic
-      ignoreDependencies: ['@docusaurus/plugin-content-docs'],
+      // prism-react-renderer is used internally by Docusaurus for code block syntax highlighting
+      ignoreDependencies: ['@docusaurus/plugin-content-docs', 'prism-react-renderer'],
     },
   },
 };

@@ -1,0 +1,117 @@
+name: Infra Change Alert
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-infra-changes:
+    runs-on: ubuntu-slim
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for infrastructure file changes
+        id: check
+        run: |
+          INFRA_PATTERNS=(
+            # Linter/Formatter configs
+            '.eslintrc*'
+            'eslint.config.*'
+            '.eslintignore'
+            '.prettierignore'
+            'biome.json'
+            'oxlintrc.json'
+
+            # TypeScript config
+            'tsconfig*.json'
+            '**/tsconfig*.json'
+
+            # Test configs
+            'jest.config.*'
+            'vitest.config.*'
+            '**/vitest.config.*'
+
+            # Git hooks
+            '.husky/*'
+            '.githooks/*'
+
+            # CI/CD
+            '.github/workflows/*'
+
+            # Monorepo/Build configs
+            'nx.json'
+            'knip.config.ts'
+          )
+
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          MATCHED_FILES=""
+
+          for file in $CHANGED_FILES; do
+            for pattern in "${INFRA_PATTERNS[@]}"; do
+              if [[ "$file" == $pattern ]]; then
+                MATCHED_FILES="$MATCHED_FILES$file\n"
+                break
+              fi
+            done
+          done
+
+          if [ -n "$MATCHED_FILES" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            {
+              echo "files<<EOF"
+              echo -e "$MATCHED_FILES"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment on PR
+        if: steps.check.outputs.found == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const files = `${{ steps.check.outputs.files }}`.trim().split('\n').filter(f => f);
+            const fileList = files.map(f => `- \`${f}\``).join('\n');
+
+            const body = `## ⚠️ Infrastructure File Changes Detected
+
+            This PR modifies infrastructure/config files that affect code quality enforcement:
+
+            ${fileList}
+
+            **Please review these changes carefully.** Changes to these files can bypass linting, type checking, or other safety measures.
+
+            ---
+            <sub>🤖 This is an automated check for infrastructure file modifications.</sub>`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const existingComment = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.includes('Infrastructure File Changes Detected')
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }
