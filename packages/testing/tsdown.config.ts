@@ -6,4 +6,7 @@ export default defineConfig({
   dts: true,
   clean: true,
   fixedExtension: false,
+  deps: {
+    neverBundle: [/^@zeltjs\//, 'hono', /^hono\//, /^@hono\//, 'vitest'],
+  },
 });

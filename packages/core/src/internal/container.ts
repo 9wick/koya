@@ -29,3 +29,37 @@ export const createContainer = (options: CreateContainerOptions = {}): ResolverH
     get: <T extends object>(cls: Class<T>): T => container.get<T>(cls),
   };
 };
+
+type Override<T> = {
+  readonly provide: Class<T>;
+  readonly useValue: T;
+};
+
+type ResolveWithOptions = {
+  readonly overrides?: readonly Override<unknown>[];
+};
+
+type ResolveWithResult<T> = {
+  readonly target: T;
+  readonly resolver: ResolverHandle;
+};
+
+export const resolveWith = <T extends object>(
+  targetClass: Class<T>,
+  options: ResolveWithOptions = {},
+): ResolveWithResult<T> => {
+  const container = new Container();
+
+  for (const override of options.overrides ?? []) {
+    container.bind({ provide: override.provide, useValue: override.useValue });
+  }
+
+  const target = container.get<T>(targetClass);
+
+  return {
+    target,
+    resolver: {
+      get: <U extends object>(cls: Class<U>): U => container.get<U>(cls),
+    },
+  };
+};

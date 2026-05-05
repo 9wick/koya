@@ -36,3 +36,6 @@ export type { ValidatedMarker, ExtractValidated, IsValidated } from './primitive
 
 export { Config, injectConfig } from './config';
 export type { ConfigClass } from './config';
+
+export { resolveWith } from './internal/container';
+export type { ResolverHandle } from './internal/container';
