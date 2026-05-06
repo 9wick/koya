@@ -198,6 +198,18 @@ export default tseslint.config(
     },
   },
   {
+    // KV driver Redis: throws KVError / MinTtlError per spec contract (user-facing error contracts);
+    // as assertions needed for defineCommand-injected types and Lua return value coercion.
+    files: [
+      'packages/kv-driver-redis/src/redis-kv-store.ts',
+      'packages/kv-driver-redis/src/redis-kv.ts',
+    ],
+    rules: {
+      '@9wick/strict-type-rules/no-throw': 'off',
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
+    },
+  },
+  {
     // compliance test suite is a single describe-tree factory; exceeds 50-line limit by design.
     files: ['packages/kv/src/testing/compliance.ts'],
     rules: {
