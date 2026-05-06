@@ -1,7 +1,11 @@
+// packages/contract/src/load-config.ts
 import { access } from 'node:fs/promises';
 import { isAbsolute, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { okAsync, errAsync, ResultAsync } from 'neverthrow';
+
+import type { ConfigError } from './errors';
 import type { GenerateClientOptions } from './config/options';
 
 const DEFAULT_CONFIG_NAMES = [
@@ -12,8 +16,6 @@ const DEFAULT_CONFIG_NAMES = [
 ] as const;
 
 const exists = async (p: string): Promise<boolean> =>
-  // access throws on missing — resolve to true/false rather than rejecting
-  // so callers don't need try/catch (no-try-catch rule applies here)
   access(p).then(
     () => true,
     () => false,
@@ -27,32 +29,30 @@ export const findConfigFile = async (cwd: string): Promise<string | undefined> =
   return undefined;
 };
 
-// dynamic import 由来の `unknown` を GenerateClientOptions に橋渡しする。
-// 公開 overload は unknown を受け取り impl で返却するだけ。
-// generateClient() が構造を検証するためここでは trust する。
-// (json-schema-input.ts の narrowToValibotSchema と同じ pattern)
 function narrowConfig(value: unknown): GenerateClientOptions;
 function narrowConfig(value: unknown): unknown {
   return value;
 }
 
-// dynamic import の戻り値は any 扱い (TS 仕様) — unknown 経由で扱う
 const dynamicImport = async (url: string): Promise<unknown> => import(url);
 
-export const loadConfig = async (path: string): Promise<GenerateClientOptions> => {
+export const loadConfig = (path: string): ResultAsync<GenerateClientOptions, ConfigError> => {
   const abs = isAbsolute(path) ? path : resolve(process.cwd(), path);
   const url = pathToFileURL(abs).href;
-  const mod = await dynamicImport(url);
-  if (typeof mod !== 'object' || mod === null) {
-    throw new Error(`zelt/openapi: ${path} must export a default GenerateClientOptions object`);
-  }
-  // Spread into Record to access named exports without in-operator or type predicate.
-  // Pattern from emit/json-schema-input.ts importNamedExport.
-  const namespace: Record<string, unknown> = { ...mod };
-  const defaultKey = 'default';
-  const cfg = namespace[defaultKey];
-  if (cfg === undefined) {
-    throw new Error(`zelt/openapi: ${path} must export a default GenerateClientOptions object`);
-  }
-  return narrowConfig(cfg);
+
+  return ResultAsync.fromPromise(dynamicImport(url), () => ({
+    type: 'INVALID_CONFIG_EXPORT' as const,
+    path,
+  })).andThen((mod) => {
+    if (typeof mod !== 'object' || mod === null) {
+      return errAsync({ type: 'INVALID_CONFIG_EXPORT' as const, path });
+    }
+    const namespace: Record<string, unknown> = { ...mod };
+    const defaultKey = 'default';
+    const cfg = namespace[defaultKey];
+    if (cfg === undefined) {
+      return errAsync({ type: 'INVALID_CONFIG_EXPORT' as const, path });
+    }
+    return okAsync(narrowConfig(cfg));
+  });
 };
