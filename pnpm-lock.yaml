@@ -144,9 +144,6 @@ importers:
       '@zeltjs/core':
         specifier: workspace:*
         version: link:../core
-      hono:
-        specifier: 4.12.16
-        version: 4.12.16
 
   packages/cli:
     dependencies:
