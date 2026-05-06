@@ -285,6 +285,60 @@ importers:
         specifier: 8.2.0
         version: 8.2.0
 
+  packages/kv:
+    dependencies:
+      neverthrow:
+        specifier: 8.2.0
+        version: 8.2.0
+      vitest:
+        specifier: '>=4 <5'
+        version: 4.1.5(@types/node@22.19.17)(@vitest/coverage-v8@4.1.5)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.2)(tsx@4.21.0)(yaml@2.8.3))
+    devDependencies:
+      '@types/node':
+        specifier: 22.19.17
+        version: 22.19.17
+      '@zeltjs/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/kv-driver-redis:
+    dependencies:
+      ioredis:
+        specifier: 5.10.1
+        version: 5.10.1
+      neverthrow:
+        specifier: 8.2.0
+        version: 8.2.0
+    devDependencies:
+      '@types/node':
+        specifier: 22.19.17
+        version: 22.19.17
+      '@zeltjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@zeltjs/kv':
+        specifier: workspace:*
+        version: link:../kv
+
+  packages/rate-limit:
+    dependencies:
+      neverthrow:
+        specifier: 8.2.0
+        version: 8.2.0
+    devDependencies:
+      '@types/node':
+        specifier: 22.19.17
+        version: 22.19.17
+      '@zeltjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@zeltjs/kv':
+        specifier: workspace:*
+        version: link:../kv
+      valibot:
+        specifier: 1.3.1
+        version: 1.3.1(typescript@6.0.2)
+
   packages/testing:
     dependencies:
       '@zeltjs/core':
@@ -293,6 +347,12 @@ importers:
       vitest:
         specifier: '>=4 <5'
         version: 4.1.5(@types/node@22.19.17)(@vitest/coverage-v8@4.1.5)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.2)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/zeltjs:
+    dependencies:
+      '@zeltjs/core':
+        specifier: '>=0.0.1'
+        version: 0.1.1(typescript@6.0.2)
 
   website:
     dependencies:
@@ -2510,6 +2570,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@ioredis/commands@1.5.1':
+    resolution: {integrity: sha512-JH8ZL/ywcJyR9MmJ5BNqZllXNZQqQbnVZOqpPQqE1vHiFgAw4NHbvE0FOduNU8IX9babitBT46571OnPTT0Zcw==}
+
   '@jest/diff-sequences@30.3.0':
     resolution: {integrity: sha512-cG51MVnLq1ecVUaQ3fr6YuuAOitHK1S4WUJHnsPFE/quQr33ADUx1FfrTCpMCRxvy0Yr9BThKpDjSlcTi91tMA==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
@@ -4122,6 +4185,9 @@ packages:
     resolution: {integrity: sha512-/HcYgtUSiJiot/XWGLOlGxPYUG65+/31V8oqk17vZLW1xlCoR4PampyePljOxY2n8/3jz9+tIFzICsyGujJZoA==}
     engines: {node: '>=18.12.0'}
 
+  '@zeltjs/core@0.1.1':
+    resolution: {integrity: sha512-GKTuDOMuD9NUmLyEXdg9gzco185hV5tU7Xk5EXgrb3JB6wJ47dZYAZywVA9uNlD6taD5OyHvO4eUVgyAdPEAaQ==}
+
   '@zkochan/js-yaml@0.0.7':
     resolution: {integrity: sha512-nrUSn7hzt7J6JWgWGz78ZYI8wj+gdIJdk0Ynjpp8l+trkn58Uqsf6RYrYkEK+3X18EX+TNdtJI0WxAtc+L84SQ==}
     hasBin: true
@@ -4580,6 +4646,10 @@ packages:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
 
+  cluster-key-slot@1.1.2:
+    resolution: {integrity: sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==}
+    engines: {node: '>=0.10.0'}
+
   code-block-writer@13.0.3:
     resolution: {integrity: sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg==}
 
@@ -4928,6 +4998,10 @@ packages:
   delayed-stream@1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
+
+  denque@2.1.0:
+    resolution: {integrity: sha512-HVQE3AAb/pxF8fQAoiqpvg9i3evqug3hoiwakOyZAwJm+6vZehbkYXZ0l4JxS+I3QxM97v5aaRNhj8v5oBhekw==}
+    engines: {node: '>=0.10'}
 
   depd@1.1.2:
     resolution: {integrity: sha512-7emPTl6Dpo6JRXOXjLRxck+FlLRX5847cLKEn00PLAgc3g2hTZZgr+e4c2v6QpSmLeFP3n5yUo7ft6avBK/5jQ==}
@@ -5881,6 +5955,10 @@ packages:
   invariant@2.2.4:
     resolution: {integrity: sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA==}
 
+  ioredis@5.10.1:
+    resolution: {integrity: sha512-HuEDBTI70aYdx1v6U97SbNx9F1+svQKBDo30o0b9fw055LMepzpOOd0Ccg9Q6tbqmBSJaMuY0fB7yw9/vjBYCA==}
+    engines: {node: '>=12.22.0'}
+
   ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
     engines: {node: '>= 0.10'}
@@ -6317,6 +6395,12 @@ packages:
 
   lodash.debounce@4.0.8:
     resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
+
+  lodash.defaults@4.2.0:
+    resolution: {integrity: sha512-qjxPLHd3r5DnsdGacqOMU6pb/avJzdh9tFX2ymgoZE27BmjXrNy/y4LoaiTeAb+O3gL8AfpJGtqfX/ae2leYYQ==}
+
+  lodash.isarguments@3.1.0:
+    resolution: {integrity: sha512-chi4NHZlZqZD18a0imDHnZPrDeBbTtVN7GXMwuGdRH9qotxAjYs3aVLKc7zNOG9eddR5Ksd8rvFEBc9SsggPpg==}
 
   lodash.memoize@4.1.2:
     resolution: {integrity: sha512-t7j+NzmgnQzTAYXcsHYLgimltOV1MXHtlOWf6GjL9Kj8GK5FInw5JotxvbOs+IvV1/Dzo04/fCGfLVs7aXb4Ag==}
@@ -7578,6 +7662,14 @@ packages:
   recma-stringify@1.0.0:
     resolution: {integrity: sha512-cjwII1MdIIVloKvC9ErQ+OgAtwHBmcZ0Bg4ciz78FtbT8In39aAYbaA7zvxQ61xVMSPE8WxhLwLbhif4Js2C+g==}
 
+  redis-errors@1.2.0:
+    resolution: {integrity: sha512-1qny3OExCf0UvUV/5wpYKf2YwPcOqXzkwKKSmKHiE6ZMQs5heeE/c8eXK+PNllPvmjgAbfnsbpkGZWy8cBpn9w==}
+    engines: {node: '>=4'}
+
+  redis-parser@3.0.0:
+    resolution: {integrity: sha512-DJnGAeenTdpMEH6uAJRK/uiyEIH9WVsUmoLwzudwGJUwZPp80PDBWPHXSAGNPwNvIXAbe7MSUB1zQFugFml66A==}
+    engines: {node: '>=4'}
+
   refa@0.12.1:
     resolution: {integrity: sha512-J8rn6v4DBb2nnFqkqwy6/NnTYMcgLA+sLr0iIO41qpv0n+ngb7ksag2tMRl0inb1bbO/esUwzW1vbJi7K0sI0g==}
     engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
@@ -7955,6 +8047,9 @@ packages:
 
   stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
+
+  standard-as-callback@2.1.0:
+    resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
 
   statuses@1.5.0:
     resolution: {integrity: sha512-OpZ3zP+jT1PI7I8nemJX4AKmAX070ZkYPVWV/AaKTJl+tXCTGyVdC1a4SL8RUQYEwk/f34ZX8UTykN68FwrqAA==}
@@ -11306,6 +11401,8 @@ snapshots:
   '@img/sharp-win32-x64@0.34.5':
     optional: true
 
+  '@ioredis/commands@1.5.1': {}
+
   '@jest/diff-sequences@30.3.0': {}
 
   '@jest/get-type@30.1.0': {}
@@ -12786,6 +12883,15 @@ snapshots:
       js-yaml: 3.14.2
       tslib: 2.8.1
 
+  '@zeltjs/core@0.1.1(typescript@6.0.2)':
+    dependencies:
+      '@needle-di/core': 1.1.2
+      hono: 4.12.16
+      neverthrow: 8.2.0
+      valibot: 1.3.1(typescript@6.0.2)
+    transitivePeerDependencies:
+      - typescript
+
   '@zkochan/js-yaml@0.0.7':
     dependencies:
       argparse: 2.0.1
@@ -13289,6 +13395,8 @@ snapshots:
 
   clsx@2.1.1: {}
 
+  cluster-key-slot@1.1.2: {}
+
   code-block-writer@13.0.3: {}
 
   collapse-white-space@2.1.0: {}
@@ -13617,6 +13725,8 @@ snapshots:
   defu@6.1.7: {}
 
   delayed-stream@1.0.0: {}
+
+  denque@2.1.0: {}
 
   depd@1.1.2: {}
 
@@ -14714,6 +14824,20 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
 
+  ioredis@5.10.1:
+    dependencies:
+      '@ioredis/commands': 1.5.1
+      cluster-key-slot: 1.1.2
+      debug: 4.4.3
+      denque: 2.1.0
+      lodash.defaults: 4.2.0
+      lodash.isarguments: 3.1.0
+      redis-errors: 1.2.0
+      redis-parser: 3.0.0
+      standard-as-callback: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
+
   ipaddr.js@1.9.1: {}
 
   ipaddr.js@2.4.0: {}
@@ -15070,6 +15194,10 @@ snapshots:
       p-locate: 6.0.0
 
   lodash.debounce@4.0.8: {}
+
+  lodash.defaults@4.2.0: {}
+
+  lodash.isarguments@3.1.0: {}
 
   lodash.memoize@4.1.2: {}
 
@@ -16794,6 +16922,12 @@ snapshots:
       unified: 11.0.5
       vfile: 6.0.3
 
+  redis-errors@1.2.0: {}
+
+  redis-parser@3.0.0:
+    dependencies:
+      redis-errors: 1.2.0
+
   refa@0.12.1:
     dependencies:
       '@eslint-community/regexpp': 4.12.2
@@ -17298,6 +17432,8 @@ snapshots:
   stable-hash-x@0.2.0: {}
 
   stackback@0.0.2: {}
+
+  standard-as-callback@2.1.0: {}
 
   statuses@1.5.0: {}
 

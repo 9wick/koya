@@ -1,0 +1,39 @@
+{
+  "name": "@zeltjs/kv",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeltjs/zelt.git",
+    "directory": "packages/kv"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "neverthrow": "8.2.0"
+  },
+  "peerDependencies": {
+    "@zeltjs/core": "workspace:*",
+    "vitest": ">=4 <5"
+  },
+  "devDependencies": {
+    "@zeltjs/core": "workspace:*",
+    "@types/node": "22.19.17"
+  }
+}

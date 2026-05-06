@@ -33,7 +33,7 @@ export default tseslint.config(
   ...strictTypes.configs.barrel,
   {
     files: ['**/*.*.{ts,tsx}'],
-    ignores: ['**/*.lib.{ts,tsx}', '**/*.types.{ts,tsx}'],
+    ignores: ['**/*.lib.{ts,tsx}', '**/*.types.{ts,tsx}', '**/*.decorator.{ts,tsx}'],
     rules: {
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': [
         'error',
@@ -200,6 +200,13 @@ export default tseslint.config(
     },
   },
   {
+    // *.decorator.ts files are decorator factories that dynamically create classes.
+    files: ['**/*.decorator.ts'],
+    rules: {
+      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
+    },
+  },
+  {
     // CLI command runner uses Object.create and DI container.get() at dynamic module
     // boundaries where type assertions are unavoidable.
     files: [
@@ -210,6 +217,20 @@ export default tseslint.config(
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
+    },
+  },
+  {
+    // JSON.parse returns `any`; type assertion unavoidable at this generic boundary.
+    files: ['packages/kv/src/serialize.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
+    },
+  },
+  {
+    // eval() returns unknown; type assertion needed at Lua script boundary.
+    files: ['packages/kv-driver-redis/src/zelt-redis.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
     },
   },
 );

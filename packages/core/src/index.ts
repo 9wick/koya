@@ -36,6 +36,7 @@ export type {
 } from './middleware/types';
 
 export { currentRoles, currentUser, setUser } from './primitives/auth';
+export { ip } from './primitives/ip';
 export { getContext, setContext } from './primitives/get-context';
 export type { RequestContextSchema } from './primitives/get-context';
 export { inject } from './primitives/inject';
@@ -60,5 +61,7 @@ export type { CreateTestContainerOptions, TestContainerResult } from './internal
 
 export { LifecycleManager } from './lifecycle';
 export type { Disposable } from './lifecycle';
+
+export { Logger } from './modules/logger';
 
 export { EnvConfig, ProcessEnvConfig, DotEnvConfig, EnvService } from './modules/env';
