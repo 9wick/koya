@@ -153,20 +153,4 @@ describe('MemoryKV (AtomicKVStore ops)', () => {
       vi.useRealTimers();
     }
   });
-
-  it('delIf deletes when value matches', async () => {
-    const kv = new MemoryKV();
-    const store = kv.namespace('test:')._unsafeUnwrap();
-    await store.set('lock', 'token-A');
-    expect((await store.delIf('lock', 'token-A'))._unsafeUnwrap()).toBe(true);
-    expect((await store.has('lock'))._unsafeUnwrap()).toBe(false);
-  });
-
-  it('delIf does not delete when value mismatches', async () => {
-    const kv = new MemoryKV();
-    const store = kv.namespace('test:')._unsafeUnwrap();
-    await store.set('lock', 'token-A');
-    expect((await store.delIf('lock', 'token-B'))._unsafeUnwrap()).toBe(false);
-    expect((await store.get('lock'))._unsafeUnwrap()).toBe('token-A');
-  });
 });

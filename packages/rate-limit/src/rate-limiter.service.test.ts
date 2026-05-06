@@ -1,17 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MemoryKV, type AtomicKVStore } from '@zeltjs/kv';
+import type { Logger } from '@zeltjs/core';
 import { errAsync } from 'neverthrow';
 
 import { RateLimitConfig } from './rate-limit.config';
 import { RateLimiter } from './rate-limiter.service';
 
-// NOTE: tests instantiate Config/Service directly instead of `Container().get(...)` because
-// `@zeltjs/core` bundles its own copy of `@needle-di/core`, causing a `injectableSymbol` mismatch
-// with the test's devDependency copy (resolves to "No provider(s) found"). Direct instantiation
-// exercises the same wiring (constructor injection happens at `new` time).
+const mockLogger = {
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+} as unknown as Logger;
+
 const makeDefaultLimiter = () => {
   const config = new RateLimitConfig(new MemoryKV());
-  return new RateLimiter(config);
+  return new RateLimiter(config, mockLogger);
 };
 
 describe('RateLimiter', () => {
@@ -69,7 +73,7 @@ describe('RateLimiter', () => {
         del: vi.fn(),
       } as unknown as AtomicKVStore,
     });
-    const limiter = new RateLimiter(failingConfig);
+    const limiter = new RateLimiter(failingConfig, mockLogger);
     const r = await limiter.hit('test:k5', { limit: 5, windowSec: 60 });
     expect(r.isOk()).toBe(true);
     expect(r._unsafeUnwrap().allowed).toBe(true);
@@ -92,7 +96,7 @@ describe('RateLimiter', () => {
       } as unknown as AtomicKVStore,
     });
     failingConfig.failureMode = 'closed';
-    const limiter = new RateLimiter(failingConfig);
+    const limiter = new RateLimiter(failingConfig, mockLogger);
     const r = await limiter.hit('test:k6', { limit: 5, windowSec: 60 });
     expect(r.isErr()).toBe(true);
     expect(r._unsafeUnwrapErr().type).toBe('KV_FAILED');

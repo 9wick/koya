@@ -1,43 +1,24 @@
 import { Injectable, injectConfig, type Disposable } from '@zeltjs/core';
 import { validatePrefix, type AtomicKVDriver, type AtomicKVStore, type KVError } from '@zeltjs/kv';
-import Redis from 'ioredis';
 import type { Result } from 'neverthrow';
 
-import { DEL_IF_LUA, INCR_WITH_TTL_LUA, SETNX_WITH_TTL_LUA } from './lua-scripts';
 import { RedisConfig } from './redis.config';
-import { RedisKVStore, type RedisWithCustomCommands } from './redis-kv-store';
+import { RedisKVStore } from './redis-kv-store';
+import { ZeltRedis } from './zelt-redis';
 
 @Injectable()
 export class RedisKV implements AtomicKVDriver, Disposable {
-  private readonly client: Redis;
+  private readonly client: ZeltRedis;
 
   constructor(config = injectConfig(RedisConfig)) {
-    this.client = new Redis(config.url, config.options);
-    this.registerLuaScripts();
+    this.client = new ZeltRedis(config.url, config.options);
   }
 
   namespace(prefix: string): Result<AtomicKVStore, KVError> {
-    return validatePrefix(prefix).map(
-      (p) => new RedisKVStore(this.client as unknown as RedisWithCustomCommands, p),
-    );
+    return validatePrefix(prefix).map((p) => new RedisKVStore(this.client, p));
   }
 
   async shutdown(): Promise<void> {
     this.client.disconnect();
-  }
-
-  private registerLuaScripts(): void {
-    this.client.defineCommand('zeltIncrWithTtl', {
-      numberOfKeys: 1,
-      lua: INCR_WITH_TTL_LUA,
-    });
-    this.client.defineCommand('zeltSetnxWithTtl', {
-      numberOfKeys: 1,
-      lua: SETNX_WITH_TTL_LUA,
-    });
-    this.client.defineCommand('zeltDelIf', {
-      numberOfKeys: 1,
-      lua: DEL_IF_LUA,
-    });
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, injectConfig } from '@zeltjs/core';
+import { inject, Injectable, injectConfig, Logger } from '@zeltjs/core';
 import { errAsync, okAsync, type ResultAsync } from 'neverthrow';
 
 import { kvFailed, type RateLimitError } from './errors';
@@ -7,7 +7,10 @@ import type { RateLimitResult } from './types';
 
 @Injectable()
 export class RateLimiter {
-  constructor(private config = injectConfig(RateLimitConfig)) {}
+  constructor(
+    private config = injectConfig(RateLimitConfig),
+    private logger = inject(Logger),
+  ) {}
 
   hit(
     key: string,
@@ -23,7 +26,7 @@ export class RateLimiter {
         if (this.config.failureMode === 'closed') {
           return errAsync(kvFailed(kvErr));
         }
-        console.warn(`rate-limit: KV failure key=${key}`, kvErr);
+        this.logger.warn(`rate-limit: KV failure key=${key} error=${JSON.stringify(kvErr)}`);
         return okAsync(this.openResult(limit));
       });
   }

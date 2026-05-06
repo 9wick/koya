@@ -140,15 +140,4 @@ class MemoryKVStore implements AtomicKVStore {
     });
     return toResultAsync(result);
   }
-
-  delIf(key: string, expected: unknown): ResultAsync<boolean, KVError> {
-    const result = serialize(expected).map((expectedRaw) => {
-      const entry = this.current(key);
-      if (!entry) return false;
-      if (entry.raw !== expectedRaw) return false;
-      this.data.delete(this.k(key));
-      return true;
-    });
-    return toResultAsync(result);
-  }
 }

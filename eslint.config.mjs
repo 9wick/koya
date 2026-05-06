@@ -227,25 +227,10 @@ export default tseslint.config(
     },
   },
   {
-    // defineCommand injects methods at runtime; their types need assertion.
-    files: ['packages/kv-driver-redis/src/redis-kv.ts'],
+    // eval() returns unknown; type assertion needed at Lua script boundary.
+    files: ['packages/kv-driver-redis/src/zelt-redis.ts'],
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
-    },
-  },
-  {
-    // Test factory: exceeds line limit by design; _unsafeUnwrap is safe in test assertion context.
-    files: ['packages/kv/src/testing/compliance.ts'],
-    rules: {
-      'max-lines-per-function': 'off',
-      '@9wick/strict-type-rules/no-unsafe-unwrap': 'off',
-    },
-  },
-  {
-    // Logger not yet injectable in rate-limit due to symbol mismatch; console.warn fallback.
-    files: ['packages/rate-limit/src/rate-limiter.service.ts'],
-    rules: {
-      'no-console': 'off',
     },
   },
 );

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AtomicKVDriver, AtomicKVStore, KVDriver, KVStore } from '../types';
+import type { AtomicKVDriver, AtomicKVStore, KVDriver, KVStore } from './types';
 
 export type ComplianceOptions = {
   /** Use real wall-clock sleeps instead of fake timers for TTL tests (needed for real backends like Redis). */
@@ -208,14 +208,6 @@ export const runAtomicKVStoreComplianceTests = (
       expect((await store.setnx('lock', 'a'))._unsafeUnwrap()).toBe(true);
       expect((await store.setnx('lock', 'b'))._unsafeUnwrap()).toBe(false);
       expect((await store.get('lock'))._unsafeUnwrap()).toBe('a');
-    });
-
-    it('delIf deletes only on value match', async () => {
-      await store.set('lock', 'A');
-      expect((await store.delIf('lock', 'B'))._unsafeUnwrap()).toBe(false);
-      expect((await store.get('lock'))._unsafeUnwrap()).toBe('A');
-      expect((await store.delIf('lock', 'A'))._unsafeUnwrap()).toBe(true);
-      expect((await store.has('lock'))._unsafeUnwrap()).toBe(false);
     });
 
     it('incr is atomic under concurrent calls', async () => {

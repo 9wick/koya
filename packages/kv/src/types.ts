@@ -30,8 +30,6 @@ export interface AtomicKVStore extends KVStore {
   incr(key: string, by?: number, opts?: { ttlSec?: number }): ResultAsync<number, KVError>;
   /** atomic set if not exists。set されたら true、既存なら false。 */
   setnx<T>(key: string, value: T, opts?: SetOptions): ResultAsync<boolean, KVError>;
-  /** 値一致時のみ削除。lock release で他人の lock を消さない保証。 */
-  delIf(key: string, expected: unknown): ResultAsync<boolean, KVError>;
   namespace(prefix: string): Result<AtomicKVStore, KVError>;
 }
 

@@ -61,3 +61,5 @@ export type { ResolverHandle } from './internal/container';
 
 export { LifecycleManager } from './lifecycle';
 export type { Disposable } from './lifecycle';
+
+export { Logger } from './modules/logger';
