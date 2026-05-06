@@ -33,7 +33,7 @@ export default tseslint.config(
   ...strictTypes.configs.barrel,
   {
     files: ['**/*.*.{ts,tsx}'],
-    ignores: ['**/*.lib.{ts,tsx}', '**/*.types.{ts,tsx}'],
+    ignores: ['**/*.lib.{ts,tsx}', '**/*.types.{ts,tsx}', '**/*.decorator.{ts,tsx}'],
     rules: {
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': [
         'error',
@@ -200,6 +200,13 @@ export default tseslint.config(
     },
   },
   {
+    // *.decorator.ts files are decorator factories that dynamically create classes.
+    files: ['**/*.decorator.ts'],
+    rules: {
+      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
+    },
+  },
+  {
     // CLI command runner uses Object.create and DI container.get() at dynamic module
     // boundaries where type assertions are unavoidable.
     files: [
@@ -213,26 +220,21 @@ export default tseslint.config(
     },
   },
   {
-    // serialize: JSON.parse returns `any`; type assertion is unavoidable at this generic boundary.
+    // JSON.parse returns `any`; type assertion unavoidable at this generic boundary.
     files: ['packages/kv/src/serialize.ts'],
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
     },
   },
   {
-    // KV driver Redis: as assertions needed for defineCommand-injected types.
-    files: [
-      'packages/kv-driver-redis/src/redis-kv-store.ts',
-      'packages/kv-driver-redis/src/redis-kv.ts',
-    ],
+    // defineCommand injects methods at runtime; their types need assertion.
+    files: ['packages/kv-driver-redis/src/redis-kv.ts'],
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
     },
   },
   {
-    // compliance test suite is a single describe-tree factory; exceeds 50-line limit by design.
-    // _unsafeUnwrap/_unsafeUnwrapErr are used in test assertion context (test failures are caught
-    // by vitest's own error handling, equivalent to expect().toThrow()).
+    // Test factory: exceeds line limit by design; _unsafeUnwrap is safe in test assertion context.
     files: ['packages/kv/src/testing/compliance.ts'],
     rules: {
       'max-lines-per-function': 'off',
@@ -240,20 +242,9 @@ export default tseslint.config(
     },
   },
   {
-    // rate-limit decorator: factory function creates a @Injectable() class per call; not a DI
-    // module itself.
-    files: ['packages/rate-limit/src/rate-limit.decorator.ts'],
-    rules: {
-      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
-    },
-  },
-  {
-    // rate-limiter service: pure helper functions at module level are not DI singletons;
-    // console.warn is the spec-mandated fallback logger for KV failures in open failureMode.
-    // no-console is disabled only for this file because Logger is not yet exported from core.
+    // Logger not yet injectable in rate-limit due to symbol mismatch; console.warn fallback.
     files: ['packages/rate-limit/src/rate-limiter.service.ts'],
     rules: {
-      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
       'no-console': 'off',
     },
   },
