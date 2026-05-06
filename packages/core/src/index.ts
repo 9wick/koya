@@ -56,10 +56,12 @@ export type {
 export { Config, injectConfig } from './config';
 export type { ConfigClass } from './config';
 
-export { resolveWith } from './internal/container';
-export type { ResolverHandle } from './internal/container';
+export { createTestContainer } from './internal/container';
+export type { CreateTestContainerOptions, TestContainerResult } from './internal/container';
 
 export { LifecycleManager } from './lifecycle';
 export type { Disposable } from './lifecycle';
 
 export { Logger } from './modules/logger';
+
+export { EnvConfig, ProcessEnvConfig, DotEnvConfig, EnvService } from './modules/env';

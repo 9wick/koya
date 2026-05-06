@@ -1,2 +1,2 @@
-export { resolveWith } from '@zeltjs/core';
-export type { ResolverHandle } from '@zeltjs/core';
+export { createTestContainer } from '@zeltjs/core';
+export type { CreateTestContainerOptions, TestContainerResult } from '@zeltjs/core';

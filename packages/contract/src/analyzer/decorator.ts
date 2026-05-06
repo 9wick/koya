@@ -1,4 +1,8 @@
+// packages/contract/src/analyzer/decorator.ts
 import { type ClassDeclaration, type MethodDeclaration, type Node, SyntaxKind } from 'ts-morph';
+import { ok, err, type Result } from 'neverthrow';
+
+import type { AnalyzerError } from '../errors';
 
 const HTTP_METHOD_MAP = {
   Get: 'GET',
@@ -19,7 +23,6 @@ export type RouteDecoratorInfo = {
   readonly path: string;
 };
 
-// 入力文字列が HTTP_METHOD_MAP のキーであれば対応する method を返す。type predicate を避けるための直接 lookup。
 const lookupHttpMethod = (name: string): HttpMethod | undefined => {
   const entries: ReadonlyArray<[string, HttpMethod]> = Object.entries(HTTP_METHOD_MAP);
   for (const [key, value] of entries) {
@@ -28,33 +31,34 @@ const lookupHttpMethod = (name: string): HttpMethod | undefined => {
   return undefined;
 };
 
-// ts-morph の StringLiteral.getText() は quote 文字を含む。剥がして literal value を取り出す。
-const stringLiteralArg = (decoratorName: string, args: readonly Node[]): string => {
+const stringLiteralArg = (
+  decoratorName: string,
+  args: readonly Node[],
+): Result<string, AnalyzerError> => {
   const first = args[0];
   if (!first || first.getKind() !== SyntaxKind.StringLiteral) {
-    throw new Error(`zelt/openapi: @${decoratorName} requires a string literal argument`);
+    return err({ type: 'DECORATOR_REQUIRES_STRING_LITERAL', decoratorName });
   }
   const text = first.getText();
-  return text.slice(1, -1);
+  return ok(text.slice(1, -1));
 };
 
 export const extractControllerDecorator = (
   cls: ClassDeclaration,
-): ControllerDecoratorInfo | undefined => {
+): Result<ControllerDecoratorInfo, AnalyzerError> | undefined => {
   const dec = cls.getDecorator('Controller');
   if (!dec) return undefined;
-  return { basePath: stringLiteralArg('Controller', dec.getArguments()) };
+  return stringLiteralArg('Controller', dec.getArguments()).map((basePath) => ({ basePath }));
 };
 
-export const extractRouteDecorator = (m: MethodDeclaration): RouteDecoratorInfo | undefined => {
+export const extractRouteDecorator = (
+  m: MethodDeclaration,
+): Result<RouteDecoratorInfo, AnalyzerError> | undefined => {
   for (const dec of m.getDecorators()) {
     const name = dec.getName();
     const method = lookupHttpMethod(name);
     if (method !== undefined) {
-      return {
-        method,
-        path: stringLiteralArg(name, dec.getArguments()),
-      };
+      return stringLiteralArg(name, dec.getArguments()).map((path) => ({ method, path }));
     }
   }
   return undefined;
