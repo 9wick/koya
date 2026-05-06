@@ -16,7 +16,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Techniques',
-      items: ['validation', 'error-handling', 'configuration', 'openapi'],
+      items: ['authentication', 'validation', 'error-handling', 'configuration', 'openapi'],
     },
   ],
 };
