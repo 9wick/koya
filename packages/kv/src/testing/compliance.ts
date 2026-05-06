@@ -63,6 +63,23 @@ export const runKVStoreComplianceTests = (factory: () => KVDriver): void => {
       const store = factory().namespace('compliance-ttl:');
       expect(await store.expire('missing', 5)).toBe(false);
     });
+
+    it('expire(key) extends/sets TTL', async () => {
+      const store = factory().namespace('compliance-ttl:');
+      await store.set('foo', 1);
+      expect(await store.expire('foo', 5)).toBe(true);
+      vi.advanceTimersByTime(6_000);
+      expect(await store.get('foo')).toBeUndefined();
+    });
+  });
+
+  describe('KVStore namespace compliance', () => {
+    it('namespace isolates keys (cache:foo vs ratelimit:foo)', async () => {
+      const a = factory().namespace('a:');
+      const b = factory().namespace('b:');
+      await a.set('shared', 1);
+      expect(await b.get('shared')).toBeUndefined();
+    });
   });
 };
 
@@ -99,6 +116,26 @@ export const runAtomicKVStoreComplianceTests = (factory: () => AtomicKVDriver): 
     it('incr is atomic under concurrent calls', async () => {
       await Promise.all(Array.from({ length: 50 }, () => store.incr('hot')));
       expect(await store.get('hot')).toBe(50);
+    });
+  });
+
+  describe('AtomicKVStore TTL compliance', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('incr with ttlSec sets TTL only on first incr (no extension on subsequent)', async () => {
+      const store = factory().namespace('atomic-ttl:');
+      await store.incr('c', 1, { ttlSec: 10 });
+      vi.advanceTimersByTime(5_000);
+      // second incr with a longer ttlSec must NOT extend the TTL
+      await store.incr('c', 1, { ttlSec: 100 });
+      vi.advanceTimersByTime(6_000);
+      // original 10s TTL has now elapsed (5+6=11s), key must be gone
+      expect(await store.get('c')).toBeUndefined();
     });
   });
 };
