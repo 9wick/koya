@@ -1,3 +1,4 @@
+// packages/contract/src/test/generate-client.test.ts
 import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -17,8 +18,12 @@ describe('generateClient', () => {
       dist,
       tsconfig: tsconfigPath,
     });
-    expect(result.appGenChanged).toBe(true);
-    expect(result.openApiChanged).toBe(true);
+
+    expect(result.isOk()).toBe(true);
+    if (result.isErr()) return;
+
+    expect(result.value.appGenChanged).toBe(true);
+    expect(result.value.openApiChanged).toBe(true);
 
     const appGen = await readFile(join(dist, 'app.gen.ts'), 'utf8');
     expect(appGen).toContain('export type AppType = BuildAppType<[');
@@ -29,17 +34,23 @@ describe('generateClient', () => {
 
   it('returns changed=false on second run with no changes', async () => {
     const dist = await mkdtemp(join(tmpdir(), 'zelt-openapi-'));
-    await generateClient({
+    const firstResult = await generateClient({
       controllers: [fixtureGlob],
       dist,
       tsconfig: tsconfigPath,
     });
-    const result = await generateClient({
+    expect(firstResult.isOk()).toBe(true);
+
+    const secondResult = await generateClient({
       controllers: [fixtureGlob],
       dist,
       tsconfig: tsconfigPath,
     });
-    expect(result.appGenChanged).toBe(false);
-    expect(result.openApiChanged).toBe(false);
+
+    expect(secondResult.isOk()).toBe(true);
+    if (secondResult.isErr()) return;
+
+    expect(secondResult.value.appGenChanged).toBe(false);
+    expect(secondResult.value.openApiChanged).toBe(false);
   });
 });
