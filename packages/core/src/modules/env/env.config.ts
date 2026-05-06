@@ -4,7 +4,14 @@ import { Config } from '../../config';
 export class EnvConfig {
   static readonly Token = EnvConfig;
 
-  get envFilePath(): string[] {
-    return ['.env'];
+  get(_key: string): string | undefined {
+    return undefined;
+  }
+}
+
+@Config
+export class ProcessEnvConfig extends EnvConfig {
+  override get(key: string): string | undefined {
+    return process.env[key];
   }
 }
