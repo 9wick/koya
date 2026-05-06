@@ -9,6 +9,7 @@ const config: KnipConfig = {
   workspaces: {
     'examples/hello': {
       entry: ['src/main.ts', 'src/entry/node.ts'],
+      ignore: ['generated/**'],
       ignoreDependencies: ['@zeltjs/openapi', '@zeltjs/adapter-node', '@zeltjs/cli', 'tsdown'],
     },
     'packages/core': {
