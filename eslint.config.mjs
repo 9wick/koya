@@ -175,4 +175,11 @@ export default tseslint.config(
       '@9wick/strict-type-rules/no-process-access': 'off',
     },
   },
+  {
+    // *.types.ts files are pure type declaration files and cannot export @injectable() classes.
+    files: ['**/*.types.ts'],
+    rules: {
+      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
+    },
+  },
 );

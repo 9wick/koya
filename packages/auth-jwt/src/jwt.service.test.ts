@@ -39,7 +39,7 @@ describe('JwtService', () => {
       const payload = await jwtService.verify(token);
 
       expect(payload.sub).toBe('user-123');
-      expect(payload.customClaim).toBe('value');
+      expect(payload['customClaim']).toBe('value');
       expect(payload.iat).toBeDefined();
       expect(payload.exp).toBeDefined();
     });
@@ -50,7 +50,7 @@ describe('JwtService', () => {
 
     it('should throw error for tampered token', async () => {
       const token = await jwtService.sign({ sub: 'user-123' });
-      const tamperedToken = token.slice(0, -5) + 'xxxxx';
+      const tamperedToken = `${token.slice(0, -5)}xxxxx`;
 
       await expect(jwtService.verify(tamperedToken)).rejects.toThrow();
     });
