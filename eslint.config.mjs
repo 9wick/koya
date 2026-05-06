@@ -213,66 +213,48 @@ export default tseslint.config(
     },
   },
   {
-    // KV package: serialize and namespace throw on invalid input (library error contract);
-    // JSON.parse requires a type assertion at the generic boundary.
-    files: ['packages/kv/src/serialize.ts', 'packages/kv/src/namespace.ts'],
+    // serialize: JSON.parse returns `any`; type assertion is unavoidable at this generic boundary.
+    files: ['packages/kv/src/serialize.ts'],
     rules: {
-      '@9wick/strict-type-rules/no-throw': 'off',
       '@9wick/strict-type-rules/no-as-assertion': 'off',
     },
   },
   {
-    // KV driver Redis: throws KVError / MinTtlError per spec contract (user-facing error contracts);
-    // as assertions needed for defineCommand-injected types and Lua return value coercion.
+    // KV driver Redis: as assertions needed for defineCommand-injected types.
     files: [
       'packages/kv-driver-redis/src/redis-kv-store.ts',
       'packages/kv-driver-redis/src/redis-kv.ts',
     ],
     rules: {
-      '@9wick/strict-type-rules/no-throw': 'off',
       '@9wick/strict-type-rules/no-as-assertion': 'off',
     },
   },
   {
-    // MemoryKV throws MinTtlError per spec contract (driver-level TTL validation,
-    // matching RedisKV for driver-swap consistency).
-    files: ['packages/kv/src/memory-kv.ts'],
-    rules: {
-      '@9wick/strict-type-rules/no-throw': 'off',
-    },
-  },
-  {
     // compliance test suite is a single describe-tree factory; exceeds 50-line limit by design.
+    // _unsafeUnwrap/_unsafeUnwrapErr are used in test assertion context (test failures are caught
+    // by vitest's own error handling, equivalent to expect().toThrow()).
     files: ['packages/kv/src/testing/compliance.ts'],
     rules: {
       'max-lines-per-function': 'off',
+      '@9wick/strict-type-rules/no-unsafe-unwrap': 'off',
     },
   },
   {
     // rate-limit decorator: factory function creates a @Injectable() class per call; not a DI
-    // module itself. throw is the correct mechanism for HTTP error propagation via HTTPException.
+    // module itself.
     files: ['packages/rate-limit/src/rate-limit.decorator.ts'],
     rules: {
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
-      '@9wick/strict-type-rules/no-throw': 'off',
     },
   },
   {
     // rate-limiter service: pure helper functions at module level are not DI singletons;
-    // throw propagates store errors per the fail-closed contract (user-facing error contract);
     // console.warn is the spec-mandated fallback logger for KV failures in open failureMode.
+    // no-console is disabled only for this file because Logger is not yet exported from core.
     files: ['packages/rate-limit/src/rate-limiter.service.ts'],
     rules: {
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
-      '@9wick/strict-type-rules/no-throw': 'off',
       'no-console': 'off',
-    },
-  },
-  {
-    // TooManyRequestsException: extending HTTPException is the correct error type for 429.
-    files: ['packages/rate-limit/src/errors.ts'],
-    rules: {
-      '@9wick/strict-type-rules/no-throw': 'off',
     },
   },
 );
