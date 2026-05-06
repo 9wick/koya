@@ -18,8 +18,7 @@ import {
 
 type MiddlewareContext = Context<Env, string, Input>;
 
-const stripTrailingSlash = (s: string): string =>
-  s.length > 1 && s.endsWith('/') ? s.slice(0, -1) : s;
+const stripTrailingSlash = (s: string): string => (s.endsWith('/') ? s.slice(0, -1) : s);
 
 const ensureLeadingSlash = (s: string): string => (s === '' || s.startsWith('/') ? s : `/${s}`);
 

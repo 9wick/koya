@@ -251,6 +251,27 @@ importers:
         specifier: workspace:*
         version: link:../kv
 
+  packages/rate-limit:
+    devDependencies:
+      '@needle-di/core':
+        specifier: 1.1.2
+        version: 1.1.2
+      '@types/node':
+        specifier: 22.19.17
+        version: 22.19.17
+      '@zeltjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@zeltjs/kv':
+        specifier: workspace:*
+        version: link:../kv
+      hono:
+        specifier: 4.12.16
+        version: 4.12.16
+      valibot:
+        specifier: 1.3.1
+        version: 1.3.1(typescript@6.0.2)
+
   packages/testing:
     dependencies:
       '@zeltjs/core':
