@@ -219,6 +219,15 @@ importers:
         specifier: 8.2.0
         version: 8.2.0
 
+  packages/kv:
+    devDependencies:
+      '@types/node':
+        specifier: 22.19.17
+        version: 22.19.17
+      '@zeltjs/core':
+        specifier: workspace:*
+        version: link:../core
+
   packages/testing:
     dependencies:
       '@zeltjs/core':
