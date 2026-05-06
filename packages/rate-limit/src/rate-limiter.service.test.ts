@@ -4,6 +4,10 @@ import { MemoryKV, type AtomicKVStore } from '@zeltjs/kv';
 import { RateLimitConfig } from './rate-limit.config';
 import { RateLimiter } from './rate-limiter.service';
 
+// NOTE: tests instantiate Config/Service directly instead of `Container().get(...)` because
+// `@zeltjs/core` bundles its own copy of `@needle-di/core`, causing a `injectableSymbol` mismatch
+// with the test's devDependency copy (resolves to "No provider(s) found"). Direct instantiation
+// exercises the same wiring (constructor injection happens at `new` time).
 const makeDefaultLimiter = () => {
   const config = new RateLimitConfig(new MemoryKV());
   return new RateLimiter(config);

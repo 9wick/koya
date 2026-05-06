@@ -14,7 +14,7 @@ const createRateLimitMiddlewareClass = (opts: RateLimitOptions): MiddlewareClass
       this.limiter = limiter;
     }
 
-    async use(c: RequestContext, next: Next): Promise<undefined> {
+    async use(c: RequestContext, next: Next): Promise<Response | undefined> {
       const key = typeof opts.key === 'string' ? opts.key : opts.key();
       const result = await this.limiter.hit(key, {
         limit: opts.limit,

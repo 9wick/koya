@@ -28,6 +28,8 @@ export class RateLimiter {
     const count = await this.config.store
       .incr(key, 1, { ttlSec: windowSec })
       .catch((err: unknown) => {
+        // closed mode propagates errors to the global error handler (logs there);
+        // open mode swallows the error so the request proceeds, but we surface it here so it isn't silent.
         if (this.config.failureMode === 'closed') throw err;
         console.warn('rate-limit: KV failure', { err, key });
         return null;
