@@ -1,4 +1,8 @@
+// packages/contract/src/analyzer/handler.ts
 import { type CallExpression, type MethodDeclaration, Node, SyntaxKind } from 'ts-morph';
+import { ok, err, type Result } from 'neverthrow';
+
+import type { AnalyzerError } from '../errors';
 
 export type ValidationTarget = 'json' | 'form';
 
@@ -34,8 +38,6 @@ const identifierArg = (expr: CallExpression): { exportName: string } | undefined
   return { exportName: arg.getText() };
 };
 
-// validated(SchemaIdent) の SchemaIdent がどの module の named export を指すかを resolve する。
-// import 経由なら module 元の SourceFile、同一 file の export なら自身の path を返す。
 const resolveSchemaModule = (expr: CallExpression, exportName: string): string | undefined => {
   const sourceFile = expr.getSourceFile();
   for (const imp of sourceFile.getImportDeclarations()) {
@@ -61,23 +63,23 @@ const extractTarget = (expr: CallExpression): ValidationTarget => {
   return 'json';
 };
 
-const analyzeValidatedCall = (expr: CallExpression): RequestSchemaRef => {
+const analyzeValidatedCall = (expr: CallExpression): Result<RequestSchemaRef, AnalyzerError> => {
   const target = extractTarget(expr);
   const id = identifierArg(expr);
   if (id) {
     const module = resolveSchemaModule(expr, id.exportName);
     if (module === undefined) {
-      throw new Error(
-        `zelt/openapi: cannot resolve module for validated(${id.exportName}). Schema must be a module-level export.`,
-      );
+      return err({ type: 'MODULE_RESOLVE_FAILED', exportName: id.exportName });
     }
-    return { kind: 'valibot-named', module, exportName: id.exportName, target };
+    return ok({ kind: 'valibot-named', module, exportName: id.exportName, target });
   }
   const arg = expr.getArguments()[0];
-  return { kind: 'valibot-inline', schemaText: arg?.getText() ?? '', target };
+  return ok({ kind: 'valibot-inline', schemaText: arg?.getText() ?? '', target });
 };
 
-export const analyzeHandlerSignature = (m: MethodDeclaration): HandlerSignatureInfo => {
+export const analyzeHandlerSignature = (
+  m: MethodDeclaration,
+): Result<HandlerSignatureInfo, AnalyzerError> => {
   let requestSchema: RequestSchemaRef = { kind: 'none' };
   const pathParams: string[] = [];
 
@@ -86,17 +88,19 @@ export const analyzeHandlerSignature = (m: MethodDeclaration): HandlerSignatureI
     if (!init || !Node.isCallExpression(init)) continue;
 
     if (isCallTo(init, 'validated')) {
-      requestSchema = analyzeValidatedCall(init);
+      const result = analyzeValidatedCall(init);
+      if (result.isErr()) return err(result.error);
+      requestSchema = result.value;
       continue;
     }
     if (isCallTo(init, 'pathParam')) {
       const name = literalArg(init);
       if (name === undefined) {
-        throw new Error(`zelt/openapi: pathParam() requires a string literal argument`);
+        return err({ type: 'PATH_PARAM_REQUIRES_LITERAL' });
       }
       pathParams.push(name);
     }
   }
 
-  return { requestSchema, pathParams };
+  return ok({ requestSchema, pathParams });
 };
