@@ -5,7 +5,7 @@ import oxlint from 'eslint-plugin-oxlint';
 import sonarjs from 'eslint-plugin-sonarjs';
 import tseslint from 'typescript-eslint';
 
-const TEST_FILES = ['**/*.{test,spec}.{ts,tsx}', '**/*.e2e-{test,spec}.{ts,tsx}'];
+const TEST_FILES = ['**/*.{test,spec}.{ts,tsx}', '**/*.e2e-{test,spec}.{ts,tsx}', '**/testing/**/*.{ts,tsx}'];
 const FIXTURE_FILES = ['**/_fixtures/**/*.{ts,tsx}', '**/test/fixtures/**/*.{ts,tsx}'];
 const EXAMPLE_FILES = ['examples/**/*.{ts,tsx}'];
 
@@ -98,8 +98,10 @@ export default tseslint.config(
     rules: {
       'no-console': 'off',
       'max-lines': ['warn', { max: 1000, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': 'off',
       'import-x/no-namespace': 'off',
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'warn',
+      '@9wick/strict-type-rules/no-unsafe-unwrap': 'off',
     },
   },
   {
@@ -231,21 +233,6 @@ export default tseslint.config(
     files: ['packages/kv-driver-redis/src/redis-kv.ts'],
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
-    },
-  },
-  {
-    // Test factory: exceeds line limit by design; _unsafeUnwrap is safe in test assertion context.
-    files: ['packages/kv/src/testing/compliance.ts'],
-    rules: {
-      'max-lines-per-function': 'off',
-      '@9wick/strict-type-rules/no-unsafe-unwrap': 'off',
-    },
-  },
-  {
-    // Logger not yet injectable in rate-limit due to symbol mismatch; console.warn fallback.
-    files: ['packages/rate-limit/src/rate-limiter.service.ts'],
-    rules: {
-      'no-console': 'off',
     },
   },
 );

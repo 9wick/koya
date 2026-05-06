@@ -9,8 +9,9 @@ import { RateLimiter } from './rate-limiter.service';
 // `@zeltjs/core` bundles its own copy of `@needle-di/core`, causing a `injectableSymbol` mismatch
 // with the test's devDependency copy (resolves to "No provider(s) found"). Direct instantiation
 // exercises the same wiring (constructor injection happens at `new` time).
+const noopWarn = vi.fn();
 const makeDefaultLimiter = () => {
-  const config = new RateLimitConfig(new MemoryKV());
+  const config = new RateLimitConfig(new MemoryKV(), noopWarn);
   return new RateLimiter(config);
 };
 
@@ -55,7 +56,7 @@ describe('RateLimiter', () => {
 
   it('failureMode=open returns allowed when store returns Err', async () => {
     const failingKv = new MemoryKV();
-    const failingConfig = new RateLimitConfig(failingKv);
+    const failingConfig = new RateLimitConfig(failingKv, noopWarn);
     Object.defineProperty(failingConfig, 'store', {
       value: {
         incr: vi.fn().mockReturnValue(
@@ -77,7 +78,7 @@ describe('RateLimiter', () => {
 
   it('failureMode=closed returns Err when store returns Err', async () => {
     const failingKv = new MemoryKV();
-    const failingConfig = new RateLimitConfig(failingKv);
+    const failingConfig = new RateLimitConfig(failingKv, noopWarn);
     Object.defineProperty(failingConfig, 'store', {
       value: {
         incr: vi.fn().mockReturnValue(
