@@ -77,9 +77,7 @@ const analyzeValidatedCall = (expr: CallExpression): Result<RequestSchemaRef, An
   return ok({ kind: 'valibot-inline', schemaText: arg?.getText() ?? '', target });
 };
 
-const processValidatedParam = (
-  init: CallExpression,
-): Result<RequestSchemaRef, AnalyzerError> => {
+const processValidatedParam = (init: CallExpression): Result<RequestSchemaRef, AnalyzerError> => {
   const result = analyzeValidatedCall(init);
   if (result.isErr()) return err(result.error);
   return ok(result.value);

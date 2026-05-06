@@ -1,7 +1,7 @@
 // packages/contract/src/emit/openapi.ts
 import { validationErrorBodySchema } from '@zeltjs/core';
 import { toJsonSchema } from '@valibot/to-json-schema';
-import { okAsync, errAsync, ResultAsync } from 'neverthrow';
+import { okAsync, errAsync, type ResultAsync } from 'neverthrow';
 
 import type { ContractError } from '../errors';
 import type { RequestSchemaRef } from '../analyzer/handler';
@@ -142,6 +142,7 @@ export const emitOpenApi = (
         chain = chain.andThen(() =>
           buildOperation(r, schemas, options).map((op) => {
             addOperation(paths, toOpenApiPath(r.fullPath), r.method, op);
+            return undefined;
           }),
         );
       }
