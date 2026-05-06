@@ -13,7 +13,13 @@ const config: KnipConfig = {
       ignoreDependencies: ['@zeltjs/openapi', '@zeltjs/adapter-node', '@zeltjs/cli', 'tsdown'],
     },
     'examples/drizzle-todo': {
-      entry: ['src/entry/node.ts', 'src/app.ts', 'src/controllers.ts', 'src/todo/*.ts', 'src/db/*.ts'],
+      entry: [
+        'src/entry/node.ts',
+        'src/app.ts',
+        'src/controllers.ts',
+        'src/todo/*.ts',
+        'src/db/*.ts',
+      ],
       ignoreDependencies: ['@zeltjs/adapter-node', '@zeltjs/core', 'valibot'],
     },
     'packages/core': {
