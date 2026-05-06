@@ -16,7 +16,7 @@
     "test": "vitest run",
     "typecheck": "tsc -b",
     "precommit": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm build && pnpm test && npx precommit-verify save",
-    "prepare": "git config core.hooksPath .githooks"
+    "prepare": "npx lefthook install"
   },
   "devDependencies": {
     "@9wick/eslint-plugin-strict-type-rules": "1.0.2",
