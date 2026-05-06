@@ -151,36 +151,26 @@ export default tseslint.config(
     },
   },
   {
-    // Env module needs process.env access and maintains load state.
-    // This is the core purpose of the module.
-    files: ['packages/core/src/modules/env/env.service.ts'],
-    rules: {
-      '@9wick/strict-type-rules/no-process-access': 'off',
-      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
-    },
-  },
-  {
-    // Env module test file
-    files: ['packages/core/src/modules/env/env.service.test.ts'],
-    rules: {
-      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
-    },
-  },
-  {
-    // Core test files that use inline classes for testing decorators
-    files: [
-      'packages/core/src/decorators/error-handler.test.ts',
-      'packages/core/src/http/error-schema.test.ts',
-    ],
-    rules: {
-      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
-    },
-  },
-  {
     // CLI package does not use DI
     files: ['packages/cli/src/**/*.{ts,tsx}'],
     rules: {
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
+    },
+  },
+  {
+    // Core modules use @Injectable (re-exported from @needle-di/core).
+    // The lint rule only recognizes @injectable(), not the Pascal-case alias.
+    files: ['packages/core/src/modules/**/*.ts'],
+    ignores: [...TEST_FILES],
+    rules: {
+      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
+    },
+  },
+  {
+    // Env module needs process.env access
+    files: ['packages/core/src/modules/env/env.service.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-process-access': 'off',
     },
   },
 );
