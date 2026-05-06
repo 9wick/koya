@@ -1,10 +1,11 @@
 export { MemoryKV } from './memory-kv';
 
 export {
-  KVError,
-  MinPrefixLengthError,
-  MinTtlError,
-  UnsupportedOperationError,
+  type KVError,
+  invalidTtl,
+  emptyNamespace,
+  invalidValue,
+  storeOperationFailed,
 } from './errors';
 
 export type {
@@ -15,4 +16,6 @@ export type {
   SetOptions,
 } from './types';
 
-export { assertNonEmptyPrefix, joinPrefix } from './namespace';
+export { validatePrefix, joinPrefix } from './namespace';
+
+export { serialize, deserialize } from './serialize';

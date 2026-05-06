@@ -1,31 +1,54 @@
 import { describe, expect, it } from 'vitest';
 
-import { KVError, MinPrefixLengthError, MinTtlError, UnsupportedOperationError } from './errors';
+import { emptyNamespace, invalidTtl, invalidValue, storeOperationFailed } from './errors';
 
 describe('errors', () => {
-  it('KVError extends Error and carries a name', () => {
-    const err = new KVError('boom');
-    expect(err).toBeInstanceOf(Error);
-    expect(err.name).toBe('KVError');
-    expect(err.message).toBe('boom');
+  it('invalidTtl returns INVALID_TTL with correct fields', () => {
+    const e = invalidTtl(0);
+    expect(e.type).toBe('INVALID_TTL');
+    if (e.type === 'INVALID_TTL') {
+      expect(e.ttlSec).toBe(0);
+    }
+    expect(e.message).toContain('0');
   });
 
-  it('UnsupportedOperationError extends KVError', () => {
-    const err = new UnsupportedOperationError('not supported');
-    expect(err).toBeInstanceOf(KVError);
-    expect(err.name).toBe('UnsupportedOperationError');
+  it('invalidTtl with negative value', () => {
+    const e = invalidTtl(-5);
+    expect(e.type).toBe('INVALID_TTL');
+    if (e.type === 'INVALID_TTL') {
+      expect(e.ttlSec).toBe(-5);
+    }
   });
 
-  it('MinTtlError extends KVError', () => {
-    const err = new MinTtlError('ttl too small');
-    expect(err).toBeInstanceOf(KVError);
-    expect(err.name).toBe('MinTtlError');
+  it('emptyNamespace returns EMPTY_NAMESPACE', () => {
+    const e = emptyNamespace();
+    expect(e.type).toBe('EMPTY_NAMESPACE');
+    expect(e.message).toContain('empty');
   });
 
-  it('MinPrefixLengthError extends KVError', () => {
-    const err = new MinPrefixLengthError();
-    expect(err).toBeInstanceOf(KVError);
-    expect(err.name).toBe('MinPrefixLengthError');
-    expect(err.message).toBe('namespace prefix must not be empty');
+  it('invalidValue returns INVALID_VALUE with reason', () => {
+    const e = invalidValue('cannot serialize undefined');
+    expect(e.type).toBe('INVALID_VALUE');
+    if (e.type === 'INVALID_VALUE') {
+      expect(e.reason).toBe('cannot serialize undefined');
+    }
+    expect(e.message).toContain('cannot serialize undefined');
+  });
+
+  it('storeOperationFailed returns STORE_OPERATION_FAILED with Error cause', () => {
+    const cause = new Error('redis down');
+    const e = storeOperationFailed('get', cause);
+    expect(e.type).toBe('STORE_OPERATION_FAILED');
+    if (e.type === 'STORE_OPERATION_FAILED') {
+      expect(e.op).toBe('get');
+      expect(e.cause).toBe(cause);
+    }
+    expect(e.message).toContain('redis down');
+  });
+
+  it('storeOperationFailed with non-Error cause uses String()', () => {
+    const e = storeOperationFailed('set', 'timeout');
+    expect(e.type).toBe('STORE_OPERATION_FAILED');
+    expect(e.message).toContain('timeout');
   });
 });

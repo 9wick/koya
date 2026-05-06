@@ -1,7 +1,8 @@
 import { Injectable, type Disposable } from '@zeltjs/core';
+import { err, ok, okAsync, ResultAsync, type Result } from 'neverthrow';
 
-import { MinTtlError } from './errors';
-import { assertNonEmptyPrefix, joinPrefix } from './namespace';
+import { invalidTtl, type KVError } from './errors';
+import { validatePrefix, joinPrefix } from './namespace';
 import { deserialize, serialize } from './serialize';
 import type { AtomicKVDriver, AtomicKVStore, SetOptions } from './types';
 
@@ -11,14 +12,16 @@ type Entry = {
   expiresAt?: number;
 };
 
-const assertValidTtl = (ttlSec: number | undefined): void => {
-  if (ttlSec !== undefined && ttlSec <= 0) {
-    throw new MinTtlError('ttlSec must be > 0');
-  }
+const validateTtl = (ttlSec: number | undefined): Result<void, KVError> => {
+  if (ttlSec !== undefined && ttlSec <= 0) return err(invalidTtl(ttlSec));
+  return ok(undefined);
 };
 
 const makeEntry = (raw: string, ttlSec?: number): Entry =>
   ttlSec !== undefined ? { raw, expiresAt: Date.now() + ttlSec * 1000 } : { raw };
+
+const toResultAsync = <T, E>(result: Result<T, E>): ResultAsync<T, E> =>
+  new ResultAsync(Promise.resolve(result));
 
 @Injectable()
 export class MemoryKV implements AtomicKVDriver, Disposable {
@@ -44,9 +47,8 @@ export class MemoryKV implements AtomicKVDriver, Disposable {
     clearInterval(this.gcInterval);
   }
 
-  namespace(prefix: string): AtomicKVStore {
-    assertNonEmptyPrefix(prefix);
-    return new MemoryKVStore(this.data, prefix);
+  namespace(prefix: string): Result<AtomicKVStore, KVError> {
+    return validatePrefix(prefix).map((p) => new MemoryKVStore(this.data, p));
   }
 }
 
@@ -70,62 +72,83 @@ class MemoryKVStore implements AtomicKVStore {
     return entry;
   }
 
-  async get<T>(key: string): Promise<T | undefined> {
-    const entry = this.current(key);
-    return entry ? deserialize<T>(entry.raw) : undefined;
+  get<T>(key: string): ResultAsync<T | undefined, KVError> {
+    return okAsync(this.current(key)).map((entry) =>
+      entry ? deserialize<T>(entry.raw) : undefined,
+    );
   }
 
-  async set<T>(key: string, value: T, opts?: SetOptions): Promise<void> {
-    assertValidTtl(opts?.ttlSec);
-    this.data.set(this.k(key), makeEntry(serialize(value), opts?.ttlSec));
+  set<T>(key: string, value: T, opts?: SetOptions): ResultAsync<void, KVError> {
+    const validated = validateTtl(opts?.ttlSec).andThen(() => serialize(value));
+    return toResultAsync(
+      validated.andThen((raw) => {
+        this.data.set(this.k(key), makeEntry(raw, opts?.ttlSec));
+        return ok<void, KVError>(undefined);
+      }),
+    );
   }
 
-  async del(key: string): Promise<void> {
+  del(key: string): ResultAsync<void, KVError> {
     this.data.delete(this.k(key));
+    return okAsync(undefined);
   }
 
-  async has(key: string): Promise<boolean> {
-    return this.current(key) !== undefined;
+  has(key: string): ResultAsync<boolean, KVError> {
+    return okAsync(this.current(key) !== undefined);
   }
 
-  async expire(key: string, ttlSec: number): Promise<boolean> {
-    assertValidTtl(ttlSec);
-    const entry = this.current(key);
-    if (!entry) return false;
-    entry.expiresAt = Date.now() + ttlSec * 1000;
-    return true;
+  expire(key: string, ttlSec: number): ResultAsync<boolean, KVError> {
+    const result = validateTtl(ttlSec).map(() => {
+      const entry = this.current(key);
+      if (!entry) return false;
+      entry.expiresAt = Date.now() + ttlSec * 1000;
+      return true;
+    });
+    return toResultAsync(result);
   }
 
-  namespace(sub: string): AtomicKVStore {
-    assertNonEmptyPrefix(sub);
-    return new MemoryKVStore(this.data, joinPrefix(this.prefix, sub));
+  namespace(sub: string): Result<AtomicKVStore, KVError> {
+    return validatePrefix(sub).map((s) => new MemoryKVStore(this.data, joinPrefix(this.prefix, s)));
   }
 
-  async incr(key: string, by = 1, opts?: { ttlSec?: number }): Promise<number> {
-    assertValidTtl(opts?.ttlSec);
-    const k = this.k(key);
-    const entry = this.current(key);
-    if (!entry) {
-      this.data.set(k, makeEntry(serialize(by), opts?.ttlSec));
-      return by;
-    }
-    const next = (deserialize<number>(entry.raw) ?? 0) + by;
-    entry.raw = serialize(next);
-    return next;
+  incr(key: string, by = 1, opts?: { ttlSec?: number }): ResultAsync<number, KVError> {
+    const result = validateTtl(opts?.ttlSec).andThen(() => {
+      const k = this.k(key);
+      const entry = this.current(key);
+      if (!entry) {
+        return serialize(by).map((raw) => {
+          this.data.set(k, makeEntry(raw, opts?.ttlSec));
+          return by;
+        });
+      }
+      const next = (deserialize<number>(entry.raw) ?? 0) + by;
+      return serialize(next).map((raw) => {
+        entry.raw = raw;
+        return next;
+      });
+    });
+    return toResultAsync(result);
   }
 
-  async setnx<T>(key: string, value: T, opts?: SetOptions): Promise<boolean> {
-    assertValidTtl(opts?.ttlSec);
-    if (this.current(key)) return false;
-    this.data.set(this.k(key), makeEntry(serialize(value), opts?.ttlSec));
-    return true;
+  setnx<T>(key: string, value: T, opts?: SetOptions): ResultAsync<boolean, KVError> {
+    const result = validateTtl(opts?.ttlSec).andThen(() => {
+      if (this.current(key)) return ok(false);
+      return serialize(value).map((raw) => {
+        this.data.set(this.k(key), makeEntry(raw, opts?.ttlSec));
+        return true;
+      });
+    });
+    return toResultAsync(result);
   }
 
-  async delIf(key: string, expected: unknown): Promise<boolean> {
-    const entry = this.current(key);
-    if (!entry) return false;
-    if (entry.raw !== serialize(expected)) return false;
-    this.data.delete(this.k(key));
-    return true;
+  delIf(key: string, expected: unknown): ResultAsync<boolean, KVError> {
+    const result = serialize(expected).map((expectedRaw) => {
+      const entry = this.current(key);
+      if (!entry) return false;
+      if (entry.raw !== expectedRaw) return false;
+      this.data.delete(this.k(key));
+      return true;
+    });
+    return toResultAsync(result);
   }
 }

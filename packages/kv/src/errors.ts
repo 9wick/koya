@@ -1,19 +1,29 @@
-export class KVError extends Error {
-  override name = 'KVError';
-}
+export type KVError =
+  | { type: 'INVALID_TTL'; ttlSec: number; message: string }
+  | { type: 'EMPTY_NAMESPACE'; message: string }
+  | { type: 'INVALID_VALUE'; reason: string; message: string }
+  | { type: 'STORE_OPERATION_FAILED'; op: string; cause: unknown; message: string };
 
-export class UnsupportedOperationError extends KVError {
-  override name = 'UnsupportedOperationError';
-}
+export const invalidTtl = (ttlSec: number): KVError => ({
+  type: 'INVALID_TTL',
+  ttlSec,
+  message: `ttlSec must be > 0, got ${ttlSec}`,
+});
 
-export class MinTtlError extends KVError {
-  override name = 'MinTtlError';
-}
+export const emptyNamespace = (): KVError => ({
+  type: 'EMPTY_NAMESPACE',
+  message: 'namespace prefix must not be empty',
+});
 
-export class MinPrefixLengthError extends KVError {
-  override name = 'MinPrefixLengthError';
+export const invalidValue = (reason: string): KVError => ({
+  type: 'INVALID_VALUE',
+  reason,
+  message: `invalid value: ${reason}`,
+});
 
-  constructor() {
-    super('namespace prefix must not be empty');
-  }
-}
+export const storeOperationFailed = (op: string, cause: unknown): KVError => ({
+  type: 'STORE_OPERATION_FAILED',
+  op,
+  cause,
+  message: `store operation '${op}' failed: ${cause instanceof Error ? cause.message : String(cause)}`,
+});
