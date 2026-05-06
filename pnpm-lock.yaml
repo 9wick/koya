@@ -169,6 +169,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@zeltjs/command':
+        specifier: workspace:*
+        version: link:../command
       c12:
         specifier: 3.0.4
         version: 3.0.4
@@ -184,6 +187,9 @@ importers:
       neverthrow:
         specifier: 8.2.0
         version: 8.2.0
+      tinyglobby:
+        specifier: 0.2.14
+        version: 0.2.14
       ts-pattern:
         specifier: 5.7.1
         version: 5.7.1
@@ -8107,6 +8113,10 @@ packages:
     resolution: {integrity: sha512-dAqSqE/RabpBKI8+h26GfLq6Vb3JVXs30XYQjdMjaj/c2tS8IYYMbIzP599KtRj7c57/wYApb3QjgRgXmrCukA==}
     engines: {node: '>=18'}
 
+  tinyglobby@0.2.14:
+    resolution: {integrity: sha512-tX5e7OM1HnYr2+a2C/4V0htOcSQcoSTH9KgJnVvNm5zm/cyEWKJ7j7YutsH9CxMdtOkkLFy2AHrMci9IM8IPZQ==}
+    engines: {node: '>=12.0.0'}
+
   tinyglobby@0.2.16:
     resolution: {integrity: sha512-pn99VhoACYR8nFHhxqix+uvsbXineAasWm5ojXoN8xEwK5Kd3/TrhNn1wByuD52UxWRLy8pu+kRMniEi6Eq9Zg==}
     engines: {node: '>=12.0.0'}
@@ -12278,7 +12288,7 @@ snapshots:
     dependencies:
       minimatch: 10.2.5
       path-browserify: 1.0.1
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.14
 
   '@tybys/wasm-util@0.10.1':
     dependencies:
@@ -17434,6 +17444,11 @@ snapshots:
   tinybench@2.9.0: {}
 
   tinyexec@1.1.2: {}
+
+  tinyglobby@0.2.14:
+    dependencies:
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
 
   tinyglobby@0.2.16:
     dependencies:
