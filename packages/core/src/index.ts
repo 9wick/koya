@@ -44,3 +44,6 @@ export type { ConfigClass } from './config';
 
 export { resolveWith } from './internal/container';
 export type { ResolverHandle } from './internal/container';
+
+export { LifecycleManager } from './lifecycle';
+export type { Disposable } from './lifecycle';
