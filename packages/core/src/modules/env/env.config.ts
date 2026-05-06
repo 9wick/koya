@@ -5,7 +5,7 @@ export class EnvConfig {
   static readonly Token = EnvConfig;
 
   get(_key: string): string | undefined {
-    throw new Error('EnvConfig.get() must be implemented by subclass');
+    return undefined;
   }
 }
 
