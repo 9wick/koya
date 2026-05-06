@@ -210,6 +210,14 @@ export default tseslint.config(
     },
   },
   {
+    // MemoryKV throws MinTtlError per spec contract (driver-level TTL validation,
+    // matching RedisKV for driver-swap consistency).
+    files: ['packages/kv/src/memory-kv.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-throw': 'off',
+    },
+  },
+  {
     // compliance test suite is a single describe-tree factory; exceeds 50-line limit by design.
     files: ['packages/kv/src/testing/compliance.ts'],
     rules: {

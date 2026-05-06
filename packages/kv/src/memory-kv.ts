@@ -1,5 +1,6 @@
 import { Injectable, type Disposable } from '@zeltjs/core';
 
+import { MinTtlError } from './errors';
 import { assertNonEmptyPrefix, joinPrefix } from './namespace';
 import { deserialize, serialize } from './serialize';
 import type { AtomicKVDriver, AtomicKVStore, SetOptions } from './types';
@@ -8,6 +9,12 @@ type Entry = {
   raw: string;
   /** epoch ms。undefined は永続 */
   expiresAt?: number;
+};
+
+const assertValidTtl = (ttlSec: number | undefined): void => {
+  if (ttlSec !== undefined && ttlSec <= 0) {
+    throw new MinTtlError('ttlSec must be > 0');
+  }
 };
 
 const makeEntry = (raw: string, ttlSec?: number): Entry =>
@@ -69,6 +76,7 @@ class MemoryKVStore implements AtomicKVStore {
   }
 
   async set<T>(key: string, value: T, opts?: SetOptions): Promise<void> {
+    assertValidTtl(opts?.ttlSec);
     this.data.set(this.k(key), makeEntry(serialize(value), opts?.ttlSec));
   }
 
@@ -81,6 +89,7 @@ class MemoryKVStore implements AtomicKVStore {
   }
 
   async expire(key: string, ttlSec: number): Promise<boolean> {
+    assertValidTtl(ttlSec);
     const entry = this.current(key);
     if (!entry) return false;
     entry.expiresAt = Date.now() + ttlSec * 1000;
@@ -93,6 +102,7 @@ class MemoryKVStore implements AtomicKVStore {
   }
 
   async incr(key: string, by = 1, opts?: { ttlSec?: number }): Promise<number> {
+    assertValidTtl(opts?.ttlSec);
     const k = this.k(key);
     const entry = this.current(key);
     if (!entry) {
@@ -105,6 +115,7 @@ class MemoryKVStore implements AtomicKVStore {
   }
 
   async setnx<T>(key: string, value: T, opts?: SetOptions): Promise<boolean> {
+    assertValidTtl(opts?.ttlSec);
     if (this.current(key)) return false;
     this.data.set(this.k(key), makeEntry(serialize(value), opts?.ttlSec));
     return true;

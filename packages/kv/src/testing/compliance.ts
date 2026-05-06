@@ -67,6 +67,19 @@ export const runKVStoreComplianceTests = (
     it('set with undefined value throws', async () => {
       await expect(store.set('foo', undefined)).rejects.toThrow();
     });
+
+    it('set with ttlSec=0 throws (driver-level TTL validation)', async () => {
+      await expect(store.set('foo', 1, { ttlSec: 0 })).rejects.toThrow();
+    });
+
+    it('set with negative ttlSec throws (driver-level TTL validation)', async () => {
+      await expect(store.set('foo', 1, { ttlSec: -1 })).rejects.toThrow();
+    });
+
+    it('expire with ttlSec=0 throws (driver-level TTL validation)', async () => {
+      await store.set('foo', 1);
+      await expect(store.expire('foo', 0)).rejects.toThrow();
+    });
   });
 
   describe('KVStore TTL compliance', () => {
