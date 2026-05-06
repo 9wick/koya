@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
 import consola from 'consola';
+import { errAsync, okAsync, ResultAsync } from 'neverthrow';
 
 import type { BuildConfig } from '../config/schema';
 
@@ -10,14 +11,9 @@ export type BuildOptions = {
   readonly config: BuildConfig;
 };
 
-export type BuildResult = {
-  readonly success: boolean;
-  readonly exitCode: number;
-};
+export type BuildError = { type: 'BUILD_FAILED'; exitCode: number };
 
-export const runTsdownBuild = (options: BuildOptions): Promise<BuildResult> => {
-  const { cwd, config } = options;
-
+const buildArgs = (config: BuildConfig): string[] => {
   const args: string[] = [];
 
   if (config.entry !== undefined) {
@@ -43,31 +39,38 @@ export const runTsdownBuild = (options: BuildOptions): Promise<BuildResult> => {
   args.push('--clean');
   args.push('--no-config');
 
+  return args;
+};
+
+export const runTsdownBuild = (options: BuildOptions): ResultAsync<void, BuildError> => {
+  const { cwd, config } = options;
+  const args = buildArgs(config);
+
   consola.info(`Running tsdown in ${cwd}`);
   consola.debug(`tsdown ${args.join(' ')}`);
 
-  return new Promise((resolvePromise) => {
-    const tsdownBin = resolve(cwd, 'node_modules/.bin/tsdown');
+  const tsdownBin = resolve(cwd, 'node_modules/.bin/tsdown');
 
-    const child = spawn(tsdownBin, args, {
-      cwd,
-      stdio: 'inherit',
-    });
-
-    child.on('close', (code) => {
-      const exitCode = code ?? 0;
-      resolvePromise({
-        success: exitCode === 0,
-        exitCode,
+  return ResultAsync.fromPromise(
+    new Promise<number>((resolvePromise, rejectPromise) => {
+      const child = spawn(tsdownBin, args, {
+        cwd,
+        stdio: 'inherit',
       });
-    });
 
-    child.on('error', (err) => {
-      consola.error('Failed to start tsdown:', err.message);
-      resolvePromise({
-        success: false,
-        exitCode: 1,
+      child.on('close', (code) => {
+        resolvePromise(code ?? 0);
       });
-    });
+
+      child.on('error', (err) => {
+        rejectPromise(err);
+      });
+    }),
+    () => ({ type: 'BUILD_FAILED' as const, exitCode: 1 }),
+  ).andThen((exitCode) => {
+    if (exitCode !== 0) {
+      return errAsync({ type: 'BUILD_FAILED' as const, exitCode });
+    }
+    return okAsync(undefined);
   });
 };

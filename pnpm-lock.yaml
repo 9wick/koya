@@ -112,9 +112,15 @@ importers:
       consola:
         specifier: 3.4.2
         version: 3.4.2
+      neverthrow:
+        specifier: 8.2.0
+        version: 8.2.0
       pathe:
         specifier: 2.0.3
         version: 2.0.3
+      ts-pattern:
+        specifier: 5.7.1
+        version: 5.7.1
       tsdown:
         specifier: 0.21.10
         version: 0.21.10(oxc-resolver@11.19.1(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0))(typescript@6.0.2)
@@ -7134,6 +7140,9 @@ packages:
 
   ts-morph@28.0.0:
     resolution: {integrity: sha512-Wp3tnZ2bzwxyTZMtgWVzXDfm7lB1Drz+y9DmmYH/L702PQhPyVrp3pkou3yIz4qjS14GY9kcpmLiOOMvl8oG1g==}
+
+  ts-pattern@5.7.1:
+    resolution: {integrity: sha512-EGs8PguQqAAUIcQfK4E9xdXxB6s2GK4sJfT/vcc9V1ELIvC4LH/zXu2t/5fajtv6oiRCxdv7BgtVK3vWgROxag==}
 
   tsconfig-paths@4.2.0:
     resolution: {integrity: sha512-NoZ4roiN7LnbKn9QqE1amc9DJfzvZXxF4xDavcOWt1BPkdx+m+0gJuPM+S0vCe7zTJMYUP0R8pO2XMr+Y8oLIg==}
@@ -15754,6 +15763,8 @@ snapshots:
     dependencies:
       '@ts-morph/common': 0.29.0
       code-block-writer: 13.0.3
+
+  ts-pattern@5.7.1: {}
 
   tsconfig-paths@4.2.0:
     dependencies:

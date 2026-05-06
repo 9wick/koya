@@ -1,4 +1,5 @@
 import { loadConfig } from 'c12';
+import { ResultAsync } from 'neverthrow';
 
 import type { ZeltConfig } from './schema';
 
@@ -6,6 +7,8 @@ export type LoadConfigOptions = {
   readonly cwd?: string;
   readonly configFile?: string;
 };
+
+export type ConfigLoadError = { type: 'CONFIG_LOAD_FAILED' };
 
 const DEFAULT_BUILD_CONFIG = {
   outDir: './dist',
@@ -19,7 +22,9 @@ const DEFAULT_DEV_CONFIG = {
   debounceMs: 300,
 } as const;
 
-export const loadZeltConfig = async (options: LoadConfigOptions = {}): Promise<ZeltConfig> => {
+export const loadZeltConfig = (
+  options: LoadConfigOptions = {},
+): ResultAsync<ZeltConfig, ConfigLoadError> => {
   const c12Options: Parameters<typeof loadConfig<ZeltConfig>>[0] = {
     name: 'zelt',
     defaults: {
@@ -35,7 +40,7 @@ export const loadZeltConfig = async (options: LoadConfigOptions = {}): Promise<Z
     c12Options.configFile = options.configFile;
   }
 
-  const result = await loadConfig<ZeltConfig>(c12Options);
-
-  return result.config;
+  return ResultAsync.fromPromise(loadConfig<ZeltConfig>(c12Options), () => ({
+    type: 'CONFIG_LOAD_FAILED' as const,
+  })).map((result) => result.config);
 };

@@ -151,11 +151,9 @@ export default tseslint.config(
     },
   },
   {
-    // CLI package: build-time tool that requires direct process access
+    // CLI package does not use DI
     files: ['packages/cli/src/**/*.{ts,tsx}'],
     rules: {
-      '@9wick/strict-type-rules/no-process-access': 'off',
-      '@9wick/strict-type-rules/no-throw': 'off',
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
     },
   },

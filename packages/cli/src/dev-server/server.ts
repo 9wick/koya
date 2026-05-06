@@ -88,8 +88,6 @@ const createShutdownHandler = (state: DevServerState) => {
     if (state.childProcess !== undefined) {
       await killProcess(state.childProcess);
     }
-
-    process.exit(0);
   };
 };
 
@@ -109,6 +107,22 @@ const createRestartHandler = (state: DevServerState, cwd: string, entry: string)
   };
 };
 
+type SignalHandler = () => void;
+
+const registerSignalHandlers = (onSignal: () => Promise<void>): SignalHandler => {
+  const handler = (): void => {
+    void onSignal();
+  };
+
+  globalThis.process.on('SIGINT', handler);
+  globalThis.process.on('SIGTERM', handler);
+
+  return () => {
+    globalThis.process.off('SIGINT', handler);
+    globalThis.process.off('SIGTERM', handler);
+  };
+};
+
 export const startDevServer = async (options: DevServerOptions): Promise<void> => {
   const { cwd, config } = options;
 
@@ -125,13 +139,7 @@ export const startDevServer = async (options: DevServerOptions): Promise<void> =
   const shutdown = createShutdownHandler(state);
   const restart = createRestartHandler(state, cwd, config.entry);
 
-  process.on('SIGINT', () => {
-    void shutdown();
-  });
-
-  process.on('SIGTERM', () => {
-    void shutdown();
-  });
+  registerSignalHandlers(shutdown);
 
   state.watcher = createWatcher({
     cwd,
@@ -149,4 +157,8 @@ export const startDevServer = async (options: DevServerOptions): Promise<void> =
   consola.info(`  Entry: ${config.entry}`);
   consola.info(`  Watch: ${watchPatterns.join(', ')}`);
   consola.info(`  Ignore: ${ignorePatterns.join(', ')}`);
+
+  return new Promise(() => {
+    // Keep the process running until signal received
+  });
 };
