@@ -23,8 +23,9 @@ describe('runCommand', () => {
 
     const GreetCommand = Command({ name: 'greet' })(GreetCommandBase);
 
-    await runCommand(GreetCommand, ['Alice', '--verbose']);
+    const result = await runCommand(GreetCommand, ['Alice', '--verbose']);
 
+    expect(result.isOk()).toBe(true);
     expect(received.name).toBe('Alice');
     expect(received.verbose).toBe(true);
   });
@@ -44,8 +45,26 @@ describe('runCommand', () => {
 
     const DeployCommand = Command({ name: 'deploy' })(DeployCommandBase);
 
-    await runCommand(DeployCommand, []);
+    const result = await runCommand(DeployCommand, []);
 
+    expect(result.isOk()).toBe(true);
     expect(received.env).toBe('production');
+  });
+
+  it('returns error when command throws', async () => {
+    class FailingCommandBase {
+      run() {
+        throw new Error('Command failed');
+      }
+    }
+
+    const FailingCommand = Command({ name: 'fail' })(FailingCommandBase);
+
+    const result = await runCommand(FailingCommand, []);
+
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      expect(result.error.type).toBe('COMMAND_EXECUTION_FAILED');
+    }
   });
 });

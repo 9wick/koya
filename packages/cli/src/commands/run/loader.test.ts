@@ -32,14 +32,20 @@ describe('loadCommands', () => {
 
     const result = await loadCommands(testDir, '*.mjs');
 
-    expect(result.size).toBe(1);
-    expect(result.has('greet')).toBe(true);
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.size).toBe(1);
+      expect(result.value.has('greet')).toBe(true);
+    }
   });
 
   it('returns empty map when no commands found', async () => {
     const result = await loadCommands(testDir, '*.mjs');
 
-    expect(result.size).toBe(0);
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.size).toBe(0);
+    }
   });
 
   it('handles multiple commands in one file', async () => {
@@ -59,8 +65,11 @@ describe('loadCommands', () => {
 
     const result = await loadCommands(testDir, '*.mjs');
 
-    expect(result.size).toBe(2);
-    expect(result.has('foo')).toBe(true);
-    expect(result.has('bar')).toBe(true);
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.size).toBe(2);
+      expect(result.value.has('foo')).toBe(true);
+      expect(result.value.has('bar')).toBe(true);
+    }
   });
 });

@@ -209,7 +209,6 @@ export default tseslint.config(
     ],
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
-      '@9wick/strict-type-rules/no-try-catch': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
     },
   },

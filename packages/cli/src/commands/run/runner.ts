@@ -2,6 +2,9 @@ import type { CommandClass, CommandContext } from '@zeltjs/command';
 import { Container } from '@needle-di/core';
 import type { ArgsDef, BooleanArgDef, StringArgDef } from 'citty';
 import { parseArgs } from 'citty';
+import { fromPromise, fromThrowable, ok, type Result, type ResultAsync } from 'neverthrow';
+
+export type RunCommandError = { type: 'COMMAND_EXECUTION_FAILED'; cause: unknown };
 
 type InstanceShape = {
   args?: Record<string, { type: string; default?: string }>;
@@ -69,7 +72,10 @@ const buildOptions = (instance: InstanceShape, parsed: ParsedArgs): Record<strin
   return options;
 };
 
-export const runCommand = async (commandClass: CommandClass, argv: string[]): Promise<void> => {
+const parseAndResolve = (
+  commandClass: CommandClass,
+  argv: string[],
+): Result<{ instance: InstanceShape; ctx: CommandContext }, never> => {
   const cittyArgs = buildCittyArgs(commandClass);
   const parsed = parseArgs(argv, cittyArgs) as ParsedArgs;
 
@@ -81,5 +87,30 @@ export const runCommand = async (commandClass: CommandClass, argv: string[]): Pr
     options: buildOptions(instance, parsed),
   } as CommandContext;
 
-  await instance.run(ctx);
+  return ok({ instance, ctx });
 };
+
+const executeRun = (
+  instance: InstanceShape,
+  ctx: CommandContext,
+): ResultAsync<void, RunCommandError> => {
+  const safeRun = fromThrowable(
+    () => instance.run(ctx),
+    (cause) => ({ type: 'COMMAND_EXECUTION_FAILED' as const, cause }),
+  );
+
+  return safeRun().asyncAndThen((maybePromise) =>
+    fromPromise(Promise.resolve(maybePromise), (cause) => ({
+      type: 'COMMAND_EXECUTION_FAILED' as const,
+      cause,
+    })),
+  );
+};
+
+export const runCommand = (
+  commandClass: CommandClass,
+  argv: string[],
+): ResultAsync<void, RunCommandError> =>
+  parseAndResolve(commandClass, argv).asyncAndThen(({ instance, ctx }) =>
+    executeRun(instance, ctx),
+  );
