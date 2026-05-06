@@ -61,4 +61,4 @@ export type { ResolverHandle } from './internal/container';
 export { LifecycleManager } from './lifecycle';
 export type { Disposable } from './lifecycle';
 
-export { EnvConfig, DotEnvConfig, EnvService } from './modules/env';
+export { EnvConfig, ProcessEnvConfig, DotEnvConfig, EnvService } from './modules/env';
