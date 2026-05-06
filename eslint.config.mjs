@@ -167,6 +167,16 @@ export default tseslint.config(
     },
   },
   {
+    // Core test files that use inline classes for testing decorators
+    files: [
+      'packages/core/src/decorators/error-handler.test.ts',
+      'packages/core/src/http/error-schema.test.ts',
+    ],
+    rules: {
+      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
+    },
+  },
+  {
     // CLI package does not use DI
     files: ['packages/cli/src/**/*.{ts,tsx}'],
     rules: {
