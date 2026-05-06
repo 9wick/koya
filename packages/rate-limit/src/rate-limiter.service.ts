@@ -21,17 +21,17 @@ const openResult = (limit: number): RateLimitResult => ({
 export class RateLimiter {
   constructor(private config = injectConfig(RateLimitConfig)) {}
 
-  async hit(
-    key: string,
-    opts?: { limit?: number; windowSec?: number },
-  ): Promise<RateLimitResult> {
+  async hit(key: string, opts?: { limit?: number; windowSec?: number }): Promise<RateLimitResult> {
     const limit = opts?.limit ?? this.config.defaultLimit;
     const windowSec = opts?.windowSec ?? this.config.defaultWindowSec;
 
-    const count = await this.config.store.incr(key, 1, { ttlSec: windowSec }).catch((err: unknown) => {
-      if (this.config.failureMode === 'closed') throw err;
-      return null;
-    });
+    const count = await this.config.store
+      .incr(key, 1, { ttlSec: windowSec })
+      .catch((err: unknown) => {
+        if (this.config.failureMode === 'closed') throw err;
+        console.warn('rate-limit: KV failure', { err, key });
+        return null;
+      });
 
     if (count === null) return openResult(limit);
     return buildResult(count, limit, windowSec);

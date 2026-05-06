@@ -21,7 +21,7 @@ export class MemoryKV implements AtomicKVDriver, Disposable {
   constructor() {
     this.gcInterval = setInterval(() => this.gc(), 60_000);
     // prevent the interval from keeping the Node.js process alive
-    this.gcInterval.unref?.();
+    this.gcInterval.unref();
   }
 
   private gc(): void {

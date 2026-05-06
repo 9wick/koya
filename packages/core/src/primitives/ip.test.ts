@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { runInEntryContext } from '../internal/entry-context';
+
 import { ip } from './ip';
 
 const makeContext = (headers: Record<string, string>) => ({
