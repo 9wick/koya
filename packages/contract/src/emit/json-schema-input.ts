@@ -32,7 +32,11 @@ function narrowToValibotSchema(value: unknown): unknown {
   return value;
 }
 
-const dynamicImport = async (url: string): Promise<unknown> => import(url);
+const dynamicImport = (url: string, modulePath: string): ResultAsync<unknown, EmitError> =>
+  ResultAsync.fromSafePromise(import(url)).mapErr(() => ({
+    type: 'MODULE_NOT_OBJECT' as const,
+    modulePath,
+  }));
 
 const importNamedExport = (
   modulePath: string,
@@ -40,10 +44,7 @@ const importNamedExport = (
 ): ResultAsync<unknown, EmitError> => {
   const url = pathToFileURL(resolve(modulePath)).href;
 
-  return ResultAsync.fromPromise(dynamicImport(url), () => ({
-    type: 'MODULE_NOT_OBJECT' as const,
-    modulePath,
-  })).andThen((mod) => {
+  return dynamicImport(url, modulePath).andThen((mod) => {
     if (typeof mod !== 'object' || mod === null) {
       return errAsync({ type: 'MODULE_NOT_OBJECT' as const, modulePath });
     }

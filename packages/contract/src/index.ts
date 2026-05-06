@@ -14,3 +14,10 @@ export type { GenerateClientOptions } from './config/options';
 export { generateClient } from './generate-client';
 export type { GenerateClientResult } from './generate-client';
 export { watchClient } from './watch';
+
+export type {
+  AnalyzerError,
+  EmitError,
+  ConfigError,
+  ContractError,
+} from './errors';

@@ -1,5 +1,5 @@
 // packages/contract/src/analyzer/internal-representation.ts
-import type { Project } from 'ts-morph';
+import type { Project, ClassDeclaration, MethodDeclaration } from 'ts-morph';
 import { ok, err, type Result } from 'neverthrow';
 
 import type { AnalyzerError } from '../errors';
@@ -47,6 +47,43 @@ export type ControllerSpec = {
   readonly exportName: string;
 };
 
+const buildMethodRoute = (
+  m: MethodDeclaration,
+  basePath: string,
+): Result<RouteIR, AnalyzerError> | undefined => {
+  const routeResult = extractRouteDecorator(m);
+  if (routeResult === undefined) return undefined;
+  if (routeResult.isErr()) return err(routeResult.error);
+  const route = routeResult.value;
+
+  const sigResult = analyzeHandlerSignature(m);
+  if (sigResult.isErr()) return err(sigResult.error);
+  const sig = sigResult.value;
+
+  const resp = analyzeResponseType(m);
+  return ok({
+    ...route,
+    ...sig,
+    fullPath: joinPath(basePath, route.path),
+    methodName: m.getName(),
+    responseType: resp,
+  });
+};
+
+const extractControllerRoutes = (
+  cls: ClassDeclaration,
+  basePath: string,
+): Result<readonly RouteIR[], AnalyzerError> => {
+  const routes: RouteIR[] = [];
+  for (const m of cls.getMethods()) {
+    const result = buildMethodRoute(m, basePath);
+    if (result === undefined) continue;
+    if (result.isErr()) return err(result.error);
+    routes.push(result.value);
+  }
+  return ok(routes);
+};
+
 const buildControllerIR = (
   project: Project,
   spec: ControllerSpec,
@@ -70,32 +107,14 @@ const buildControllerIR = (
   }
   const ctrl = ctrlResult.value;
 
-  const routes: RouteIR[] = [];
-  for (const m of cls.getMethods()) {
-    const routeResult = extractRouteDecorator(m);
-    if (routeResult === undefined) continue;
-    if (routeResult.isErr()) return err(routeResult.error);
-    const route = routeResult.value;
-
-    const sigResult = analyzeHandlerSignature(m);
-    if (sigResult.isErr()) return err(sigResult.error);
-    const sig = sigResult.value;
-
-    const resp = analyzeResponseType(m);
-    routes.push({
-      ...route,
-      ...sig,
-      fullPath: joinPath(ctrl.basePath, route.path),
-      methodName: m.getName(),
-      responseType: resp,
-    });
-  }
+  const routesResult = extractControllerRoutes(cls, ctrl.basePath);
+  if (routesResult.isErr()) return err(routesResult.error);
 
   return ok({
     module: spec.filePath,
     exportName: spec.exportName,
     basePath: ctrl.basePath,
-    routes,
+    routes: routesResult.value,
   });
 };
 

@@ -11,32 +11,40 @@ const formatError = (error: ContractError): string =>
   match(error)
     .with({ type: 'SOURCE_FILE_NOT_FOUND' }, (e) => `source file not found: ${e.path}`)
     .with({ type: 'CLASS_NOT_FOUND' }, (e) => `class ${e.className} not found in ${e.path}`)
-    .with({ type: 'CONTROLLER_DECORATOR_MISSING' }, (e) =>
-      `${e.className} is missing @Controller decorator`,
+    .with(
+      { type: 'CONTROLLER_DECORATOR_MISSING' },
+      (e) => `${e.className} is missing @Controller decorator`,
     )
-    .with({ type: 'DECORATOR_REQUIRES_STRING_LITERAL' }, (e) =>
-      `@${e.decoratorName} requires a string literal argument`,
+    .with(
+      { type: 'DECORATOR_REQUIRES_STRING_LITERAL' },
+      (e) => `@${e.decoratorName} requires a string literal argument`,
     )
-    .with({ type: 'MODULE_RESOLVE_FAILED' }, (e) =>
-      `cannot resolve module for validated(${e.exportName})`,
+    .with(
+      { type: 'MODULE_RESOLVE_FAILED' },
+      (e) => `cannot resolve module for validated(${e.exportName})`,
     )
-    .with({ type: 'PATH_PARAM_REQUIRES_LITERAL' }, () =>
-      `pathParam() requires a string literal argument`,
+    .with(
+      { type: 'PATH_PARAM_REQUIRES_LITERAL' },
+      () => `pathParam() requires a string literal argument`,
     )
     .with({ type: 'MODULE_NOT_OBJECT' }, (e) => `${e.modulePath} did not export an object module`)
     .with({ type: 'EXPORT_NOT_FOUND' }, (e) => `${e.exportName} not found in ${e.modulePath}`)
-    .with({ type: 'INLINE_SCHEMA_NOT_SUPPORTED' }, () =>
-      `inline schema not supported. Extract to module-level export.`,
+    .with(
+      { type: 'INLINE_SCHEMA_NOT_SUPPORTED' },
+      () => `inline schema not supported. Extract to module-level export.`,
     )
-    .with({ type: 'NOT_VALIBOT_SCHEMA' }, (e) =>
-      `${e.exportName} in ${e.modulePath} is not a valibot schema`,
+    .with(
+      { type: 'NOT_VALIBOT_SCHEMA' },
+      (e) => `${e.exportName} in ${e.modulePath} is not a valibot schema`,
     )
-    .with({ type: 'UNRESOLVABLE_RESPONSE_TYPE' }, () =>
-      `handler return type is unknown/any. Add explicit return type.`,
+    .with(
+      { type: 'UNRESOLVABLE_RESPONSE_TYPE' },
+      () => `handler return type is unknown/any. Add explicit return type.`,
     )
     .with({ type: 'CONFIG_NOT_FOUND' }, () => `config file not found`)
-    .with({ type: 'INVALID_CONFIG_EXPORT' }, (e) =>
-      `${e.path} must export a default GenerateClientOptions`,
+    .with(
+      { type: 'INVALID_CONFIG_EXPORT' },
+      (e) => `${e.path} must export a default GenerateClientOptions`,
     )
     .exhaustive();
 

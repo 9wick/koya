@@ -24,10 +24,16 @@ describe('emitOpenApi', () => {
       tsConfigFilePath: tsconfigPath,
       controllerFiles: [fixturePath],
     });
-    const ir = analyzeControllers(project, [
+    const irResult = analyzeControllers(project, [
       { filePath: fixturePath, exportName: 'UserController' },
     ]);
-    const doc = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(irResult.isOk()).toBe(true);
+    if (!irResult.isOk()) return;
+    const ir = irResult.value;
+    const docResult = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(docResult.isOk()).toBe(true);
+    if (!docResult.isOk()) return;
+    const doc = docResult.value;
 
     expect(doc.openapi).toBe('3.1.0');
     expect(doc.paths['/users/{id}']?.[getKey]).toBeDefined();
@@ -39,10 +45,16 @@ describe('emitOpenApi', () => {
       tsConfigFilePath: tsconfigPath,
       controllerFiles: [fixturePath],
     });
-    const ir = analyzeControllers(project, [
+    const irResult = analyzeControllers(project, [
       { filePath: fixturePath, exportName: 'UserController' },
     ]);
-    const doc = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(irResult.isOk()).toBe(true);
+    if (!irResult.isOk()) return;
+    const ir = irResult.value;
+    const docResult = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(docResult.isOk()).toBe(true);
+    if (!docResult.isOk()) return;
+    const doc = docResult.value;
 
     const schemaKey = 'ValidationErrorBody';
     expect(doc.components.schemas[schemaKey]).toBeDefined();
@@ -53,10 +65,16 @@ describe('emitOpenApi', () => {
       tsConfigFilePath: tsconfigPath,
       controllerFiles: [fixturePath],
     });
-    const ir = analyzeControllers(project, [
+    const irResult = analyzeControllers(project, [
       { filePath: fixturePath, exportName: 'UserController' },
     ]);
-    const doc = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(irResult.isOk()).toBe(true);
+    if (!irResult.isOk()) return;
+    const ir = irResult.value;
+    const docResult = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(docResult.isOk()).toBe(true);
+    if (!docResult.isOk()) return;
+    const doc = docResult.value;
 
     const postOp = doc.paths['/users']?.[postKey];
     expect(postOp).toBeDefined();
@@ -72,10 +90,16 @@ describe('emitOpenApi', () => {
       tsConfigFilePath: tsconfigPath,
       controllerFiles: [fixturePath],
     });
-    const ir = analyzeControllers(project, [
+    const irResult = analyzeControllers(project, [
       { filePath: fixturePath, exportName: 'UserController' },
     ]);
-    const doc = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(irResult.isOk()).toBe(true);
+    if (!irResult.isOk()) return;
+    const ir = irResult.value;
+    const docResult = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(docResult.isOk()).toBe(true);
+    if (!docResult.isOk()) return;
+    const doc = docResult.value;
 
     const schemaKey = 'CreateUserBody';
     expect(doc.components.schemas[schemaKey]).toBeDefined();
@@ -86,10 +110,16 @@ describe('emitOpenApi', () => {
       tsConfigFilePath: tsconfigPath,
       controllerFiles: [fixturePath],
     });
-    const ir = analyzeControllers(project, [
+    const irResult = analyzeControllers(project, [
       { filePath: fixturePath, exportName: 'UserController' },
     ]);
-    const doc = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(irResult.isOk()).toBe(true);
+    if (!irResult.isOk()) return;
+    const ir = irResult.value;
+    const docResult = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(docResult.isOk()).toBe(true);
+    if (!docResult.isOk()) return;
+    const doc = docResult.value;
 
     const schemaKey = 'User';
     expect(doc.components.schemas[schemaKey]).toBeDefined();
@@ -100,10 +130,16 @@ describe('emitOpenApi', () => {
       tsConfigFilePath: tsconfigPath,
       controllerFiles: [fixturePath],
     });
-    const ir = analyzeControllers(project, [
+    const irResult = analyzeControllers(project, [
       { filePath: fixturePath, exportName: 'UserController' },
     ]);
-    const doc = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(irResult.isOk()).toBe(true);
+    if (!irResult.isOk()) return;
+    const ir = irResult.value;
+    const docResult = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(docResult.isOk()).toBe(true);
+    if (!docResult.isOk()) return;
+    const doc = docResult.value;
 
     const getOp = doc.paths['/users/{id}']?.[getKey];
     expect(getOp?.[parametersKey]).toEqual([
@@ -116,10 +152,16 @@ describe('emitOpenApi', () => {
       tsConfigFilePath: tsconfigPath,
       controllerFiles: [uploadFixturePath],
     });
-    const ir = analyzeControllers(project, [
+    const irResult = analyzeControllers(project, [
       { filePath: uploadFixturePath, exportName: 'UploadController' },
     ]);
-    const doc = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(irResult.isOk()).toBe(true);
+    if (!irResult.isOk()) return;
+    const ir = irResult.value;
+    const docResult = await emitOpenApi(ir, { distDir: '/tmp/generated', tsconfigPath });
+    expect(docResult.isOk()).toBe(true);
+    if (!docResult.isOk()) return;
+    const doc = docResult.value;
 
     const postOp = doc.paths['/upload']?.[postKey];
     expect(postOp).toBeDefined();

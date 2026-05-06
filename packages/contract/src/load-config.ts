@@ -34,16 +34,17 @@ function narrowConfig(value: unknown): unknown {
   return value;
 }
 
-const dynamicImport = async (url: string): Promise<unknown> => import(url);
+const dynamicImport = (url: string, path: string): ResultAsync<unknown, ConfigError> =>
+  ResultAsync.fromSafePromise(import(url)).mapErr(() => ({
+    type: 'INVALID_CONFIG_EXPORT' as const,
+    path,
+  }));
 
 export const loadConfig = (path: string): ResultAsync<GenerateClientOptions, ConfigError> => {
   const abs = isAbsolute(path) ? path : resolve(process.cwd(), path);
   const url = pathToFileURL(abs).href;
 
-  return ResultAsync.fromPromise(dynamicImport(url), () => ({
-    type: 'INVALID_CONFIG_EXPORT' as const,
-    path,
-  })).andThen((mod) => {
+  return dynamicImport(url, path).andThen((mod) => {
     if (typeof mod !== 'object' || mod === null) {
       return errAsync({ type: 'INVALID_CONFIG_EXPORT' as const, path });
     }
