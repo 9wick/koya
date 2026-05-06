@@ -27,6 +27,26 @@ const extractCommands = (module: Record<string, unknown>): Map<string, CommandCl
   return commandMap;
 };
 
+const importAndExtract = (
+  file: string,
+  commandMap: Map<string, CommandClass>,
+): ResultAsync<void, LoadCommandsError> =>
+  importModule(file).map((module) => {
+    for (const [name, cls] of extractCommands(module)) {
+      commandMap.set(name, cls);
+    }
+    return undefined;
+  });
+
+const importAllFiles = (
+  files: string[],
+  commandMap: Map<string, CommandClass>,
+): ResultAsync<void, LoadCommandsError> =>
+  files.reduce<ResultAsync<void, LoadCommandsError>>(
+    (acc, file) => acc.andThen(() => importAndExtract(file, commandMap)),
+    okAsync(undefined),
+  );
+
 export const loadCommands = (
   cwd: string,
   pattern: string,
@@ -36,19 +56,5 @@ export const loadCommands = (
     (cause) => ({ type: 'GLOB_FAILED', cause }) as const,
   ).andThen((files) => {
     const commandMap = new Map<string, CommandClass>();
-
-    const importAll = files.reduce<ResultAsync<void, LoadCommandsError>>(
-      (acc, file) =>
-        acc.andThen(() =>
-          importModule(file).map((module) => {
-            for (const [name, cls] of extractCommands(module)) {
-              commandMap.set(name, cls);
-            }
-            return undefined;
-          }),
-        ),
-      okAsync(undefined),
-    );
-
-    return importAll.map(() => commandMap);
+    return importAllFiles(files, commandMap).map(() => commandMap);
   });
