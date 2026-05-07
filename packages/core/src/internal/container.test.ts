@@ -137,4 +137,15 @@ describe('createTestTargetBase', () => {
 
     expect(events).toEqual(['shutdown']); // Only called once
   });
+
+  it('throws error when get is called after shutdown', async () => {
+    @Injectable()
+    class SomeService {}
+
+    const { get, shutdown } = await createTestTargetBase(SomeService);
+
+    await shutdown();
+
+    expect(() => get(SomeService)).toThrow('Cannot resolve SomeService: TestTarget has been shut down');
+  });
 });

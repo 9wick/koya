@@ -87,9 +87,13 @@ export const createTestTargetBase = async <T extends object>(
     await lifecycle.shutdown();
   };
 
-  return {
-    target,
-    get: <U extends object>(cls: Class<U>): U => container.get<U>(cls),
-    shutdown,
+  const get = <U extends object>(cls: Class<U>): U => {
+    if (disposed) {
+      const name = cls.name || 'unknown';
+      throw new Error(`Cannot resolve ${name}: TestTarget has been shut down`);
+    }
+    return container.get<U>(cls);
   };
+
+  return { target, get, shutdown };
 };

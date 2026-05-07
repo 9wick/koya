@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 
 import { createContainer } from '../internal/container';
+import { LifecycleManager } from '../lifecycle';
 import { buildRoutes } from '../internal/route-builder';
 import type {
   ErrorHandlerClass,
@@ -21,7 +22,7 @@ export type CreateHttpAppOptions = {
   readonly schedulers?: readonly SchedulerClass[];
   readonly middlewares?: readonly MiddlewareInput[];
   readonly errorHandlers?: readonly ErrorHandlerClass[];
-  readonly configs?: readonly (new (...args: never[]) => unknown)[];
+  readonly configs?: readonly (new (...args: never[]) => object)[];
 };
 
 export type HttpApp = {
@@ -29,6 +30,8 @@ export type HttpApp = {
   readonly request: (input: string | Request, init?: RequestInit) => Promise<Response>;
   readonly startScheduler: () => void;
   readonly stopScheduler: () => Promise<void>;
+  readonly startup: () => Promise<void>;
+  readonly shutdown: () => Promise<void>;
 };
 
 const createErrorHandler =
@@ -53,6 +56,12 @@ const resolveErrorHandlers = (
 
 export const createHttpApp = (options: CreateHttpAppOptions): HttpApp => {
   const resolver = createContainer({ configs: options.configs });
+  const lifecycle = resolver.get(LifecycleManager);
+
+  // Instantiate configs so they can register with LifecycleManager
+  for (const configClass of options.configs ?? []) {
+    resolver.get(configClass);
+  }
   // strict:false で `/echo` と `/echo/` を同一視する。joinPath が末尾スラッシュを正規化するため、
   // 利用者が `@Post('/')` と書いた場合でも `/echo/` リクエストにマッチさせる必要がある。
   const hono = new Hono({ strict: false });
@@ -84,5 +93,14 @@ export const createHttpApp = (options: CreateHttpAppOptions): HttpApp => {
     await schedulerRunner?.stop();
   };
 
-  return { fetch, request, startScheduler, stopScheduler };
+  const startup = async (): Promise<void> => {
+    await lifecycle.startup();
+  };
+
+  const shutdown = async (): Promise<void> => {
+    await stopScheduler();
+    await lifecycle.shutdown();
+  };
+
+  return { fetch, request, startScheduler, stopScheduler, startup, shutdown };
 };
