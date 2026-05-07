@@ -4,7 +4,7 @@ import { Injectable, inject } from '@zeltjs/core';
 import { createTestTarget } from './test-target';
 
 describe('createTestTarget', () => {
-  it('resolves a simple injectable class', () => {
+  it('resolves a simple injectable class', async () => {
     @Injectable()
     class SimpleService {
       getValue() {
@@ -12,12 +12,12 @@ describe('createTestTarget', () => {
       }
     }
 
-    const { target } = createTestTarget(SimpleService);
+    const { target } = await createTestTarget(SimpleService);
 
     expect(target.getValue()).toBe('hello');
   });
 
-  it('resolves with dependency injection', () => {
+  it('resolves with dependency injection', async () => {
     @Injectable()
     class Repository {
       getData() {
@@ -34,12 +34,12 @@ describe('createTestTarget', () => {
       }
     }
 
-    const { target } = createTestTarget(Service);
+    const { target } = await createTestTarget(Service);
 
     expect(target.process()).toBe('processed: real-data');
   });
 
-  it('allows overriding dependencies with mock values', () => {
+  it('allows overriding dependencies with mock values', async () => {
     @Injectable()
     class Repository {
       getData() {
@@ -60,14 +60,14 @@ describe('createTestTarget', () => {
       getData: () => 'mock-data',
     };
 
-    const { target } = createTestTarget(Service, {
+    const { target } = await createTestTarget(Service, {
       overrides: [{ provide: Repository, useValue: mockRepo as Repository }],
     });
 
     expect(target.process()).toBe('processed: mock-data');
   });
 
-  it('exposes container.get for resolving additional dependencies', () => {
+  it('exposes container.get for resolving additional dependencies', async () => {
     @Injectable()
     class ServiceA {
       name = 'A';
@@ -78,7 +78,7 @@ describe('createTestTarget', () => {
       name = 'B';
     }
 
-    const { target, get } = createTestTarget(ServiceA);
+    const { target, get } = await createTestTarget(ServiceA);
 
     expect(target.name).toBe('A');
 
@@ -86,7 +86,7 @@ describe('createTestTarget', () => {
     expect(serviceB.name).toBe('B');
   });
 
-  it('works with class-based token injection', () => {
+  it('works with class-based token injection', async () => {
     @Injectable()
     class ConfigService {
       apiUrl = 'https://default.api';
@@ -103,7 +103,7 @@ describe('createTestTarget', () => {
 
     const mockConfig = { apiUrl: 'https://test.api' };
 
-    const { target } = createTestTarget(ApiClient, {
+    const { target } = await createTestTarget(ApiClient, {
       overrides: [{ provide: ConfigService, useValue: mockConfig as ConfigService }],
     });
 
