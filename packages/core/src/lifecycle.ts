@@ -4,15 +4,27 @@ export interface Disposable {
   shutdown(): Promise<void>;
 }
 
+export interface Lifecycle extends Disposable {
+  startup(): Promise<void>;
+}
+
 @injectable()
 export class LifecycleManager {
-  private disposables: Disposable[] = [];
+  private readonly lifecycles: Lifecycle[] = [];
 
-  register(disposable: Disposable): void {
-    this.disposables.push(disposable);
+  register(lifecycle: Lifecycle): void {
+    this.lifecycles.push(lifecycle);
+  }
+
+  async startup(): Promise<void> {
+    for (const lc of this.lifecycles) {
+      await lc.startup();
+    }
   }
 
   async shutdown(): Promise<void> {
-    await Promise.all(this.disposables.map((d) => d.shutdown()));
+    for (const lc of [...this.lifecycles].reverse()) {
+      await lc.shutdown();
+    }
   }
 }

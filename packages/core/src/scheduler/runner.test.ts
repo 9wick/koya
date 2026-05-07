@@ -10,7 +10,7 @@ describe('SchedulerRunner', () => {
   let runner: SchedulerRunner | undefined;
 
   afterEach(async () => {
-    await runner?.stop();
+    await runner?.shutdown();
   });
 
   it('starts and stops scheduler jobs', async () => {
@@ -27,10 +27,10 @@ describe('SchedulerRunner', () => {
     const resolver = createContainer();
     runner = createSchedulerRunner([TestScheduler], resolver);
 
-    runner.start();
+    await runner.startup();
     expect(runner.isRunning()).toBe(true);
 
-    await runner.stop();
+    await runner.shutdown();
     expect(runner.isRunning()).toBe(false);
   });
 
@@ -48,11 +48,11 @@ describe('SchedulerRunner', () => {
     const resolver = createContainer();
     runner = createSchedulerRunner([TestScheduler], resolver);
 
-    runner.start();
+    await runner.startup();
 
     await vi.waitFor(() => expect(taskFn).toHaveBeenCalled(), { timeout: 2000 });
 
-    await runner.stop();
+    await runner.shutdown();
   });
 
   it('respects timezone setting', async () => {
@@ -65,11 +65,11 @@ describe('SchedulerRunner', () => {
     const resolver = createContainer();
     runner = createSchedulerRunner([TestScheduler], resolver);
 
-    runner.start();
+    await runner.startup();
     const jobs = runner.getJobs();
     expect(jobs).toHaveLength(1);
     expect(jobs[0]?.timezone).toBe('Asia/Tokyo');
 
-    await runner.stop();
+    await runner.shutdown();
   });
 });

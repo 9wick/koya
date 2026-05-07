@@ -9,4 +9,4 @@ coverage/
 .DS_Store
 *.log
 /.idea
-lefthook-local.yml
+lefthook-local.yml.worktrees/
