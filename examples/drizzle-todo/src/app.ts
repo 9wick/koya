@@ -2,6 +2,7 @@ import { createHttpApp } from '@zeltjs/core';
 
 import { controllers } from './controllers';
 
-export const app = await createHttpApp({
+export const app = createHttpApp({
   controllers,
 });
+await app.ready();
