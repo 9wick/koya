@@ -37,12 +37,12 @@ type Override<T> = {
   readonly useValue: T;
 };
 
-export type CreateTestContainerOptions = {
+export type CreateTestTargetOptions = {
   readonly configs?: readonly Class<unknown>[];
   readonly overrides?: readonly Override<unknown>[];
 };
 
-export type TestContainerResult<T> = {
+export type TestTargetResult<T> = {
   readonly target: T;
   readonly get: <U extends object>(cls: Class<U>) => U;
 };
@@ -53,10 +53,10 @@ const bindOverrides = (container: Container, overrides: readonly Override<unknow
   }
 };
 
-export const createTestContainer = <T extends object>(
+export const createTestTarget = <T extends object>(
   targetClass: Class<T>,
-  options: CreateTestContainerOptions = {},
-): TestContainerResult<T> => {
+  options: CreateTestTargetOptions = {},
+): TestTargetResult<T> => {
   const container = new Container();
   bindConfigs(container, options.configs ?? []);
   bindOverrides(container, options.overrides ?? []);
