@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { createHttpApp } from '../http/app';
 import { Controller } from '../decorators/controller';
 import { Get, Post } from '../decorators/http-method';
-import { url, path, method } from './url';
+import { createHttpApp } from '../http/app';
+
+import { method, path, url } from './url';
 
 describe('url', () => {
   it('returns full request URL', async () => {

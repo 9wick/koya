@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { createHttpApp } from '../http/app';
 import { Controller } from '../decorators/controller';
 import { Post } from '../decorators/http-method';
+import { createHttpApp } from '../http/app';
+
 import { body } from './body';
 
 describe('body', () => {
