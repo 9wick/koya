@@ -1,6 +1,5 @@
 import type { Context, TypedResponse } from 'hono';
 import { deleteCookie, setCookie } from 'hono/cookie';
-import type { CookieOptions as HonoCookieOptions } from 'hono/utils/cookie';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
 import { getEntryContext } from '../internal/entry-context';
@@ -110,13 +109,11 @@ const buildResponseBuilder = (c: Context): ResponseBuilder => {
       return builder;
     },
     setCookie: (name, value, options) => {
-      const honoOptions: HonoCookieOptions | undefined = options;
-      setCookie(c, name, value, honoOptions);
+      setCookie(c, name, value, options);
       return builder;
     },
     deleteCookie: (name, options) => {
-      const honoOptions: HonoCookieOptions | undefined = options;
-      deleteCookie(c, name, honoOptions);
+      deleteCookie(c, name, options);
       return builder;
     },
   };
