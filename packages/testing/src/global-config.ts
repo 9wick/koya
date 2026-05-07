@@ -1,16 +1,16 @@
-import { findConfigToken } from '@zeltjs/core';
+import { findConfigToken, type ConfigClass } from '@zeltjs/core';
 
-type AnyConstructor = new (...args: never[]) => unknown;
+type AnyConfigClass = ConfigClass<object>;
 
 type TestDefaults = {
-  readonly tokenMap: ReadonlyMap<AnyConstructor, AnyConstructor>;
+  readonly tokenMap: ReadonlyMap<AnyConfigClass, AnyConfigClass>;
 };
 
 type ConfigureOptions = {
-  readonly configs: readonly AnyConstructor[];
+  readonly configs: readonly AnyConfigClass[];
 };
 
-const tokenMap = new Map<AnyConstructor, AnyConstructor>();
+const tokenMap = new Map<AnyConfigClass, AnyConfigClass>();
 
 export const configureTestDefaults = (options: ConfigureOptions): void => {
   for (const configClass of options.configs) {

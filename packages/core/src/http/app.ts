@@ -35,6 +35,7 @@ export type HttpApp = {
   readonly request: (input: string | Request, init?: RequestInit) => Promise<Response>;
   readonly shutdown: () => Promise<void>;
   readonly ready: () => Promise<void>;
+  readonly hasConfig: (token: AnyConfigClass) => boolean;
   readonly replaceConfig: (token: AnyConfigClass, replacement: AnyConfigClass) => void;
   /** @deprecated Scheduler now starts automatically. Use shutdown() to stop. */
   readonly startScheduler: () => void;
@@ -153,58 +154,80 @@ const awaitSafe = async (p: Promise<void>): Promise<void> => {
   }
 };
 
-export const createHttpApp = (options: CreateHttpAppOptions): HttpApp => {
-  let built: BuiltApp | undefined;
-  let disposed = false;
-  let readyPromise: Promise<void> | undefined;
-  const configOverrides = new Map<AnyConfigClass, AnyConfigClass>();
+const configHasToken = (configs: readonly AnyConstructorClass[], token: AnyConfigClass): boolean =>
+  configs.some((cfg) => cfg === token || findConfigToken(cfg) === token);
 
-  const replaceConfig = (token: AnyConfigClass, replacement: AnyConfigClass): void => {
-    if (disposed) throw new Error('Cannot replaceConfig() after shutdown()');
-    if (built) throw new Error('Cannot replaceConfig() after ready()');
+type AppState = {
+  built: BuiltApp | undefined;
+  disposed: boolean;
+  readyPromise: Promise<void> | undefined;
+  readonly configOverrides: Map<AnyConfigClass, AnyConfigClass>;
+};
+
+const createReplaceConfig =
+  (options: CreateHttpAppOptions, state: AppState) =>
+  (token: AnyConfigClass, replacement: AnyConfigClass): void => {
+    if (state.disposed) throw new Error('Cannot replaceConfig() after shutdown()');
+    if (state.built) throw new Error('Cannot replaceConfig() after ready()');
     assertConfigToken(token, options.configs ?? []);
-    configOverrides.set(token, replacement);
+    state.configOverrides.set(token, replacement);
   };
 
-  const ready = async (): Promise<void> => {
-    if (disposed) throw new Error('Cannot ready() after shutdown()');
-    if (built) return;
-    if (readyPromise) return readyPromise;
-    readyPromise = buildApp(options, configOverrides).then((b) => {
-      built = b;
-    });
-    return readyPromise;
+const createReady = (options: CreateHttpAppOptions, state: AppState) => async (): Promise<void> => {
+  if (state.disposed) throw new Error('Cannot ready() after shutdown()');
+  if (state.built) return;
+  if (state.readyPromise) return state.readyPromise;
+  state.readyPromise = buildApp(options, state.configOverrides).then((b) => {
+    state.built = b;
+  });
+  return state.readyPromise;
+};
+
+const createShutdown = (state: AppState) => async (): Promise<void> => {
+  if (state.disposed) return;
+  state.disposed = true;
+  if (state.readyPromise) await awaitSafe(state.readyPromise);
+  if (state.built) {
+    await state.built.lifecycle.shutdown();
+    state.built = undefined;
+  }
+};
+
+const createFetch =
+  (state: AppState) =>
+  async (req: Request): Promise<Response> => {
+    if (!state.built) throw new Error('Cannot fetch() before ready()');
+    return state.built.hono.fetch(req);
   };
 
-  const shutdown = async (): Promise<void> => {
-    if (disposed) return;
-    disposed = true;
-    // Wait for any in-flight ready() to complete before shutting down
-    if (readyPromise) await awaitSafe(readyPromise);
-    if (built) {
-      await built.lifecycle.shutdown();
-      built = undefined;
-    }
-  };
-
-  const fetch = async (req: Request): Promise<Response> => {
-    if (!built) throw new Error('Cannot fetch() before ready()');
-    return built.hono.fetch(req);
-  };
-
+const createAppMethods = (options: CreateHttpAppOptions, state: AppState): HttpApp => {
+  const fetch = createFetch(state);
   const request = (input: string | Request, init?: RequestInit): Promise<Response> => {
     const req =
       typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
     return fetch(req);
   };
 
-  const startScheduler = (): void => {
-    // no-op: scheduler now starts automatically via lifecycle
+  return {
+    fetch,
+    request,
+    shutdown: createShutdown(state),
+    ready: createReady(options, state),
+    hasConfig: (token: AnyConfigClass): boolean => configHasToken(options.configs ?? [], token),
+    replaceConfig: createReplaceConfig(options, state),
+    startScheduler: (): void => {},
+    stopScheduler: async (): Promise<void> => {
+      await state.built?.schedulerRunner?.shutdown();
+    },
   };
+};
 
-  const stopScheduler = async (): Promise<void> => {
-    await built?.schedulerRunner?.shutdown();
+export const createHttpApp = (options: CreateHttpAppOptions): HttpApp => {
+  const state: AppState = {
+    built: undefined,
+    disposed: false,
+    readyPromise: undefined,
+    configOverrides: new Map<AnyConfigClass, AnyConfigClass>(),
   };
-
-  return { fetch, request, shutdown, ready, replaceConfig, startScheduler, stopScheduler };
+  return createAppMethods(options, state);
 };

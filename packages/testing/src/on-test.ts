@@ -3,11 +3,10 @@ import { afterAll } from 'vitest';
 
 import { getTestDefaults } from './global-config';
 
-type AnyConstructor = new (...args: never[]) => unknown;
 type AnyConfigClass = ConfigClass<object>;
 
 type OnTestOptions = {
-  readonly configs?: readonly AnyConstructor[];
+  readonly configs?: readonly AnyConfigClass[];
 };
 
 type TestApp = {
@@ -16,33 +15,27 @@ type TestApp = {
   readonly shutdown: () => Promise<void>;
 };
 
-const tryReplaceConfig = (
-  app: HttpApp,
-  token: AnyConstructor,
-  replacement: AnyConstructor,
-): void => {
-  try {
-    app.replaceConfig(token as AnyConfigClass, replacement as AnyConfigClass);
-  } catch {
-    // Token not in app's configs - ignore
+const applyGlobalConfigs = (app: HttpApp): void => {
+  const defaults = getTestDefaults();
+  for (const [token, replacement] of defaults.tokenMap) {
+    if (app.hasConfig(token)) {
+      app.replaceConfig(token, replacement);
+    }
+  }
+};
+
+const applyInlineConfigs = (app: HttpApp, configs: readonly AnyConfigClass[]): void => {
+  for (const configClass of configs) {
+    const token = findConfigToken(configClass);
+    if (token && app.hasConfig(token)) {
+      app.replaceConfig(token, configClass);
+    }
   }
 };
 
 export const onTest = async (app: HttpApp, options: OnTestOptions = {}): Promise<TestApp> => {
-  const defaults = getTestDefaults();
-
-  // Apply global config replacements first (lower priority)
-  for (const [token, replacement] of defaults.tokenMap) {
-    tryReplaceConfig(app, token, replacement);
-  }
-
-  // Apply inline config replacements (higher priority, overrides global)
-  for (const configClass of options.configs ?? []) {
-    const token = findConfigToken(configClass);
-    if (token) {
-      tryReplaceConfig(app, token, configClass);
-    }
-  }
+  applyGlobalConfigs(app);
+  applyInlineConfigs(app, options.configs ?? []);
 
   await app.ready();
 

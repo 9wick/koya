@@ -21,16 +21,9 @@ export const onNode = (app: HttpApp): OnNodeHandle => {
     const options: ListenOptions =
       typeof portOrOptions === 'number' ? { port: portOrOptions } : (portOrOptions ?? {});
 
-    // Attempt to auto-inject ProcessEnvConfig. If EnvConfig is not registered in configs,
-    // replaceConfig throws - we silently ignore this since the app simply doesn't need env config.
-    try {
+    // Auto-inject ProcessEnvConfig if EnvConfig is registered
+    if (app.hasConfig(EnvConfig)) {
       app.replaceConfig(EnvConfig, ProcessEnvConfig);
-    } catch (error) {
-      const isTokenNotFound =
-        error instanceof Error && error.message.startsWith('Cannot replaceConfig(): token');
-      if (!isTokenNotFound) {
-        throw error;
-      }
     }
 
     await app.ready();

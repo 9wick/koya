@@ -1,4 +1,4 @@
-import { createTestTargetBase, findConfigToken } from '@zeltjs/core';
+import { createTestTargetBase, findConfigToken, type ConfigClass } from '@zeltjs/core';
 import type { CreateTestTargetOptions, TestTargetResult } from '@zeltjs/core';
 import { afterAll } from 'vitest';
 
@@ -7,6 +7,11 @@ import { getTestDefaults } from './global-config';
 export type { CreateTestTargetOptions, TestTargetResult } from '@zeltjs/core';
 
 type AnyConstructor = new (...args: never[]) => unknown;
+type AnyConfigClass = ConfigClass<object>;
+
+const isBaseConfig = (configClass: AnyConstructor, token: AnyConfigClass): boolean => {
+  return token.Token === configClass;
+};
 
 const applyGlobalDefaults = (configs: readonly AnyConstructor[]): AnyConstructor[] => {
   const defaults = getTestDefaults();
@@ -15,7 +20,7 @@ const applyGlobalDefaults = (configs: readonly AnyConstructor[]): AnyConstructor
   for (const configClass of configs) {
     const token = findConfigToken(configClass);
     // If this config IS the token (base class), check for global replacement
-    if (token && token === configClass) {
+    if (token && isBaseConfig(configClass, token)) {
       const replacement = defaults.tokenMap.get(token);
       if (replacement) {
         result.push(replacement);
