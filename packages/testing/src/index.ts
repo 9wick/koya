@@ -1,2 +1,2 @@
-export { createTestContainer } from './test-container';
-export type { CreateTestContainerOptions, TestContainerResult } from './test-container';
+export { createTestTarget } from './test-target';
+export type { CreateTestTargetOptions, TestTargetResult } from './test-target';

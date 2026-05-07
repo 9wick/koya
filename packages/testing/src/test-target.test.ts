@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { Injectable, inject } from '@zeltjs/core';
 
-import { createTestContainer } from './test-container';
+import { createTestTarget } from './test-target';
 
-describe('createTestContainer', () => {
+describe('createTestTarget', () => {
   it('resolves a simple injectable class', () => {
     @Injectable()
     class SimpleService {
@@ -12,7 +12,7 @@ describe('createTestContainer', () => {
       }
     }
 
-    const { target } = createTestContainer(SimpleService);
+    const { target } = createTestTarget(SimpleService);
 
     expect(target.getValue()).toBe('hello');
   });
@@ -34,7 +34,7 @@ describe('createTestContainer', () => {
       }
     }
 
-    const { target } = createTestContainer(Service);
+    const { target } = createTestTarget(Service);
 
     expect(target.process()).toBe('processed: real-data');
   });
@@ -60,7 +60,7 @@ describe('createTestContainer', () => {
       getData: () => 'mock-data',
     };
 
-    const { target } = createTestContainer(Service, {
+    const { target } = createTestTarget(Service, {
       overrides: [{ provide: Repository, useValue: mockRepo as Repository }],
     });
 
@@ -78,7 +78,7 @@ describe('createTestContainer', () => {
       name = 'B';
     }
 
-    const { target, get } = createTestContainer(ServiceA);
+    const { target, get } = createTestTarget(ServiceA);
 
     expect(target.name).toBe('A');
 
@@ -103,7 +103,7 @@ describe('createTestContainer', () => {
 
     const mockConfig = { apiUrl: 'https://test.api' };
 
-    const { target } = createTestContainer(ApiClient, {
+    const { target } = createTestTarget(ApiClient, {
       overrides: [{ provide: ConfigService, useValue: mockConfig as ConfigService }],
     });
 

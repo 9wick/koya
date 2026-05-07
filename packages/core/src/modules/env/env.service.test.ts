@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createTestContainer } from '../../internal/container';
+import { createTestTarget } from '../../internal/container';
 
 import { ProcessEnvConfig } from './env.config';
 import { EnvService } from './env.service';
 
 const createEnvService = () => {
-  const { target } = createTestContainer(EnvService, {
+  const { target } = createTestTarget(EnvService, {
     configs: [ProcessEnvConfig],
   });
   return target;
