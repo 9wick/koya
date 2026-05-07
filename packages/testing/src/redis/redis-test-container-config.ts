@@ -19,9 +19,7 @@ export class RedisTestContainerConfig extends RedisConfig implements Lifecycle {
   }
 
   async startup(): Promise<void> {
-    this.container = await new GenericContainer(this.image)
-      .withExposedPorts(6379)
-      .start();
+    this.container = await new GenericContainer(this.image).withExposedPorts(6379).start();
     const host = this.container.getHost();
     const port = this.container.getMappedPort(6379);
     this.connectionUrl = `redis://${host}:${port}`;

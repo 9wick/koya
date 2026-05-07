@@ -121,7 +121,9 @@ describe('await createHttpApp() — fetch', () => {
       list() {}
     }
     new NoDecorator();
-    await expect(createHttpApp({ controllers: [NoDecorator] })).rejects.toThrow(/missing @Controller/);
+    await expect(createHttpApp({ controllers: [NoDecorator] })).rejects.toThrow(
+      /missing @Controller/,
+    );
   });
 });
 

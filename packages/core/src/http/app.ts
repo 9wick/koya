@@ -28,9 +28,11 @@ export type CreateHttpAppOptions = {
 export type HttpApp = {
   readonly fetch: (request: Request) => Promise<Response>;
   readonly request: (input: string | Request, init?: RequestInit) => Promise<Response>;
-  readonly startScheduler: () => void;
-  readonly stopScheduler: () => Promise<void>;
   readonly shutdown: () => Promise<void>;
+  /** @deprecated Scheduler now starts automatically. Use shutdown() to stop. */
+  readonly startScheduler: () => void;
+  /** @deprecated Scheduler now stops via shutdown(). */
+  readonly stopScheduler: () => Promise<void>;
 };
 
 const createErrorHandler =
@@ -53,52 +55,76 @@ const resolveErrorHandlers = (
   resolver: Resolver,
 ): ErrorHandlerInstance[] => classes.map((cls) => resolveErrorHandler(cls, resolver));
 
+const instantiateConfigs = (
+  configs: readonly (new (...args: never[]) => object)[] | undefined,
+  resolver: Resolver,
+): void => {
+  for (const configClass of configs ?? []) {
+    resolver.get(configClass);
+  }
+};
+
+const registerScheduler = (
+  schedulers: readonly SchedulerClass[] | undefined,
+  resolver: Resolver,
+  lifecycle: LifecycleManager,
+): SchedulerRunner | undefined => {
+  if (!schedulers || schedulers.length === 0) return undefined;
+  const runner = createSchedulerRunner(schedulers, resolver);
+  lifecycle.register(runner);
+  return runner;
+};
+
+const setupHono = (options: CreateHttpAppOptions, resolver: Resolver): Hono => {
+  // strict:false で `/echo` と `/echo/` を同一視する。joinPath が末尾スラッシュを正規化するため、
+  // 利用者が `@Post('/')` と書いた場合でも `/echo/` リクエストにマッチさせる必要がある。
+  const hono = new Hono({ strict: false });
+  const errorHandlers = resolveErrorHandlers(options.errorHandlers ?? [], resolver);
+  hono.onError(createErrorHandler(errorHandlers));
+  buildRoutes(hono, options.controllers, resolver, options.middlewares ?? []);
+  return hono;
+};
+
 export const createHttpApp = async (options: CreateHttpAppOptions): Promise<HttpApp> => {
   const resolver = createContainer({ configs: options.configs });
   const lifecycle = resolver.get(LifecycleManager);
 
-  // Instantiate configs so they can register with LifecycleManager
-  for (const configClass of options.configs ?? []) {
-    resolver.get(configClass);
+  instantiateConfigs(options.configs, resolver);
+  const schedulerRunner = registerScheduler(options.schedulers, resolver, lifecycle);
+
+  try {
+    await lifecycle.startup();
+  } catch (error) {
+    await lifecycle.shutdown();
+    throw error;
   }
 
-  await lifecycle.startup();
-
-  // strict:false で `/echo` と `/echo/` を同一視する。joinPath が末尾スラッシュを正規化するため、
-  // 利用者が `@Post('/')` と書いた場合でも `/echo/` リクエストにマッチさせる必要がある。
-  const hono = new Hono({ strict: false });
-
-  const errorHandlers = resolveErrorHandlers(options.errorHandlers ?? [], resolver);
-  hono.onError(createErrorHandler(errorHandlers));
-
-  buildRoutes(hono, options.controllers, resolver, options.middlewares ?? []);
-
-  let schedulerRunner: SchedulerRunner | undefined;
-  if (options.schedulers && options.schedulers.length > 0) {
-    schedulerRunner = createSchedulerRunner(options.schedulers, resolver);
+  let hono: Hono;
+  try {
+    hono = setupHono(options, resolver);
+  } catch (error) {
+    await lifecycle.shutdown();
+    throw error;
   }
 
   const fetch = (req: Request): Promise<Response> => Promise.resolve(hono.fetch(req));
   const request = (input: string | Request, init?: RequestInit): Promise<Response> => {
-    // path 文字列の場合は localhost ベースで Request を組み立てる。テスト用 ergonomic API なので
-    // host/scheme は意味を持たない (hono `app.request` と同じ慣例)。
     const req =
       typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
     return fetch(req);
   };
 
-  const startScheduler = (): void => {
-    schedulerRunner?.start();
-  };
-
-  const stopScheduler = async (): Promise<void> => {
-    await schedulerRunner?.stop();
-  };
-
   const shutdown = async (): Promise<void> => {
-    await stopScheduler();
     await lifecycle.shutdown();
   };
 
-  return { fetch, request, startScheduler, stopScheduler, shutdown };
+  const startScheduler = (): void => {
+    // no-op: scheduler now starts automatically via lifecycle
+  };
+
+  const stopScheduler = async (): Promise<void> => {
+    await schedulerRunner?.shutdown();
+  };
+
+  return { fetch, request, shutdown, startScheduler, stopScheduler };
 };

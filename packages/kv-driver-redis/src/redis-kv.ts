@@ -10,10 +10,7 @@ import { ZeltRedis } from './zelt-redis';
 export class RedisKV implements AtomicKVDriver, Lifecycle {
   private readonly client: ZeltRedis;
 
-  constructor(
-    config = injectConfig(RedisConfig),
-    lifecycle = inject(LifecycleManager),
-  ) {
+  constructor(config = injectConfig(RedisConfig), lifecycle = inject(LifecycleManager)) {
     this.client = new ZeltRedis(config.url, config.options);
     lifecycle.register(this);
   }

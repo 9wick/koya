@@ -8,12 +8,20 @@ describe('LifecycleManager', () => {
     const events: string[] = [];
 
     const first: Lifecycle = {
-      startup: async () => { events.push('first:start'); },
-      shutdown: async () => { events.push('first:stop'); },
+      startup: async () => {
+        events.push('first:start');
+      },
+      shutdown: async () => {
+        events.push('first:stop');
+      },
     };
     const second: Lifecycle = {
-      startup: async () => { events.push('second:start'); },
-      shutdown: async () => { events.push('second:stop'); },
+      startup: async () => {
+        events.push('second:start');
+      },
+      shutdown: async () => {
+        events.push('second:stop');
+      },
     };
 
     manager.register(first);
@@ -30,11 +38,15 @@ describe('LifecycleManager', () => {
 
     const first: Lifecycle = {
       startup: async () => {},
-      shutdown: async () => { events.push('first:stop'); },
+      shutdown: async () => {
+        events.push('first:stop');
+      },
     };
     const second: Lifecycle = {
       startup: async () => {},
-      shutdown: async () => { events.push('second:stop'); },
+      shutdown: async () => {
+        events.push('second:stop');
+      },
     };
 
     manager.register(first);

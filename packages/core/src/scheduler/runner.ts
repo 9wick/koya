@@ -1,6 +1,7 @@
 import { Cron } from 'croner';
 
 import { getScheduledMetadata, getScheduleMetadata } from '../internal/scheduler-metadata';
+import type { Lifecycle } from '../lifecycle';
 
 type SchedulerClass = new (...args: never[]) => object;
 type Resolver = { get: <T extends object>(cls: new (...args: never[]) => T) => T };
@@ -11,9 +12,7 @@ type JobInfo = {
   readonly timezone: string | undefined;
 };
 
-export type SchedulerRunner = {
-  readonly start: () => void;
-  readonly stop: () => Promise<void>;
+export type SchedulerRunner = Lifecycle & {
   readonly isRunning: () => boolean;
   readonly getJobs: () => readonly JobInfo[];
 };
@@ -26,7 +25,7 @@ export const createSchedulerRunner = (
   const jobInfos: JobInfo[] = [];
   let running = false;
 
-  const start = (): void => {
+  const startup = async (): Promise<void> => {
     if (running) return;
 
     for (const schedulerClass of schedulerClasses) {
@@ -62,7 +61,7 @@ export const createSchedulerRunner = (
     running = true;
   };
 
-  const stop = async (): Promise<void> => {
+  const shutdown = async (): Promise<void> => {
     for (const job of jobs) {
       job.stop();
     }
@@ -74,5 +73,5 @@ export const createSchedulerRunner = (
 
   const getJobs = (): readonly JobInfo[] => jobInfos;
 
-  return { start, stop, isRunning, getJobs };
+  return { startup, shutdown, isRunning, getJobs };
 };
