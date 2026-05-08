@@ -48,6 +48,10 @@ const config: KnipConfig = {
     'packages/adapter-node': {
       ignoreDependencies: ['@zeltjs/core'],
     },
+    'packages/testing': {
+      // node:test requires @types/node for types - referenced via optional peer dependency
+      ignoreDependencies: ['@types/node'],
+    },
     website: {
       // @docusaurus/plugin-content-docs types are re-exported by @docusaurus/preset-classic
       // prism-react-renderer is used internally by Docusaurus for code block syntax highlighting
