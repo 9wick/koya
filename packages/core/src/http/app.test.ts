@@ -9,6 +9,7 @@ import { Get, Post } from '../decorators/http-method';
 import { Middleware } from '../decorators/middleware';
 import { SkipMiddleware } from '../decorators/skip-middleware';
 import { UseMiddleware } from '../decorators/use-middleware';
+import { LifecycleManager, type Lifecycle } from '../lifecycle';
 import { inject } from '../primitives/inject';
 import { getContext } from '../primitives/get-context';
 import { pathParam } from '../primitives/path-param';
@@ -716,5 +717,121 @@ describe('replaceConfig', () => {
     const app = createHttpApp({ controllers: [TestController] });
     await app.shutdown();
     expect(() => app.replaceConfig(SomeConfig2, SomeConfig2)).toThrow(/after shutdown\(\)/);
+  });
+});
+
+describe('warmup option', () => {
+  it('lazy mode (default): lifecycle starts on first request', async () => {
+    const events: string[] = [];
+
+    @injectable()
+    class LazyService {
+      constructor(lifecycle = inject(LifecycleManager)) {
+        const lc: Lifecycle = {
+          startup: async () => {
+            events.push('LazyService:startup');
+          },
+          shutdown: async () => {
+            events.push('LazyService:shutdown');
+          },
+        };
+        lifecycle.register(lc);
+      }
+
+      getValue() {
+        return 'lazy';
+      }
+    }
+
+    @Controller('/lazy')
+    class LazyController {
+      constructor(private svc = inject(LazyService)) {}
+
+      @Get('/')
+      get() {
+        return { value: this.svc.getValue() };
+      }
+    }
+
+    const app = createHttpApp({ controllers: [LazyController] });
+    await app.ready();
+
+    expect(events).toEqual([]);
+
+    const res = await app.request('/lazy/');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ value: 'lazy' });
+
+    expect(events).toEqual(['LazyService:startup']);
+    await app.shutdown();
+  });
+
+  it('warmup: true - lifecycle starts during ready()', async () => {
+    const events: string[] = [];
+
+    @injectable()
+    class EagerService {
+      constructor(lifecycle = inject(LifecycleManager)) {
+        const lc: Lifecycle = {
+          startup: async () => {
+            events.push('EagerService:startup');
+          },
+          shutdown: async () => {
+            events.push('EagerService:shutdown');
+          },
+        };
+        lifecycle.register(lc);
+      }
+
+      getValue() {
+        return 'eager';
+      }
+    }
+
+    @Controller('/eager')
+    class EagerController {
+      constructor(private svc = inject(EagerService)) {}
+
+      @Get('/')
+      get() {
+        return { value: this.svc.getValue() };
+      }
+    }
+
+    const app = createHttpApp({ controllers: [EagerController] });
+    await app.ready({ warmup: true });
+
+    expect(events).toEqual(['EagerService:startup']);
+
+    const res = await app.request('/eager/');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ value: 'eager' });
+    await app.shutdown();
+  });
+
+  it('controller instance is cached per request', async () => {
+    let instantiationCount = 0;
+
+    @Controller('/cached')
+    class CachedController {
+      constructor() {
+        instantiationCount++;
+      }
+
+      @Get('/')
+      get() {
+        return { count: instantiationCount };
+      }
+    }
+
+    const app = createHttpApp({ controllers: [CachedController] });
+    await app.ready();
+
+    await app.request('/cached/');
+    await app.request('/cached/');
+    await app.request('/cached/');
+
+    expect(instantiationCount).toBe(1);
+    await app.shutdown();
   });
 });
