@@ -146,6 +146,9 @@ importers:
       '@zeltjs/core':
         specifier: workspace:*
         version: link:../core
+      dotenv:
+        specifier: 17.4.2
+        version: 17.4.2
     devDependencies:
       '@types/node':
         specifier: 22.19.17
@@ -286,9 +289,6 @@ importers:
       croner:
         specifier: 9.1.0
         version: 9.1.0
-      dotenv:
-        specifier: 17.4.2
-        version: 17.4.2
       hono:
         specifier: 4.12.16
         version: 4.12.16

@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createHttpApp, Controller, Get, EnvConfig, ProcessEnvConfig } from '@zeltjs/core';
+import { createHttpApp, Controller, Get, EnvConfig } from '@zeltjs/core';
 
 import { onNode, type ServerHandle } from './on-node';
+import { ProcessEnvConfig } from './process-env.config';
 
 describe('onNode', () => {
   let handle: ServerHandle | undefined;

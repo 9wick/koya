@@ -1,6 +1,8 @@
 import { serve } from '@hono/node-server';
 import type { ServerType } from '@hono/node-server';
-import { EnvConfig, ProcessEnvConfig, type HttpApp, type ReadyOptions } from '@zeltjs/core';
+import { EnvConfig, type HttpApp, type ReadyOptions } from '@zeltjs/core';
+
+import { ProcessEnvConfig } from './process-env.config';
 
 type ListenOptions = {
   readonly port?: number;

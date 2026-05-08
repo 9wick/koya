@@ -9,8 +9,7 @@
     "sourceMap": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "experimentalDecorators": true,
-    "erasableSyntaxOnly": false,
-    "types": ["node"]
+    "erasableSyntaxOnly": false
   },
   "include": ["src/**/*"]
 }
