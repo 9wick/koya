@@ -1,10 +1,11 @@
 import { serve } from '@hono/node-server';
 import type { ServerType } from '@hono/node-server';
-import { EnvConfig, ProcessEnvConfig, type HttpApp } from '@zeltjs/core';
+import { EnvConfig, ProcessEnvConfig, type HttpApp, type ReadyOptions } from '@zeltjs/core';
 
 type ListenOptions = {
   readonly port?: number;
   readonly hostname?: string;
+  readonly warmup?: boolean;
 };
 
 export type ServerHandle = {
@@ -21,12 +22,12 @@ export const onNode = (app: HttpApp): OnNodeHandle => {
     const options: ListenOptions =
       typeof portOrOptions === 'number' ? { port: portOrOptions } : (portOrOptions ?? {});
 
-    // Auto-inject ProcessEnvConfig if EnvConfig is registered
     if (app.hasConfig(EnvConfig)) {
       app.replaceConfig(EnvConfig, ProcessEnvConfig);
     }
 
-    await app.ready();
+    const readyOptions: ReadyOptions = { warmup: options.warmup ?? true };
+    await app.ready(readyOptions);
 
     const port = options.port ?? 3000;
     const hostname = options.hostname ?? '0.0.0.0';
