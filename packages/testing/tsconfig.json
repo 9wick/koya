@@ -9,9 +9,9 @@
     "sourceMap": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "experimentalDecorators": true,
-    "erasableSyntaxOnly": false
+    "erasableSyntaxOnly": false,
+    "types": ["bun-types"]
   },
   "include": ["src/**/*"],
-  "exclude": ["src/adapters/**/*"],
   "references": [{ "path": "../core" }, { "path": "../kv-driver-redis" }]
 }
