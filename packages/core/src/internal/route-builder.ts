@@ -202,10 +202,12 @@ const composeHandler = (
           const result = await mw(c, () => dispatch(i + 1));
           if (result instanceof Response) {
             response = result;
+            c.res = result;
           }
         }
       } else {
         response = await finalHandler(c);
+        c.res = response;
       }
     };
 

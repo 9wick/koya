@@ -215,6 +215,12 @@ export default tseslint.config(
     },
   },
   {
+    files: ['**/*.types.ts'],
+    rules: {
+      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
+    },
+  },
+  {
     // JSON.parse returns `any`; type assertion unavoidable at this generic boundary.
     files: ['packages/kv/src/serialize.ts'],
     rules: {
@@ -224,6 +230,17 @@ export default tseslint.config(
   {
     // eval() returns unknown; type assertion needed at Lua script boundary.
     files: ['packages/kv-driver-redis/src/zelt-redis.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
+    },
+  },
+  {
+    // Session context uses generic type narrowing at AsyncLocalStorage boundary.
+    // Type assertions are needed for user-facing generic session data APIs.
+    files: [
+      'packages/auth-session/src/session.context.lib.ts',
+      'packages/auth-session/src/session.functions.lib.ts',
+    ],
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
     },
