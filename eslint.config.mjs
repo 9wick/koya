@@ -187,6 +187,13 @@ export default tseslint.config(
     },
   },
   {
+    // ConsoleTransport writes to stdout via console.log; this is its intended behavior.
+    files: ['packages/core/src/modules/logger/transport/console.transport.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
     // Example apps: relaxed rules for demo code clarity
     // - HTTPException requires throw
     // - raw fetch returns untyped JSON
