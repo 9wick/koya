@@ -5,4 +5,15 @@ export default defineConfig({
   format: ['esm'],
   dts: true,
   clean: true,
+  fixedExtension: false,
+  deps: {
+    neverBundle: [
+      '@zeltjs/core',
+      /^@zeltjs\/core\//,
+      '@zeltjs/openapi',
+      /^@zeltjs\/openapi\//,
+      'hono',
+      /^hono\//,
+    ],
+  },
 });
