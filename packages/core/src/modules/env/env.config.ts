@@ -8,10 +8,3 @@ export class EnvConfig {
     return undefined;
   }
 }
-
-@Config
-export class ProcessEnvConfig extends EnvConfig {
-  override get(key: string): string | undefined {
-    return process.env[key];
-  }
-}

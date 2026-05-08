@@ -9,7 +9,9 @@
     "sourceMap": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "experimentalDecorators": true,
-    "erasableSyntaxOnly": false
+    "erasableSyntaxOnly": false,
+    "types": ["@cloudflare/workers-types"]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "references": [{ "path": "../core" }]
 }

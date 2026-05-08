@@ -48,6 +48,9 @@ const config: KnipConfig = {
     'packages/adapter-node': {
       ignoreDependencies: ['@zeltjs/core'],
     },
+    'packages/adapter-cloudflare-workers': {
+      ignoreDependencies: ['@zeltjs/core', 'cloudflare'],
+    },
     'packages/testing': {
       // node:test requires @types/node for types - referenced via optional peer dependency
       ignoreDependencies: ['@types/node'],
