@@ -12,5 +12,6 @@
     "erasableSyntaxOnly": false
   },
   "include": ["src/**/*"],
+  "exclude": ["src/adapters/**/*"],
   "references": [{ "path": "../core" }, { "path": "../kv-driver-redis" }]
 }

@@ -21,6 +21,7 @@ export default tseslint.config(
       'eslint.config.mjs',
       '**/generated/**',
       'website/**',
+      'packages/testing/src/adapters/**',
     ],
   },
   tseslint.configs.recommended,

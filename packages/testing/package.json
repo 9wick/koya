@@ -16,6 +16,22 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./vitest": {
+      "types": "./dist/adapters/vitest.d.ts",
+      "import": "./dist/adapters/vitest.js"
+    },
+    "./jest": {
+      "types": "./dist/adapters/jest.d.ts",
+      "import": "./dist/adapters/jest.js"
+    },
+    "./bun": {
+      "types": "./dist/adapters/bun.d.ts",
+      "import": "./dist/adapters/bun.js"
+    },
+    "./node": {
+      "types": "./dist/adapters/node.d.ts",
+      "import": "./dist/adapters/node.js"
+    },
     "./redis": {
       "types": "./dist/redis/index.d.ts",
       "import": "./dist/redis/index.js"
@@ -32,8 +48,7 @@
   "peerDependencies": {
     "@zeltjs/core": "workspace:*",
     "@zeltjs/kv-driver-redis": "workspace:*",
-    "testcontainers": ">=10 <12",
-    "vitest": ">=4 <5"
+    "testcontainers": ">=10 <12"
   },
   "peerDependenciesMeta": {
     "@zeltjs/kv-driver-redis": {
