@@ -11,7 +11,8 @@
     { "path": "packages/command" },
     { "path": "packages/kv" },
     { "path": "packages/kv-driver-redis" },
-    { "path": "packages/rate-limit" }
+    { "path": "packages/rate-limit" },
+    { "path": "packages/validate-valibot" }
   ],
   "files": []
 }
