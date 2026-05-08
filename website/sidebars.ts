@@ -11,12 +11,12 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Fundamentals',
-      items: ['modules', 'dependency-injection', 'testing'],
+      items: ['modules', 'dependency-injection', 'primitives', 'testing'],
     },
     {
       type: 'category',
       label: 'Techniques',
-      items: ['authentication', 'validation', 'error-handling', 'configuration'],
+      items: ['authentication', 'validation', 'error-handling', 'configuration', 'command'],
     },
     {
       type: 'category',
