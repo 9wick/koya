@@ -69,4 +69,4 @@ export type { Lifecycle, Disposable } from './lifecycle';
 
 export { Logger } from './modules/logger';
 
-export { EnvConfig, ProcessEnvConfig, DotEnvConfig, EnvService } from './modules/env';
+export { EnvConfig, EnvService } from './modules/env';
