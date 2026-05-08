@@ -368,9 +368,6 @@ importers:
       '@zeltjs/core':
         specifier: workspace:*
         version: link:../core
-      vitest:
-        specifier: '>=4 <5'
-        version: 4.1.5(@types/node@22.19.17)(@vitest/coverage-v8@4.1.5)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.2)(tsx@4.21.0)(yaml@2.8.3))
     devDependencies:
       '@zeltjs/kv-driver-redis':
         specifier: workspace:*
