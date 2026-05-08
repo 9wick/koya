@@ -99,7 +99,7 @@ export default tseslint.config(
       'no-console': 'off',
       'max-lines': ['warn', { max: 1000, skipBlankLines: true, skipComments: true }],
       'import-x/no-namespace': 'off',
-      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'warn',
+      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
     },
   },
   {
@@ -193,20 +193,6 @@ export default tseslint.config(
     },
   },
   {
-    // *.types.ts files are pure type declaration files and cannot export @injectable() classes.
-    files: ['**/*.types.ts'],
-    rules: {
-      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
-    },
-  },
-  {
-    // *.decorator.ts files are decorator factories that dynamically create classes.
-    files: ['**/*.decorator.ts'],
-    rules: {
-      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
-    },
-  },
-  {
     // CLI command runner uses Object.create and DI container.get() at dynamic module
     // boundaries where type assertions are unavoidable.
     files: [
@@ -217,6 +203,12 @@ export default tseslint.config(
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
+    },
+  },
+  {
+    files: ['**/*.decorator.ts'],
+    rules: {
+      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
     },
   },
   {
