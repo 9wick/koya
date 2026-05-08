@@ -45,6 +45,7 @@ describe('validated()', () => {
   });
 
   it('HTTPException contains VALIDATION_FAILED response', async () => {
+    expect.assertions(4);
     try {
       runInEntryContext(
         {
