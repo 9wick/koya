@@ -3,11 +3,21 @@ import { describe, expect, it } from 'vitest';
 
 import { runCommand } from './runner';
 
+const getArgsFromContext = (cmd: unknown): unknown => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return args(cmd as any);
+  } catch {
+    return {};
+  }
+};
+
 describe('runCommand', () => {
   it('executes command with parsed args and options', async () => {
     const received: { name: string; verbose: boolean } = { name: '', verbose: false };
 
-    class GreetCommandBase {
+    @Command({ name: 'greet' })
+    class GreetCommand {
       readonly args = {
         name: { type: 'positional' as const, required: true as const },
       };
@@ -21,8 +31,6 @@ describe('runCommand', () => {
       }
     }
 
-    const GreetCommand = Command({ name: 'greet' })(GreetCommandBase);
-
     const result = await runCommand(GreetCommand, ['Alice', '--verbose']);
 
     expect(result.isOk()).toBe(true);
@@ -33,7 +41,8 @@ describe('runCommand', () => {
   it('uses default values when args not provided', async () => {
     const received: { env: string } = { env: '' };
 
-    class DeployCommandBase {
+    @Command({ name: 'deploy' })
+    class DeployCommand {
       readonly options = {
         env: { type: 'string' as const, default: 'production' },
       };
@@ -43,8 +52,6 @@ describe('runCommand', () => {
       }
     }
 
-    const DeployCommand = Command({ name: 'deploy' })(DeployCommandBase);
-
     const result = await runCommand(DeployCommand, []);
 
     expect(result.isOk()).toBe(true);
@@ -52,13 +59,12 @@ describe('runCommand', () => {
   });
 
   it('returns error when command throws', async () => {
-    class FailingCommandBase {
+    @Command({ name: 'fail' })
+    class FailingCommand {
       run() {
         throw new Error('Command failed');
       }
     }
-
-    const FailingCommand = Command({ name: 'fail' })(FailingCommandBase);
 
     const result = await runCommand(FailingCommand, []);
 
@@ -73,18 +79,19 @@ describe('runCommand with static schema', () => {
   it('parses positional args from schema', async () => {
     const received: { target: string } = { target: '' };
 
-    @Command({ name: 'greet' })
-    class GreetCommand {
+    class GreetCommandBase {
       static schema = cliSchema({
         args: [{ name: 'target', type: 'string' }],
       });
 
-      run(ctx = args(GreetCommand)) {
+      run() {
+        const ctx = getArgsFromContext(GreetCommandBase) as { target: string };
         received.target = ctx.target;
       }
     }
+    Command({ name: 'greet' })(GreetCommandBase);
 
-    const result = await runCommand(GreetCommand, ['world']);
+    const result = await runCommand(GreetCommandBase, ['world']);
 
     expect(result.isOk()).toBe(true);
     expect(received.target).toBe('world');
@@ -93,16 +100,17 @@ describe('runCommand with static schema', () => {
   it('parses options with alias from schema', async () => {
     const received: { verbose: boolean } = { verbose: false };
 
-    @Command({ name: 'test' })
     class TestCommand {
       static schema = cliSchema({
         options: [{ name: 'verbose', type: 'boolean', alias: 'v' }],
       });
 
-      run(ctx = args(TestCommand)) {
+      run() {
+        const ctx = getArgsFromContext(TestCommand) as { verbose: boolean };
         received.verbose = ctx.verbose;
       }
     }
+    Command({ name: 'test' })(TestCommand);
 
     const result = await runCommand(TestCommand, ['-v']);
 
@@ -113,16 +121,17 @@ describe('runCommand with static schema', () => {
   it('converts number type args', async () => {
     const received: { port: number } = { port: 0 };
 
-    @Command({ name: 'serve' })
     class ServeCommand {
       static schema = cliSchema({
         options: [{ name: 'port', type: 'number', default: 3000 }],
       });
 
-      run(ctx = args(ServeCommand)) {
+      run() {
+        const ctx = getArgsFromContext(ServeCommand) as { port: number };
         received.port = ctx.port;
       }
     }
+    Command({ name: 'serve' })(ServeCommand);
 
     const result = await runCommand(ServeCommand, ['--port', '8080']);
 
@@ -134,16 +143,17 @@ describe('runCommand with static schema', () => {
   it('uses default value for number option', async () => {
     const received: { port: number } = { port: 0 };
 
-    @Command({ name: 'serve' })
     class ServeCommand {
       static schema = cliSchema({
         options: [{ name: 'port', type: 'number', default: 3000 }],
       });
 
-      run(ctx = args(ServeCommand)) {
+      run() {
+        const ctx = getArgsFromContext(ServeCommand) as { port: number };
         received.port = ctx.port;
       }
     }
+    Command({ name: 'serve' })(ServeCommand);
 
     const result = await runCommand(ServeCommand, []);
 
@@ -152,7 +162,6 @@ describe('runCommand with static schema', () => {
   });
 
   it('returns error for invalid number', async () => {
-    @Command({ name: 'serve' })
     class ServeCommand {
       static schema = cliSchema({
         options: [{ name: 'port', type: 'number' }],
@@ -160,6 +169,7 @@ describe('runCommand with static schema', () => {
 
       run() {}
     }
+    Command({ name: 'serve' })(ServeCommand);
 
     const result = await runCommand(ServeCommand, ['--port', 'abc']);
 
@@ -175,7 +185,6 @@ describe('runCommand with static schema', () => {
       message: undefined,
     };
 
-    @Command({ name: 'greet' })
     class GreetCommand {
       static schema = cliSchema({
         args: [
@@ -184,11 +193,13 @@ describe('runCommand with static schema', () => {
         ],
       });
 
-      run(ctx = args(GreetCommand)) {
+      run() {
+        const ctx = getArgsFromContext(GreetCommand) as { target: string; message?: string };
         received.target = ctx.target;
         received.message = ctx.message;
       }
     }
+    Command({ name: 'greet' })(GreetCommand);
 
     const result = await runCommand(GreetCommand, ['world']);
 
@@ -204,7 +215,6 @@ describe('runCommand with static schema', () => {
       verbose: false,
     };
 
-    @Command({ name: 'deploy' })
     class DeployCommand {
       static schema = cliSchema({
         args: [{ name: 'target', type: 'string' }],
@@ -214,12 +224,18 @@ describe('runCommand with static schema', () => {
         ],
       });
 
-      run(ctx = args(DeployCommand)) {
+      run() {
+        const ctx = getArgsFromContext(DeployCommand) as {
+          target: string;
+          port: number;
+          verbose: boolean;
+        };
         received.target = ctx.target;
         received.port = ctx.port;
         received.verbose = ctx.verbose;
       }
     }
+    Command({ name: 'deploy' })(DeployCommand);
 
     const result = await runCommand(DeployCommand, ['production', '--port', '8080', '--verbose']);
 
@@ -232,7 +248,6 @@ describe('runCommand with static schema', () => {
 
 describe('schema validation', () => {
   it('returns error when args and options have same name', async () => {
-    @Command({ name: 'test' })
     class TestCommand {
       static schema = cliSchema({
         args: [{ name: 'port', type: 'string' }],
@@ -241,6 +256,7 @@ describe('schema validation', () => {
 
       run() {}
     }
+    Command({ name: 'test' })(TestCommand);
 
     const result = await runCommand(TestCommand, []);
 
