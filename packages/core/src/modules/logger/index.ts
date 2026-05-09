@@ -1,6 +1,11 @@
 export { Logger } from './logger.service';
-export { LoggerConfig } from './logger.config';
-export type { TransportBinding } from './logger.config';
+export { LoggerConfig, type TransportBinding } from './logger.config';
+export { withLogContext, getLogContext } from './logger.context.lib';
 export type { LogLevel, LogContext, LogEntry } from './logger.lib';
 export { safeStringify } from './logger.lib';
-export { withLogContext } from './logger.context.lib';
+
+export type { LoggerFormatter } from './formatter';
+export { JsonlFormatter, PrettyFormatter } from './formatter';
+
+export type { LoggerTransport } from './transport';
+export { ConsoleTransport } from './transport';
