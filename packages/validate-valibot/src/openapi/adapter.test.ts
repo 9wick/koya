@@ -25,4 +25,10 @@ describe('valibotAdapter', () => {
   it('throws for invalid schema input', () => {
     expect(() => valibotAdapter.toJsonSchema('not a schema')).toThrow();
   });
+
+  it('throws when passed a plain object that mimics schema shape', () => {
+    expect(() =>
+      valibotAdapter.toJsonSchema({ kind: 'schema', type: 'string', async: false }),
+    ).toThrow();
+  });
 });
