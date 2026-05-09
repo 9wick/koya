@@ -297,4 +297,26 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['packages/**/*.{ts,tsx}'],
+    ignores: [
+      'packages/core/**/*.{ts,tsx}',
+      'packages/command/**/*.{ts,tsx}',
+      'packages/cli/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@needle-di/core',
+              message:
+                'Import from @zeltjs/core or @zeltjs/testing instead. Direct @needle-di/core imports are only allowed in packages/core, packages/command, and packages/cli.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );
