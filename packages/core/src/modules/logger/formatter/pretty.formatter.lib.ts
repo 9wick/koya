@@ -8,8 +8,3 @@ export const COLORS: Record<LogLevel, string> = {
 };
 
 export const RESET = '\x1b[0m';
-
-export const isTTY = (): boolean =>
-  typeof process !== 'undefined' &&
-  process.stdout.isTTY === true &&
-  process.env['NO_COLOR'] === undefined;

@@ -179,18 +179,17 @@ export default tseslint.config(
     },
   },
   {
-    // TTY detection reads process.stdout.isTTY and process.env.NO_COLOR; typeof guard
-    // prevents crashes in runtimes without process (e.g. browser/Cloudflare Workers).
-    files: ['packages/core/src/modules/logger/formatter/pretty.formatter.lib.ts'],
-    rules: {
-      '@9wick/strict-type-rules/no-process-access': 'off',
-    },
-  },
-  {
     // ConsoleTransport writes to stdout via console.log; this is its intended behavior.
     files: ['packages/core/src/modules/logger/transport/console.transport.ts'],
     rules: {
       'no-console': 'off',
+    },
+  },
+  {
+    // Node adapter config needs process.env access.
+    files: ['packages/adapter-node/src/process-env.config.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-process-access': 'off',
     },
   },
   {

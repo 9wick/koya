@@ -75,6 +75,7 @@ export {
   safeStringify,
   JsonlFormatter,
   PrettyFormatter,
+  PrettyFormatterConfig,
   ConsoleTransport,
 } from './modules/logger';
 export type {
