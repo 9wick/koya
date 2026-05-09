@@ -1,7 +1,12 @@
 import { args, cliSchema, Command } from '@zeltjs/command';
 import { describe, expect, it } from 'vitest';
 
-import { runCommand } from './runner';
+import {
+  CommandExecutionError,
+  InvalidNumberError,
+  runCommand,
+  SchemaValidationError,
+} from './runner';
 
 const getArgsFromContext = (cmd: unknown): unknown => {
   try {
@@ -31,9 +36,8 @@ describe('runCommand', () => {
       }
     }
 
-    const result = await runCommand(GreetCommand, ['Alice', '--verbose']);
+    await runCommand(GreetCommand, ['Alice', '--verbose']);
 
-    expect(result.isOk()).toBe(true);
     expect(received.name).toBe('Alice');
     expect(received.verbose).toBe(true);
   });
@@ -52,13 +56,12 @@ describe('runCommand', () => {
       }
     }
 
-    const result = await runCommand(DeployCommand, []);
+    await runCommand(DeployCommand, []);
 
-    expect(result.isOk()).toBe(true);
     expect(received.env).toBe('production');
   });
 
-  it('returns error when command throws', async () => {
+  it('throws CommandExecutionError when command throws', async () => {
     @Command({ name: 'fail' })
     class FailingCommand {
       run() {
@@ -66,12 +69,7 @@ describe('runCommand', () => {
       }
     }
 
-    const result = await runCommand(FailingCommand, []);
-
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) {
-      expect(result.error.type).toBe('COMMAND_EXECUTION_FAILED');
-    }
+    await expect(runCommand(FailingCommand, [])).rejects.toThrow(CommandExecutionError);
   });
 });
 
@@ -91,9 +89,8 @@ describe('runCommand with static schema', () => {
     }
     Command({ name: 'greet' })(GreetCommandBase);
 
-    const result = await runCommand(GreetCommandBase, ['world']);
+    await runCommand(GreetCommandBase, ['world']);
 
-    expect(result.isOk()).toBe(true);
     expect(received.target).toBe('world');
   });
 
@@ -112,9 +109,8 @@ describe('runCommand with static schema', () => {
     }
     Command({ name: 'test' })(TestCommand);
 
-    const result = await runCommand(TestCommand, ['-v']);
+    await runCommand(TestCommand, ['-v']);
 
-    expect(result.isOk()).toBe(true);
     expect(received.verbose).toBe(true);
   });
 
@@ -133,9 +129,8 @@ describe('runCommand with static schema', () => {
     }
     Command({ name: 'serve' })(ServeCommand);
 
-    const result = await runCommand(ServeCommand, ['--port', '8080']);
+    await runCommand(ServeCommand, ['--port', '8080']);
 
-    expect(result.isOk()).toBe(true);
     expect(received.port).toBe(8080);
     expect(typeof received.port).toBe('number');
   });
@@ -155,13 +150,12 @@ describe('runCommand with static schema', () => {
     }
     Command({ name: 'serve' })(ServeCommand);
 
-    const result = await runCommand(ServeCommand, []);
+    await runCommand(ServeCommand, []);
 
-    expect(result.isOk()).toBe(true);
     expect(received.port).toBe(3000);
   });
 
-  it('returns error for invalid number', async () => {
+  it('throws InvalidNumberError for invalid number', async () => {
     class ServeCommand {
       static schema = cliSchema({
         options: [{ name: 'port', type: 'number' }],
@@ -171,12 +165,7 @@ describe('runCommand with static schema', () => {
     }
     Command({ name: 'serve' })(ServeCommand);
 
-    const result = await runCommand(ServeCommand, ['--port', 'abc']);
-
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) {
-      expect(result.error.type).toBe('INVALID_NUMBER');
-    }
+    await expect(runCommand(ServeCommand, ['--port', 'abc'])).rejects.toThrow(InvalidNumberError);
   });
 
   it('handles optional positional args', async () => {
@@ -201,9 +190,8 @@ describe('runCommand with static schema', () => {
     }
     Command({ name: 'greet' })(GreetCommand);
 
-    const result = await runCommand(GreetCommand, ['world']);
+    await runCommand(GreetCommand, ['world']);
 
-    expect(result.isOk()).toBe(true);
     expect(received.target).toBe('world');
     expect(received.message).toBeUndefined();
   });
@@ -237,9 +225,8 @@ describe('runCommand with static schema', () => {
     }
     Command({ name: 'deploy' })(DeployCommand);
 
-    const result = await runCommand(DeployCommand, ['production', '--port', '8080', '--verbose']);
+    await runCommand(DeployCommand, ['production', '--port', '8080', '--verbose']);
 
-    expect(result.isOk()).toBe(true);
     expect(received.target).toBe('production');
     expect(received.port).toBe(8080);
     expect(received.verbose).toBe(true);
@@ -247,7 +234,7 @@ describe('runCommand with static schema', () => {
 });
 
 describe('schema validation', () => {
-  it('returns error when args and options have same name', async () => {
+  it('throws SchemaValidationError when args and options have same name', async () => {
     class TestCommand {
       static schema = cliSchema({
         args: [{ name: 'port', type: 'string' }],
@@ -258,11 +245,6 @@ describe('schema validation', () => {
     }
     Command({ name: 'test' })(TestCommand);
 
-    const result = await runCommand(TestCommand, []);
-
-    expect(result.isErr()).toBe(true);
-    if (result.isErr()) {
-      expect(result.error.type).toBe('SCHEMA_VALIDATION_FAILED');
-    }
+    await expect(runCommand(TestCommand, [])).rejects.toThrow(SchemaValidationError);
   });
 });

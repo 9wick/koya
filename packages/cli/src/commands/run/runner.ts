@@ -10,20 +10,34 @@ import { runInCommandContext } from '@zeltjs/command';
 import { Container } from '@needle-di/core';
 import type { ArgsDef, BooleanArgDef, StringArgDef } from 'citty';
 import { parseArgs } from 'citty';
-import {
-  err,
-  errAsync,
-  fromPromise,
-  fromThrowable,
-  ok,
-  type Result,
-  type ResultAsync,
-} from 'neverthrow';
 
-export type RunCommandError =
-  | { type: 'COMMAND_EXECUTION_FAILED'; cause: unknown }
-  | { type: 'INVALID_NUMBER'; name: string; value: unknown }
-  | { type: 'SCHEMA_VALIDATION_FAILED'; message: string };
+export class CommandExecutionError extends Error {
+  readonly type = 'COMMAND_EXECUTION_FAILED' as const;
+  constructor(cause: unknown) {
+    super('Command execution failed');
+    this.name = 'CommandExecutionError';
+    this.cause = cause;
+  }
+}
+
+export class InvalidNumberError extends Error {
+  readonly type = 'INVALID_NUMBER' as const;
+  constructor(
+    readonly argName: string,
+    readonly value: unknown,
+  ) {
+    super(`Invalid number for '${argName}': ${String(value)}`);
+    this.name = 'InvalidNumberError';
+  }
+}
+
+export class SchemaValidationError extends Error {
+  readonly type = 'SCHEMA_VALIDATION_FAILED' as const;
+  constructor(message: string) {
+    super(message);
+    this.name = 'SchemaValidationError';
+  }
+}
 
 type LegacyInstanceShape = {
   args?: Record<string, { type: string; default?: string }>;
@@ -107,22 +121,15 @@ const getStaticSchema = (commandClass: CommandClass): SchemaDefinition | undefin
   return maybeSchema;
 };
 
-const validateSchema = (
-  schema: SchemaDefinition,
-): Result<void, { type: 'SCHEMA_VALIDATION_FAILED'; message: string }> => {
+const validateSchema = (schema: SchemaDefinition): void => {
   const argNames = new Set((schema.args ?? []).map((a) => a.name));
   const optionNames = new Set((schema.options ?? []).map((o) => o.name));
 
   for (const name of argNames) {
     if (optionNames.has(name)) {
-      return err({
-        type: 'SCHEMA_VALIDATION_FAILED',
-        message: `Duplicate name '${name}' in args and options`,
-      });
+      throw new SchemaValidationError(`Duplicate name '${name}' in args and options`);
     }
   }
-
-  return ok(undefined);
 };
 
 const optionToCittyArg = (opt: {
@@ -157,90 +164,54 @@ const buildNewCittyArgs = (schema: SchemaDefinition): ArgsDef => {
   return cittyArgs;
 };
 
-const convertNumber = (
-  value: unknown,
-  name: string,
-): Result<number, { type: 'INVALID_NUMBER'; name: string; value: unknown }> => {
+const convertNumber = (value: unknown, name: string): number => {
   const num = Number(value);
   if (!Number.isFinite(num)) {
-    return err({ type: 'INVALID_NUMBER', name, value });
+    throw new InvalidNumberError(name, value);
   }
-  return ok(num);
+  return num;
 };
-
-type NumberConvertError = { type: 'INVALID_NUMBER'; name: string; value: unknown };
 
 const processPositionalArg = (
   arg: ArgDef,
   value: unknown,
   result: Record<string, unknown>,
-): Result<void, NumberConvertError> => {
+): void => {
   if (arg.type === 'number' && value !== undefined) {
-    const converted = convertNumber(value, arg.name);
-    if (converted.isErr()) return err(converted.error);
-    result[arg.name] = converted.value;
+    result[arg.name] = convertNumber(value, arg.name);
   } else {
     result[arg.name] = value;
   }
-  return ok(undefined);
 };
 
 const processOption = (
   opt: { name: string; type: string; default?: unknown },
   value: unknown,
   result: Record<string, unknown>,
-): Result<void, NumberConvertError> => {
+): void => {
   if (opt.type === 'number' && value !== undefined) {
-    const converted = convertNumber(value, opt.name);
-    if (converted.isErr()) return err(converted.error);
-    result[opt.name] = converted.value;
+    result[opt.name] = convertNumber(value, opt.name);
   } else if (opt.type === 'boolean') {
     result[opt.name] = value ?? false;
   } else {
     result[opt.name] = value;
   }
-  return ok(undefined);
 };
 
-const processAllPositionalArgs = (
-  argDefs: readonly ArgDef[],
-  parsed: ParsedArgs,
-  result: Record<string, unknown>,
-): Result<void, NumberConvertError> => {
-  for (let i = 0; i < argDefs.length; i++) {
-    const arg = argDefs[i] as ArgDef;
-    const processResult = processPositionalArg(arg, parsed._[i], result);
-    if (processResult.isErr()) return err(processResult.error);
-  }
-  return ok(undefined);
-};
-
-const processAllOptions = (
-  optionDefs: readonly { name: string; type: string; default?: unknown }[],
-  parsed: ParsedArgs,
-  result: Record<string, unknown>,
-): Result<void, NumberConvertError> => {
-  for (const opt of optionDefs) {
-    const value = parsed[opt.name] ?? opt.default;
-    const processResult = processOption(opt, value, result);
-    if (processResult.isErr()) return err(processResult.error);
-  }
-  return ok(undefined);
-};
-
-const buildNewArgs = (
-  schema: SchemaDefinition,
-  parsed: ParsedArgs,
-): Result<Record<string, unknown>, NumberConvertError> => {
+const buildNewArgs = (schema: SchemaDefinition, parsed: ParsedArgs): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
 
-  const argsResult = processAllPositionalArgs(schema.args ?? [], parsed, result);
-  if (argsResult.isErr()) return err(argsResult.error);
+  for (let i = 0; i < (schema.args ?? []).length; i++) {
+    const arg = (schema.args ?? [])[i] as ArgDef;
+    processPositionalArg(arg, parsed._[i], result);
+  }
 
-  const optionsResult = processAllOptions(schema.options ?? [], parsed, result);
-  if (optionsResult.isErr()) return err(optionsResult.error);
+  for (const opt of schema.options ?? []) {
+    const value = parsed[opt.name] ?? opt.default;
+    processOption(opt, value, result);
+  }
 
-  return ok(result);
+  return result;
 };
 
 // --- Legacy execution ---
@@ -248,7 +219,7 @@ const buildNewArgs = (
 const parseAndResolveLegacy = (
   commandClass: LegacyCommandClass,
   argv: string[],
-): Result<{ instance: LegacyInstanceShape; ctx: CommandContext }, never> => {
+): { instance: LegacyInstanceShape; ctx: CommandContext } => {
   const cittyArgs = buildLegacyCittyArgs(commandClass);
   const parsed = parseArgs(argv, cittyArgs) as ParsedArgs;
 
@@ -260,24 +231,7 @@ const parseAndResolveLegacy = (
     options: buildLegacyOptions(instance, parsed),
   } as CommandContext;
 
-  return ok({ instance, ctx });
-};
-
-const executeLegacyRun = (
-  instance: LegacyInstanceShape,
-  ctx: CommandContext,
-): ResultAsync<void, RunCommandError> => {
-  const safeRun = fromThrowable(
-    () => instance.run(ctx),
-    (cause) => ({ type: 'COMMAND_EXECUTION_FAILED' as const, cause }),
-  );
-
-  return safeRun().asyncAndThen((maybePromise) =>
-    fromPromise(Promise.resolve(maybePromise), (cause) => ({
-      type: 'COMMAND_EXECUTION_FAILED' as const,
-      cause,
-    })),
-  );
+  return { instance, ctx };
 };
 
 // --- New execution ---
@@ -285,55 +239,41 @@ const executeLegacyRun = (
 const parseAndResolveNew = (
   commandClass: NewCommandClass,
   argv: string[],
-): Result<{ instance: NewInstanceShape; parsedArgs: Record<string, unknown> }, RunCommandError> => {
+): { instance: NewInstanceShape; parsedArgs: Record<string, unknown> } => {
   const schema = commandClass.schema;
 
-  const validationResult = validateSchema(schema);
-  if (validationResult.isErr()) return err(validationResult.error);
+  validateSchema(schema);
 
   const cittyArgs = buildNewCittyArgs(schema);
   const parsed = parseArgs(argv, cittyArgs) as ParsedArgs;
 
-  const argsResult = buildNewArgs(schema, parsed);
-  if (argsResult.isErr()) return err(argsResult.error);
+  const parsedArgs = buildNewArgs(schema, parsed);
 
   const container = new Container();
   const instance = container.get(commandClass) as NewInstanceShape;
 
-  return ok({ instance, parsedArgs: argsResult.value });
-};
-
-const executeNewRun = (
-  instance: NewInstanceShape,
-  parsedArgs: Record<string, unknown>,
-): ResultAsync<void, RunCommandError> => {
-  const safeRun = fromThrowable(
-    () => runInCommandContext({ parsedArgs }, () => instance.run()),
-    (cause) => ({ type: 'COMMAND_EXECUTION_FAILED' as const, cause }),
-  );
-
-  return safeRun().asyncAndThen((maybePromise) =>
-    fromPromise(Promise.resolve(maybePromise), (cause) => ({
-      type: 'COMMAND_EXECUTION_FAILED' as const,
-      cause,
-    })),
-  );
+  return { instance, parsedArgs };
 };
 
 // --- Main entry point ---
 
-export const runCommand = (
-  commandClass: CommandClass,
-  argv: string[],
-): ResultAsync<void, RunCommandError> => {
+export const runCommand = async (commandClass: CommandClass, argv: string[]): Promise<void> => {
   const staticSchema = getStaticSchema(commandClass);
+
   if (staticSchema !== undefined) {
-    const result = parseAndResolveNew(commandClass as NewCommandClass, argv);
-    if (result.isErr()) return errAsync(result.error);
-    return executeNewRun(result.value.instance, result.value.parsedArgs);
+    const { instance, parsedArgs } = parseAndResolveNew(commandClass as NewCommandClass, argv);
+    try {
+      await Promise.resolve(runInCommandContext({ parsedArgs }, () => instance.run()));
+    } catch (cause) {
+      throw new CommandExecutionError(cause);
+    }
+    return;
   }
 
-  return parseAndResolveLegacy(commandClass as LegacyCommandClass, argv).asyncAndThen(
-    ({ instance, ctx }) => executeLegacyRun(instance, ctx),
-  );
+  const { instance, ctx } = parseAndResolveLegacy(commandClass as LegacyCommandClass, argv);
+  try {
+    await Promise.resolve(instance.run(ctx));
+  } catch (cause) {
+    throw new CommandExecutionError(cause);
+  }
 };
