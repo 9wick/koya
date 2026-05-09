@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Container } from '@needle-di/core';
+import { createTestTarget } from '@zeltjs/testing';
 import {
   Controller,
   Get,
@@ -51,10 +51,11 @@ class JwtServiceTestConfig extends JwtConfig {
   }
 }
 
-const buildJwtService = () => {
-  const container = new Container();
-  container.bind({ provide: JwtConfig, useValue: new JwtServiceTestConfig() });
-  return container.get(JwtService);
+const buildJwtService = async () => {
+  const testTarget = await createTestTarget(JwtService, {
+    configs: [JwtServiceTestConfig],
+  });
+  return { jwtService: testTarget.target, shutdown: testTarget.shutdown };
 };
 
 describe('JwtMiddleware', () => {
@@ -81,7 +82,7 @@ describe('JwtMiddleware', () => {
   });
 
   it('should allow request with valid token', async () => {
-    const jwtService = buildJwtService();
+    const { jwtService, shutdown } = await buildJwtService();
     const token = await jwtService.sign({ sub: 'user-123' });
     const res = await (await buildApp()).request('/protected/', {
       headers: { Authorization: `Bearer ${token}` },
@@ -90,10 +91,10 @@ describe('JwtMiddleware', () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as { message: string };
     expect(body.message).toBe('success');
+    await shutdown();
   });
 
   it('should return 401 for expired token', async () => {
-    const expiredContainer = new Container();
     class ExpiredConfig extends JwtConfig {
       override get secret(): string {
         return 'test-secret-key-for-testing-only';
@@ -102,9 +103,10 @@ describe('JwtMiddleware', () => {
         return '0s';
       }
     }
-    expiredContainer.bind({ provide: JwtConfig, useValue: new ExpiredConfig() });
-    const expiredJwtService = expiredContainer.get(JwtService);
-    const token = await expiredJwtService.sign({ sub: 'user-123' });
+    const expiredTarget = await createTestTarget(JwtService, {
+      configs: [ExpiredConfig],
+    });
+    const token = await expiredTarget.target.sign({ sub: 'user-123' });
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -113,6 +115,7 @@ describe('JwtMiddleware', () => {
     });
 
     expect(res.status).toBe(401);
+    await expiredTarget.shutdown();
   });
 });
 
@@ -138,7 +141,7 @@ describe('JwtMiddleware — setUser integration', () => {
     });
     await httpApp.ready();
 
-    const jwtService = buildJwtService();
+    const { jwtService, shutdown } = await buildJwtService();
     const token = await jwtService.sign({ sub: 'user-42' });
 
     const res = await httpApp.request('/user-check/', {
@@ -148,6 +151,7 @@ describe('JwtMiddleware — setUser integration', () => {
     expect(res.status).toBe(200);
     expect(capturedUser).toBe('user-42');
     expect(capturedRoles).toEqual(['user', 'admin']);
+    await shutdown();
   });
 });
 
@@ -191,10 +195,11 @@ describe('JwtMiddleware — cookie driver', () => {
     return app;
   };
 
-  const buildCookieJwtService = () => {
-    const container = new Container();
-    container.bind({ provide: JwtConfig, useClass: CookieDriverConfig });
-    return container.get(JwtService);
+  const buildCookieJwtService = async () => {
+    const testTarget = await createTestTarget(JwtService, {
+      configs: [CookieDriverConfig],
+    });
+    return { jwtService: testTarget.target, shutdown: testTarget.shutdown };
   };
 
   it('should return 401 when no cookie is present', async () => {
@@ -204,17 +209,18 @@ describe('JwtMiddleware — cookie driver', () => {
   });
 
   it('should return 401 when Authorization header is used instead of cookie', async () => {
-    const jwtService = buildCookieJwtService();
+    const { jwtService, shutdown } = await buildCookieJwtService();
     const token = await jwtService.sign({ sub: 'user-123' });
     const res = await (await buildCookieApp()).request('/cookie-protected/', {
       headers: { Authorization: `Bearer ${token}` },
     });
 
     expect(res.status).toBe(401);
+    await shutdown();
   });
 
   it('should allow request with valid cookie', async () => {
-    const jwtService = buildCookieJwtService();
+    const { jwtService, shutdown } = await buildCookieJwtService();
     const token = await jwtService.sign({ sub: 'user-123' });
     const res = await (await buildCookieApp()).request('/cookie-protected/', {
       headers: { Cookie: `auth_token=${token}` },
@@ -223,6 +229,7 @@ describe('JwtMiddleware — cookie driver', () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as { message: string };
     expect(body.message).toBe('cookie-success');
+    await shutdown();
   });
 
   it('should return 401 for invalid cookie token', async () => {
@@ -252,7 +259,7 @@ describe('JwtMiddleware — cookie driver', () => {
     });
     await httpApp.ready();
 
-    const jwtService = buildCookieJwtService();
+    const { jwtService, shutdown } = await buildCookieJwtService();
     const token = await jwtService.sign({ sub: 'cookie-user-99' });
 
     const res = await httpApp.request('/cookie-user-check/', {
@@ -261,5 +268,6 @@ describe('JwtMiddleware — cookie driver', () => {
 
     expect(res.status).toBe(200);
     expect(capturedUser).toBe('cookie-user-99');
+    await shutdown();
   });
 });

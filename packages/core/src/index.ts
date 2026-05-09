@@ -68,6 +68,24 @@ export type { CreateTestTargetOptions, TestTargetResult } from './internal/conta
 export { LifecycleManager } from './lifecycle';
 export type { Lifecycle, Disposable } from './lifecycle';
 
-export { Logger } from './modules/logger';
+export {
+  Logger,
+  LoggerConfig,
+  withLogContext,
+  getLogContext,
+  safeStringify,
+  JsonlFormatter,
+  PrettyFormatter,
+  PrettyFormatterConfig,
+  ConsoleTransport,
+} from './modules/logger';
+export type {
+  LogLevel,
+  LogContext,
+  LogEntry,
+  TransportBinding,
+  LoggerFormatter,
+  LoggerTransport,
+} from './modules/logger';
 
 export { EnvConfig, EnvService } from './modules/env';

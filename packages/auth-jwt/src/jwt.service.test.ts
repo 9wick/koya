@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { Container } from '@needle-di/core';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createTestTarget, type TestTargetResult } from '@zeltjs/testing';
 
 import { JwtService } from './jwt.service';
 import { JwtConfig } from './jwt.config';
@@ -15,12 +15,18 @@ class TestJwtConfig extends JwtConfig {
 }
 
 describe('JwtService', () => {
+  let testTarget: TestTargetResult<JwtService>;
   let jwtService: JwtService;
 
-  beforeEach(() => {
-    const container = new Container();
-    container.bind({ provide: JwtConfig, useValue: new TestJwtConfig() });
-    jwtService = container.get(JwtService);
+  beforeEach(async () => {
+    testTarget = await createTestTarget(JwtService, {
+      configs: [TestJwtConfig],
+    });
+    jwtService = testTarget.target;
+  });
+
+  afterEach(async () => {
+    await testTarget.shutdown();
   });
 
   describe('sign', () => {

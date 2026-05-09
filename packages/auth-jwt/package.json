@@ -34,9 +34,9 @@
     "neverthrow": "8.2.0"
   },
   "devDependencies": {
-    "@needle-di/core": "1.1.2",
     "@types/node": "22.19.17",
     "@zeltjs/core": "workspace:*",
+    "@zeltjs/testing": "workspace:*",
     "hono": "4.12.16"
   }
 }
