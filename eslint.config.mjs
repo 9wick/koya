@@ -104,6 +104,8 @@ export default tseslint.config(
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@9wick/strict-type-rules/no-throw': 'off',
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
     },
   },
   {

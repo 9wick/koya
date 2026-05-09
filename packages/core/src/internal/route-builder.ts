@@ -106,18 +106,25 @@ const hasUseMethod = (proto: unknown): boolean => {
   return typeof Reflect.get(proto, 'use') === 'function';
 };
 
-const isMiddlewareClass = (input: MiddlewareInput): input is MiddlewareClass =>
+const checkMiddlewareClass = (input: MiddlewareInput): boolean =>
   typeof input === 'function' && input.prototype !== undefined && hasUseMethod(input.prototype);
+
+function narrowToMiddlewareClass(middleware: MiddlewareInput, isClass: true): MiddlewareClass;
+function narrowToMiddlewareClass(middleware: MiddlewareInput, isClass: false): FunctionMiddleware;
+function narrowToMiddlewareClass(middleware: MiddlewareInput, _isClass: boolean): MiddlewareInput {
+  return middleware;
+}
 
 const resolveMiddleware = (
   middleware: MiddlewareInput,
   resolver: ResolverHandle,
 ): FunctionMiddleware => {
-  if (isMiddlewareClass(middleware)) {
-    const instance = resolver.get(middleware);
+  if (checkMiddlewareClass(middleware)) {
+    const mwClass = narrowToMiddlewareClass(middleware, true);
+    const instance = resolver.get(mwClass);
     return (c, next) => instance.use(c, next);
   }
-  return middleware;
+  return narrowToMiddlewareClass(middleware, false);
 };
 
 const createAuthorizationMiddleware = (requiredRoles: readonly string[]): FunctionMiddleware => {

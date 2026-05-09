@@ -1,6 +1,7 @@
-import { Controller, Get, Post, pathParam, response } from '@zeltjs/core';
-import { validated } from './validated';
 import * as v from 'valibot';
+import { Controller, Get, Post, pathParam, response } from '@zeltjs/core';
+
+import { validated } from './validated';
 
 export const CreateUserBody = v.object({
   name: v.string(),
