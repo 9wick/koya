@@ -8,9 +8,10 @@
     "declarationMap": true,
     "sourceMap": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "experimentalDecorators": true,
     "erasableSyntaxOnly": false,
     "types": ["node"]
   },
-  "references": [{ "path": "../core" }, { "path": "../kv" }, { "path": "../validate-valibot" }],
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "references": [{ "path": "../core" }, { "path": "../contract" }]
 }

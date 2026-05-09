@@ -104,11 +104,12 @@ export default tseslint.config(
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@9wick/strict-type-rules/no-throw': 'off',
     },
   },
   {
     // framework error strategy: throw + global error handler (spec §4.9 / koya phase2)
-    files: ['packages/core/src/**/*.{ts,tsx}'],
+    files: ['packages/core/src/**/*.{ts,tsx}', 'packages/validate-valibot/src/**/*.{ts,tsx}'],
     rules: {
       '@9wick/strict-type-rules/no-throw': 'off',
       '@9wick/strict-type-rules/no-try-catch': 'off',

@@ -3,12 +3,20 @@ import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
+import { toJsonSchema } from '@valibot/to-json-schema';
+import type { GenericSchema } from 'valibot';
 import { describe, expect, it } from 'vitest';
 
 import { generateClient } from '../generate-client';
+import type { SchemaAdapter, JsonSchema } from '../types/schema-adapter';
 
 const fixtureGlob = resolve(import.meta.dirname, 'fixtures/*.controller.ts');
 const tsconfigPath = resolve(import.meta.dirname, '../../tsconfig.json');
+
+const requestValidator: SchemaAdapter = {
+  toJsonSchema: (schema: unknown): JsonSchema =>
+    toJsonSchema(schema as GenericSchema) as unknown as JsonSchema,
+};
 
 describe('generateClient', () => {
   it('writes app.gen.ts and openapi.json', async () => {
@@ -17,6 +25,7 @@ describe('generateClient', () => {
       controllers: [fixtureGlob],
       dist,
       tsconfig: tsconfigPath,
+      requestValidator,
     });
 
     expect(result.appGenChanged).toBe(true);
@@ -35,12 +44,14 @@ describe('generateClient', () => {
       controllers: [fixtureGlob],
       dist,
       tsconfig: tsconfigPath,
+      requestValidator,
     });
 
     const secondResult = await generateClient({
       controllers: [fixtureGlob],
       dist,
       tsconfig: tsconfigPath,
+      requestValidator,
     });
 
     expect(secondResult.appGenChanged).toBe(false);
