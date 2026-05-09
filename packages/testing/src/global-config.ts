@@ -14,9 +14,9 @@ const tokenMap = new Map<AnyConfigClass, AnyConfigClass>();
 
 export const configureTestDefaults = (options: ConfigureOptions): void => {
   for (const configClass of options.configs) {
-    const token = findRootConfigToken(configClass);
-    if (token && token !== configClass) {
-      tokenMap.set(token, configClass);
+    const rootToken = findRootConfigToken(configClass);
+    if (rootToken) {
+      tokenMap.set(rootToken, configClass);
     }
   }
 };

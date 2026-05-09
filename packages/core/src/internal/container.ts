@@ -1,7 +1,6 @@
 import { Container } from '@needle-di/core';
 
-import { findRootConfigToken } from '../config/token';
-import { toConfigClass } from '../config/types';
+import { findConfigToken } from '../config';
 import { LifecycleManager } from '../lifecycle';
 
 type Class<T> = new (...args: never[]) => T;
@@ -16,11 +15,10 @@ export type ResolverHandle = {
 
 const bindConfigs = (container: Container, configs: readonly Class<unknown>[]): void => {
   for (const configClass of configs) {
-    const configClassTyped = toConfigClass(configClass);
-    const rootConfig = findRootConfigToken(configClassTyped);
-    container.bind(configClass);
-    if (rootConfig && rootConfig !== configClass) {
-      container.bind({ provide: rootConfig, useExisting: configClass });
+    const token = findConfigToken(configClass);
+    if (token && token !== configClass) {
+      container.bind(configClass);
+      container.bind({ provide: token, useExisting: configClass });
     }
   }
 };

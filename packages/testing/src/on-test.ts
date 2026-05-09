@@ -26,9 +26,9 @@ const applyGlobalConfigs = (app: HttpApp): void => {
 
 const applyInlineConfigs = (app: HttpApp, configs: readonly AnyConfigClass[]): void => {
   for (const configClass of configs) {
-    const token = findRootConfigToken(configClass);
-    if (token && app.hasConfig(token)) {
-      app.replaceConfig(token, configClass);
+    const rootToken = findRootConfigToken(configClass);
+    if (rootToken && app.hasConfig(rootToken)) {
+      app.replaceConfig(rootToken, configClass);
     }
   }
 };
