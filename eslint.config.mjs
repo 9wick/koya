@@ -186,13 +186,6 @@ export default tseslint.config(
     },
   },
   {
-    // Node adapter config needs process.env access.
-    files: ['packages/adapter-node/src/process-env.config.ts'],
-    rules: {
-      '@9wick/strict-type-rules/no-process-access': 'off',
-    },
-  },
-  {
     // Example apps: relaxed rules for demo code clarity
     // - HTTPException requires throw
     // - raw fetch returns untyped JSON
