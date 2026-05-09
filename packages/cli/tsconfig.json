@@ -8,7 +8,9 @@
     "declarationMap": true,
     "sourceMap": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "types": ["node"]
+    "types": ["node"],
+    "experimentalDecorators": true,
+    "erasableSyntaxOnly": false
   },
   "include": ["src/**/*"],
   "references": [{ "path": "../command" }]

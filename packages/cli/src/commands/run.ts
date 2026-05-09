@@ -70,6 +70,12 @@ const handleError = (error: RunError): void => {
     .with({ type: 'COMMAND_EXECUTION_FAILED' }, (e) => {
       consola.error('Command execution failed:', e.cause);
     })
+    .with({ type: 'INVALID_NUMBER' }, (e) => {
+      consola.error(`Invalid number for '${e.name}': ${String(e.value)}`);
+    })
+    .with({ type: 'SCHEMA_VALIDATION_FAILED' }, (e) => {
+      consola.error(`Schema validation failed: ${e.message}`);
+    })
     .exhaustive();
 };
 
