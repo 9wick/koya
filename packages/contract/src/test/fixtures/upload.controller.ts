@@ -1,4 +1,5 @@
-import { Controller, Post, validated } from '@zeltjs/core';
+import { Controller, Post } from '@zeltjs/core';
+import { validated } from './validated';
 import * as v from 'valibot';
 
 export const UploadBody = v.object({
