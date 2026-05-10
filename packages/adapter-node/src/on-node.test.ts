@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createApp, Controller, Get, EnvConfig, CliConfig, Command } from '@zeltjs/core';
+import { createApp, Controller, Get, EnvConfig, CliConfig, Command, cliSchema } from '@zeltjs/core';
 
 import { NodeCliConfig } from './cli.config';
 import { onNode, type ServerHandle, type HttpNodeApp, type CommandNodeApp } from './on-node';
@@ -168,12 +168,14 @@ describe('onNode with commands', () => {
   it('executes a command and returns exitCode 0 on success', async () => {
     const runFn = vi.fn();
 
-    @Command({ name: 'test-cmd' })
     class TestCommand {
+      static schema = cliSchema({});
+
       run() {
         runFn();
       }
     }
+    Command({ name: 'test-cmd' })(TestCommand);
 
     const app = createApp({ commands: [TestCommand] });
     nodeApp = await onNode(app);
@@ -185,10 +187,12 @@ describe('onNode with commands', () => {
   });
 
   it('returns exitCode 1 when command not found', async () => {
-    @Command({ name: 'existing' })
     class ExistingCommand {
+      static schema = cliSchema({});
+
       run() {}
     }
+    Command({ name: 'existing' })(ExistingCommand);
 
     const app = createApp({ commands: [ExistingCommand] });
     nodeApp = await onNode(app);
@@ -199,10 +203,12 @@ describe('onNode with commands', () => {
   });
 
   it('returns exitCode 1 when no command specified', async () => {
-    @Command({ name: 'test' })
     class TestCommand {
+      static schema = cliSchema({});
+
       run() {}
     }
+    Command({ name: 'test' })(TestCommand);
 
     const app = createApp({ commands: [TestCommand] });
     nodeApp = await onNode(app);
@@ -213,12 +219,14 @@ describe('onNode with commands', () => {
   });
 
   it('returns exitCode 1 when command throws', async () => {
-    @Command({ name: 'failing' })
     class FailingCommand {
+      static schema = cliSchema({});
+
       run() {
         throw new Error('Command failed');
       }
     }
+    Command({ name: 'failing' })(FailingCommand);
 
     const app = createApp({ commands: [FailingCommand] });
     nodeApp = await onNode(app);

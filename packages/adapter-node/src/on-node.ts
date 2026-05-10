@@ -88,7 +88,7 @@ const runCommand = (
 ): Promise<ExecResult> => {
   const instance = get(CommandClass);
   return Promise.resolve()
-    .then(() => instance.run({ args: {}, options: {} }))
+    .then(() => instance.run())
     .then(() => successResult)
     .catch(() => failureResult);
 };
