@@ -19,7 +19,7 @@ const makeEntry = (raw: string, ttlSec?: number): Entry =>
   ttlSec !== undefined ? { raw, expiresAt: Date.now() + ttlSec * 1000 } : { raw };
 
 @Injectable()
-export class MemoryKV implements AtomicKVDriver, Lifecycle {
+export class MemoryKVService implements AtomicKVDriver, Lifecycle {
   private readonly data = new Map<string, Entry>();
   private readonly gcInterval: ReturnType<typeof setInterval>;
 

@@ -267,10 +267,19 @@ export default tseslint.config(
     },
   },
   {
-    // KV uses throw for TTL validation.
-    files: ['packages/kv/src/memory-kv.ts'],
+    // KV uses throw for TTL validation. Internal helper functions and class fields
+    // are needed for the GC interval pattern.
+    files: ['packages/kv/src/memory-kv.service.ts'],
     rules: {
       '@9wick/strict-type-rules/no-throw': 'off',
+      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
+    },
+  },
+  {
+    // RedisKVService uses private readonly field for client instance.
+    files: ['packages/kv-driver-redis/src/redis-kv.service.ts'],
+    rules: {
+      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
     },
   },
   {
@@ -317,9 +326,19 @@ export default tseslint.config(
   },
   {
     // Rate limiter wraps KV errors at the service boundary.
-    files: ['packages/rate-limit/src/rate-limiter.service.ts'],
+    files: ['packages/rate-limit/src/rate-limit.service.ts'],
     rules: {
       '@9wick/strict-type-rules/no-try-catch': 'off',
+    },
+  },
+  {
+    // Dynamic middleware class inside decorator factory cannot follow file naming convention.
+    // Also uses throw for 429 response and module-level variables for factory pattern.
+    files: ['packages/rate-limit/src/rate-limit.decorator.ts'],
+    rules: {
+      'zelt/decorator-file-naming': 'off',
+      '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
+      '@9wick/strict-type-rules/no-throw': 'off',
     },
   },
   {

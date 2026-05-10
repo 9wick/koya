@@ -1,4 +1,4 @@
-export { MemoryKV } from './memory-kv';
+export { MemoryKVService, MemoryKVService as MemoryKV } from './memory-kv.service';
 
 export { KVError, type KVErrorType } from './errors';
 

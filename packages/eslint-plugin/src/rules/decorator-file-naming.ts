@@ -15,6 +15,7 @@ const SUFFIX_MAP: Record<string, string> = {
   Middleware: 'middleware',
   ErrorHandler: 'error-handler',
   Formatter: 'formatter',
+  Transport: 'transport',
 };
 
 function findDIDecorator(decorators: Decorator[]): string | null {
