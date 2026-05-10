@@ -15,8 +15,7 @@ import { getContext } from '../primitives/get-context';
 import { pathParam } from '../primitives/path-param';
 import { validated } from '../primitives/validated';
 import { Config } from '../config';
-
-import { createHttpApp, type HttpApp } from './app';
+import { createApp, type App, type ControllerClass } from '../app';
 
 declare module '@zeltjs/core' {
   interface RequestContextSchema {
@@ -64,12 +63,14 @@ class UploadController {
 }
 
 const buildApp = async () => {
-  const app = createHttpApp({ controllers: [HelloController, EchoController, UploadController] });
+  const app = createApp({
+    http: { controllers: [HelloController, EchoController, UploadController] },
+  });
   await app.ready();
   return app;
 };
 
-describe('createHttpApp() — fetch', () => {
+describe('createApp() — fetch', () => {
   it('serves a constructor-injected GET endpoint with pathParam', async () => {
     const app = await buildApp();
     const res = await app.fetch(new Request('https://example.com/hello/zelt'));
@@ -126,12 +127,12 @@ describe('createHttpApp() — fetch', () => {
       list() {}
     }
     new NoDecorator();
-    const app = createHttpApp({ controllers: [NoDecorator] });
+    const app = createApp({ http: { controllers: [NoDecorator] } });
     await expect(app.ready()).rejects.toThrow(/missing @Controller/);
   });
 });
 
-describe('createHttpApp() — request', () => {
+describe('createApp() — request', () => {
   it('accepts a path string with no init (defaults to GET)', async () => {
     const app = await buildApp();
     const res = await app.request('/hello/zelt');
@@ -199,7 +200,7 @@ describe('error paths', () => {
         return { v: pathParam('id') };
       }
     }
-    const app = createHttpApp({ controllers: [BrokenController] });
+    const app = createApp({ http: { controllers: [BrokenController] } });
     await app.ready();
     const res = await app.fetch(new Request('https://example.com/x/'));
     expect(res.status).toBe(500);
@@ -222,9 +223,11 @@ describe('middleware', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      middlewares: [trackMiddleware],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        middlewares: [trackMiddleware],
+      },
     });
     await app.ready();
 
@@ -258,9 +261,11 @@ describe('middleware', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      middlewares: [globalMiddleware],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        middlewares: [globalMiddleware],
+      },
     });
     await app.ready();
 
@@ -291,9 +296,11 @@ describe('middleware', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      middlewares: [authMiddleware],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        middlewares: [authMiddleware],
+      },
     });
     await app.ready();
 
@@ -334,7 +341,7 @@ describe('middleware', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.request('/test/');
     expect(res.status).toBe(200);
@@ -356,9 +363,11 @@ describe('middleware', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      middlewares: [setUserMiddleware],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        middlewares: [setUserMiddleware],
+      },
     });
     await app.ready();
 
@@ -380,9 +389,11 @@ describe('middleware', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      middlewares: [throwingMiddleware],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        middlewares: [throwingMiddleware],
+      },
     });
     await app.ready();
 
@@ -406,9 +417,11 @@ describe('middleware', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      middlewares: [earlyReturnMiddleware],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        middlewares: [earlyReturnMiddleware],
+      },
     });
     await app.ready();
 
@@ -447,9 +460,11 @@ describe('errorHandlers', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      errorHandlers: [CustomErrorHandler],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        errorHandlers: [CustomErrorHandler],
+      },
     });
     await app.ready();
 
@@ -474,9 +489,11 @@ describe('errorHandlers', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      errorHandlers: [SelectiveErrorHandler],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        errorHandlers: [SelectiveErrorHandler],
+      },
     });
     await app.ready();
 
@@ -511,9 +528,11 @@ describe('errorHandlers', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      errorHandlers: [FirstErrorHandler, SecondErrorHandler],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        errorHandlers: [FirstErrorHandler, SecondErrorHandler],
+      },
     });
     await app.ready();
 
@@ -548,10 +567,12 @@ describe('errorHandlers', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      middlewares: [beforeMiddleware],
-      errorHandlers: [TestErrorHandler],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        middlewares: [beforeMiddleware],
+        errorHandlers: [TestErrorHandler],
+      },
     });
     await app.ready();
 
@@ -560,8 +581,9 @@ describe('errorHandlers', () => {
   });
 });
 
-describe('createHttpApp 2-phase initialization', () => {
-  let app: HttpApp | undefined;
+describe('createApp 2-phase initialization', () => {
+  type TestAppOptions = { http: { controllers: ControllerClass[] } };
+  let app: App<TestAppOptions> | undefined;
 
   afterEach(async () => {
     if (app) {
@@ -570,7 +592,7 @@ describe('createHttpApp 2-phase initialization', () => {
     }
   });
 
-  it('returns HttpApp synchronously without starting lifecycle', () => {
+  it('returns App<{ http: { controllers: unknown[] } }> synchronously without starting lifecycle', () => {
     @Controller('/test')
     class TestController {
       @Get('/')
@@ -579,8 +601,8 @@ describe('createHttpApp 2-phase initialization', () => {
       }
     }
 
-    // createHttpApp must return synchronously — no await
-    const app = createHttpApp({ controllers: [TestController] });
+    // createApp must return synchronously — no await
+    const app = createApp({ http: { controllers: [TestController] } });
     expect(app).toBeDefined();
     expect(typeof app.ready).toBe('function');
     expect(typeof app.fetch).toBe('function');
@@ -597,7 +619,7 @@ describe('createHttpApp 2-phase initialization', () => {
       }
     }
 
-    app = createHttpApp({ controllers: [TestController] });
+    app = createApp({ http: { controllers: [TestController] } });
     await expect(app.fetch(new Request('https://example.com/test/'))).rejects.toThrow(
       'Cannot fetch() before ready()',
     );
@@ -612,7 +634,7 @@ describe('createHttpApp 2-phase initialization', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     const result1 = await app.ready();
     // Second call must not throw and must return same result
     const result2 = await app.ready();
@@ -630,13 +652,13 @@ describe('createHttpApp 2-phase initialization', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.shutdown();
     await expect(app.ready()).rejects.toThrow(/after shutdown\(\)/);
   });
 
   it('shutdown() is idempotent', async () => {
-    app = createHttpApp({ controllers: [] });
+    app = createApp({ http: { controllers: [] } });
     await app.ready();
     await app.shutdown();
     await expect(app.shutdown()).resolves.toBeUndefined();
@@ -671,7 +693,10 @@ describe('replaceConfig', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController], configs: [BaseConfig] });
+    const app = createApp({
+      http: { controllers: [TestController] },
+      configs: [BaseConfig],
+    });
     app.replaceConfig(BaseConfig, OverrideConfig);
     await app.ready();
 
@@ -693,7 +718,7 @@ describe('replaceConfig', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     expect(() => app.replaceConfig(SomeConfig, SomeConfig)).toThrow(/after ready\(\)/);
     await app.shutdown();
@@ -711,7 +736,7 @@ describe('replaceConfig', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.shutdown();
     expect(() => app.replaceConfig(SomeConfig2, SomeConfig2)).toThrow(/after shutdown\(\)/);
   });
@@ -750,7 +775,7 @@ describe('warmup option', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [LazyController] });
+    const app = createApp({ http: { controllers: [LazyController] } });
     await app.ready();
 
     expect(events).toEqual([]);
@@ -795,7 +820,7 @@ describe('warmup option', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [EagerController] });
+    const app = createApp({ http: { controllers: [EagerController] } });
     await app.ready({ warmup: true });
 
     expect(events).toEqual(['EagerService:startup']);
@@ -821,7 +846,7 @@ describe('warmup option', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [CachedController] });
+    const app = createApp({ http: { controllers: [CachedController] } });
     await app.ready();
 
     await app.request('/cached/');

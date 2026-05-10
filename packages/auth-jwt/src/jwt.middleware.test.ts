@@ -1,13 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createTestTarget } from '@zeltjs/testing';
-import {
-  Controller,
-  Get,
-  UseMiddleware,
-  createHttpApp,
-  currentUser,
-  currentRoles,
-} from '@zeltjs/core';
+import { Controller, Get, UseMiddleware, createApp, currentUser, currentRoles } from '@zeltjs/core';
 
 import { JwtMiddleware } from './jwt.middleware';
 import { JwtService } from './jwt.service';
@@ -37,8 +30,8 @@ class ProtectedController {
 }
 
 const buildApp = async () => {
-  const app = createHttpApp({
-    controllers: [ProtectedController],
+  const app = createApp({
+    http: { controllers: [ProtectedController] },
     configs: [TestJwtConfig],
   });
   await app.ready();
@@ -135,8 +128,8 @@ describe('JwtMiddleware — setUser integration', () => {
       }
     }
 
-    const httpApp = createHttpApp({
-      controllers: [UserCheckController],
+    const httpApp = createApp({
+      http: { controllers: [UserCheckController] },
       configs: [TestJwtConfig],
     });
     await httpApp.ready();
@@ -187,8 +180,8 @@ describe('JwtMiddleware — cookie driver', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [CookieProtectedController],
+    const app = createApp({
+      http: { controllers: [CookieProtectedController] },
       configs: [CookieDriverConfig],
     });
     await app.ready();
@@ -253,8 +246,8 @@ describe('JwtMiddleware — cookie driver', () => {
       }
     }
 
-    const httpApp = createHttpApp({
-      controllers: [CookieUserCheckController],
+    const httpApp = createApp({
+      http: { controllers: [CookieUserCheckController] },
       configs: [CookieDriverConfig],
     });
     await httpApp.ready();

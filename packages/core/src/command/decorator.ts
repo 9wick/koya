@@ -1,6 +1,6 @@
 import { injectable } from '@needle-di/core';
 
-import { setCommandMetadata, type CommandMetadata } from '../internal/metadata';
+import { setCommandMetadata, type CommandMetadata } from './metadata';
 
 type AnyClass = new (...args: never[]) => object;
 

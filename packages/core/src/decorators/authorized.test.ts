@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createHttpApp } from '../http/app';
+import { createApp } from '../app';
 import type { FunctionMiddleware } from '../middleware/types';
 import { setUser } from '../primitives/auth';
 
@@ -29,9 +29,11 @@ describe('@Authorized', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      middlewares: [authMiddleware],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        middlewares: [authMiddleware],
+      },
     });
     await app.ready();
 
@@ -53,9 +55,11 @@ describe('@Authorized', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
-      middlewares: [authMiddleware],
+    const app = createApp({
+      http: {
+        controllers: [TestController],
+        middlewares: [authMiddleware],
+      },
     });
     await app.ready();
 
@@ -76,9 +80,11 @@ describe('@Authorized', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [AdminController],
-      middlewares: [authMiddleware],
+    const app = createApp({
+      http: {
+        controllers: [AdminController],
+        middlewares: [authMiddleware],
+      },
     });
     await app.ready();
 
@@ -102,9 +108,11 @@ describe('@Authorized', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [AdminController],
-      middlewares: [authMiddleware],
+    const app = createApp({
+      http: {
+        controllers: [AdminController],
+        middlewares: [authMiddleware],
+      },
     });
     await app.ready();
 
@@ -125,9 +133,11 @@ describe('@Authorized', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [ContentController],
-      middlewares: [authMiddleware],
+    const app = createApp({
+      http: {
+        controllers: [ContentController],
+        middlewares: [authMiddleware],
+      },
     });
     await app.ready();
 

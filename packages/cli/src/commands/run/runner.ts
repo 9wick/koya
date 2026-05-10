@@ -1,4 +1,4 @@
-import type { CommandClass, CommandContext } from '@zeltjs/command';
+import type { CommandClass, CommandContext } from '@zeltjs/core';
 import { Container } from '@needle-di/core';
 import type { ArgsDef, BooleanArgDef, StringArgDef } from 'citty';
 import { parseArgs } from 'citty';

@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createHttpApp, Controller, Get, Config, inject } from '@zeltjs/core';
+import { createApp, Controller, Get, Config, inject } from '@zeltjs/core';
 
 import { configureTestDefaults } from './global-config';
 import { onTest } from './on-test';
@@ -50,8 +50,8 @@ describe('onTest', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [TestController],
+    const app = createApp({
+      http: { controllers: [TestController] },
       configs: [DbConfig],
     });
 
@@ -72,8 +72,8 @@ describe('onTest', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [InlineTestController],
+    const app = createApp({
+      http: { controllers: [InlineTestController] },
       configs: [DbConfig2],
     });
 

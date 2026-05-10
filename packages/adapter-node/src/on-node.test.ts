@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createHttpApp, Controller, Get, EnvConfig } from '@zeltjs/core';
+import { createApp, Controller, Get, EnvConfig } from '@zeltjs/core';
 
 import { onNode, type ServerHandle, type NodeApp } from './on-node';
 import { ProcessEnvConfig } from './process-env.config';
@@ -23,7 +23,7 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     nodeApp = await onNode(app);
     handle = await nodeApp.listen(0);
 
@@ -44,7 +44,7 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [PingController] });
+    const app = createApp({ http: { controllers: [PingController] } });
     nodeApp = await onNode(app);
     handle = await nodeApp.listen(0);
 
@@ -62,7 +62,7 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [HealthController] });
+    const app = createApp({ http: { controllers: [HealthController] } });
     const readySpy = vi.spyOn(app, 'ready');
 
     nodeApp = await onNode(app);
@@ -76,8 +76,8 @@ describe('onNode', () => {
   });
 
   it('auto-injects ProcessEnvConfig when EnvConfig token is in configs', async () => {
-    const app = createHttpApp({
-      controllers: [],
+    const app = createApp({
+      http: { controllers: [] },
       configs: [EnvConfig],
     });
     const replaceConfigSpy = vi.spyOn(app, 'replaceConfig');
@@ -96,7 +96,7 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [SimpleController] });
+    const app = createApp({ http: { controllers: [SimpleController] } });
     nodeApp = await onNode(app);
     handle = await nodeApp.listen(0);
 
@@ -113,7 +113,7 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [ShutdownController] });
+    const app = createApp({ http: { controllers: [ShutdownController] } });
     nodeApp = await onNode(app);
     handle = await nodeApp.listen(0);
     const { port } = handle.address;
@@ -133,8 +133,8 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [ServiceController],
+    const app = createApp({
+      http: { controllers: [ServiceController] },
       configs: [EnvConfig],
     });
     nodeApp = await onNode(app);

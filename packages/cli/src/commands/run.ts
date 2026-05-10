@@ -1,4 +1,4 @@
-import type { CommandClass } from '@zeltjs/command';
+import type { CommandClass } from '@zeltjs/core';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { err, ok, type Result, type ResultAsync } from 'neverthrow';

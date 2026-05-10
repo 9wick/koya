@@ -1,5 +1,14 @@
-export { createHttpApp } from './http/app';
-export type { CreateHttpAppOptions, HttpApp, ReadyOptions, ReadyResult } from './http/app';
+export { createApp } from './app/create-app';
+export type {
+  App,
+  HttpApp,
+  CreateAppOptions,
+  HttpOptions,
+  ReadyOptions,
+  ReadyResult,
+  ControllerClass,
+  SchedulerClass,
+} from './app/types';
 
 export { validationErrorBodySchema } from './http/error-schema';
 export type { ValidationErrorBody } from './http/error-schema';
@@ -22,6 +31,20 @@ export { Scheduled } from './decorators/scheduled';
 export { SkipMiddleware } from './decorators/skip-middleware';
 export { UseMiddleware } from './decorators/use-middleware';
 export { Weekly } from './decorators/weekly';
+
+export { Command } from './command/decorator';
+export { getCommandMetadata, setCommandMetadata } from './command/metadata';
+export type { CommandMetadata } from './command/metadata';
+export type {
+  ArgDefinition,
+  ArgsDefinition,
+  CommandClass,
+  CommandContext,
+  InferArgs,
+  InferOptions,
+  OptionDefinition,
+  OptionsDefinition,
+} from './command/types';
 
 export type {
   ErrorHandlerClass,

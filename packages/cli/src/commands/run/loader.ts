@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url';
 
-import { getCommandMetadata, type CommandClass } from '@zeltjs/command';
+import { getCommandMetadata, type CommandClass } from '@zeltjs/core';
 import { fromPromise, okAsync, type ResultAsync } from 'neverthrow';
 import { glob } from 'tinyglobby';
 
