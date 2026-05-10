@@ -2,11 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { Cron } from '../decorators/cron';
 import { Scheduled } from '../decorators/scheduled';
+import { createApp, type App, type SchedulerClass } from '../app';
 
-import { createHttpApp, type HttpApp } from './app';
-
-describe('createHttpApp with schedulers', () => {
-  let app: HttpApp | undefined;
+describe('createApp with schedulers', () => {
+  let app: App<{ http: { controllers: [] }; schedulers: SchedulerClass[] }> | undefined;
 
   afterEach(async () => {
     if (app) {
@@ -22,15 +21,13 @@ describe('createHttpApp with schedulers', () => {
       hourlyTask() {}
     }
 
-    app = createHttpApp({
-      controllers: [],
+    app = createApp({
+      http: { controllers: [] },
       schedulers: [TestScheduler],
     });
     await app.ready();
 
     expect(app.shutdown).toBeDefined();
-    expect(app.startScheduler).toBeDefined();
-    expect(app.stopScheduler).toBeDefined();
   });
 
   it('scheduler runs automatically after ready()', async () => {
@@ -44,8 +41,8 @@ describe('createHttpApp with schedulers', () => {
       }
     }
 
-    app = createHttpApp({
-      controllers: [],
+    app = createApp({
+      http: { controllers: [] },
       schedulers: [TestScheduler],
     });
     await app.ready();
@@ -54,22 +51,12 @@ describe('createHttpApp with schedulers', () => {
   });
 
   it('works without schedulers option', async () => {
-    app = createHttpApp({
-      controllers: [],
-    });
-    await app.ready();
-
-    expect(app.shutdown).toBeDefined();
-  });
-
-  it('deprecated startScheduler/stopScheduler work for backward compatibility', async () => {
-    const localApp = createHttpApp({
-      controllers: [],
+    const localApp = createApp({
+      http: { controllers: [] },
     });
     await localApp.ready();
-    app = localApp;
 
-    expect(() => localApp.startScheduler()).not.toThrow();
-    await expect(localApp.stopScheduler()).resolves.toBeUndefined();
+    expect(localApp.shutdown).toBeDefined();
+    await localApp.shutdown();
   });
 });

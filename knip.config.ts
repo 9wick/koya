@@ -56,6 +56,8 @@ const config: KnipConfig = {
     'packages/core': {
       // neverthrow は今後 Result wrapper に使う想定で keep。
       ignoreDependencies: ['neverthrow'],
+      // app/index.ts is used by test files via '../app' import path
+      ignore: ['src/app/index.ts'],
     },
     'packages/adapter-node': {
       ignoreDependencies: ['@zeltjs/core'],

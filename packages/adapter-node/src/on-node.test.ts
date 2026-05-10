@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createHttpApp, Controller, Get, EnvConfig } from '@zeltjs/core';
+import { createApp, Controller, Get, EnvConfig, Command } from '@zeltjs/core';
 
-import { onNode, type ServerHandle, type NodeApp } from './on-node';
+import { onNode, type ServerHandle, type HttpNodeApp, type CommandNodeApp } from './on-node';
 import { ProcessEnvConfig } from './process-env.config';
 
-describe('onNode', () => {
-  let nodeApp: NodeApp | undefined;
+describe('onNode with HTTP', () => {
+  let nodeApp: HttpNodeApp | undefined;
   let handle: ServerHandle | undefined;
 
   afterEach(async () => {
@@ -23,7 +23,7 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     nodeApp = await onNode(app);
     handle = await nodeApp.listen(0);
 
@@ -44,7 +44,7 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [PingController] });
+    const app = createApp({ http: { controllers: [PingController] } });
     nodeApp = await onNode(app);
     handle = await nodeApp.listen(0);
 
@@ -62,7 +62,7 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [HealthController] });
+    const app = createApp({ http: { controllers: [HealthController] } });
     const readySpy = vi.spyOn(app, 'ready');
 
     nodeApp = await onNode(app);
@@ -76,8 +76,8 @@ describe('onNode', () => {
   });
 
   it('auto-injects ProcessEnvConfig when EnvConfig token is in configs', async () => {
-    const app = createHttpApp({
-      controllers: [],
+    const app = createApp({
+      http: { controllers: [] },
       configs: [EnvConfig],
     });
     const replaceConfigSpy = vi.spyOn(app, 'replaceConfig');
@@ -96,7 +96,7 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [SimpleController] });
+    const app = createApp({ http: { controllers: [SimpleController] } });
     nodeApp = await onNode(app);
     handle = await nodeApp.listen(0);
 
@@ -113,7 +113,7 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [ShutdownController] });
+    const app = createApp({ http: { controllers: [ShutdownController] } });
     nodeApp = await onNode(app);
     handle = await nodeApp.listen(0);
     const { port } = handle.address;
@@ -133,13 +133,85 @@ describe('onNode', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [ServiceController],
+    const app = createApp({
+      http: { controllers: [ServiceController] },
       configs: [EnvConfig],
     });
     nodeApp = await onNode(app);
 
     const env = nodeApp.get(EnvConfig);
     expect(env.get).toBeTypeOf('function');
+  });
+});
+
+describe('onNode with commands', () => {
+  let nodeApp: CommandNodeApp | undefined;
+
+  afterEach(async () => {
+    await nodeApp?.shutdown();
+    nodeApp = undefined;
+  });
+
+  it('executes a command and returns exitCode 0 on success', async () => {
+    const runFn = vi.fn();
+
+    @Command({ name: 'test-cmd' })
+    class TestCommand {
+      run() {
+        runFn();
+      }
+    }
+
+    const app = createApp({ commands: [TestCommand] });
+    nodeApp = await onNode(app);
+
+    const result = await nodeApp.exec(['test-cmd']);
+
+    expect(result.exitCode).toBe(0);
+    expect(runFn).toHaveBeenCalled();
+  });
+
+  it('returns exitCode 1 when command not found', async () => {
+    @Command({ name: 'existing' })
+    class ExistingCommand {
+      run() {}
+    }
+
+    const app = createApp({ commands: [ExistingCommand] });
+    nodeApp = await onNode(app);
+
+    const result = await nodeApp.exec(['nonexistent']);
+
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('returns exitCode 1 when no command specified', async () => {
+    @Command({ name: 'test' })
+    class TestCommand {
+      run() {}
+    }
+
+    const app = createApp({ commands: [TestCommand] });
+    nodeApp = await onNode(app);
+
+    const result = await nodeApp.exec([]);
+
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('returns exitCode 1 when command throws', async () => {
+    @Command({ name: 'failing' })
+    class FailingCommand {
+      run() {
+        throw new Error('Command failed');
+      }
+    }
+
+    const app = createApp({ commands: [FailingCommand] });
+    nodeApp = await onNode(app);
+
+    const result = await nodeApp.exec(['failing']);
+
+    expect(result.exitCode).toBe(1);
   });
 });

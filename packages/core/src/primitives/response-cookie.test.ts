@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Controller } from '../decorators/controller';
 import { Post } from '../decorators/http-method';
-import { createHttpApp } from '../http/app';
+import { createApp } from '../app';
 
 import { response } from './response';
 
@@ -16,7 +16,7 @@ describe('response.setCookie', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(new Request('http://localhost/login', { method: 'POST' }));
 
@@ -40,7 +40,7 @@ describe('response.setCookie', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(new Request('http://localhost/login', { method: 'POST' }));
 
@@ -62,7 +62,7 @@ describe('response.deleteCookie', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(new Request('http://localhost/logout', { method: 'POST' }));
 

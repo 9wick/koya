@@ -1,4 +1,4 @@
-import { Command } from '@zeltjs/command';
+import { Command } from '@zeltjs/core';
 import { describe, expect, it } from 'vitest';
 
 import { CommandExecutionError, runCommand } from './runner';

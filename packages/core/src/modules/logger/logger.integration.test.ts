@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import {
-  createHttpApp,
+  createApp,
   Controller,
   Get,
   inject,
@@ -49,12 +49,12 @@ describe('Logger integration', () => {
         }
       }
 
-      const app = createHttpApp({
-        controllers: [TestController],
+      const app = createApp({
+        http: { controllers: [TestController] },
       });
       await app.ready();
 
-      const res = await app.request('/test');
+      const res = await app.fetch(new Request('http://localhost/test'));
       expect(res.status).toBe(200);
 
       const raw = consoleSpy.mock.calls[0]?.[0] as string;
@@ -88,13 +88,12 @@ describe('Logger integration', () => {
         }
       }
 
-      const app = createHttpApp({
-        controllers: [TestController],
-        middlewares: [RequestContextMiddleware],
+      const app = createApp({
+        http: { controllers: [TestController], middlewares: [RequestContextMiddleware] },
       });
       await app.ready();
 
-      const res = await app.request('/test');
+      const res = await app.fetch(new Request('http://localhost/test'));
       expect(res.status).toBe(200);
 
       const raw = consoleSpy.mock.calls[0]?.[0] as string;
@@ -124,13 +123,13 @@ describe('Logger integration', () => {
         }
       }
 
-      const app = createHttpApp({
-        controllers: [TestController],
+      const app = createApp({
+        http: { controllers: [TestController] },
         configs: [ErrorOnlyConfig],
       });
       await app.ready();
 
-      const res = await app.request('/test');
+      const res = await app.fetch(new Request('http://localhost/test'));
       expect(res.status).toBe(200);
       expect(consoleSpy).toHaveBeenCalledTimes(1);
 
@@ -171,13 +170,13 @@ describe('Logger integration', () => {
         }
       }
 
-      const app = createHttpApp({
-        controllers: [TestController],
+      const app = createApp({
+        http: { controllers: [TestController] },
         configs: [MultiTransportConfig],
       });
       await app.ready();
 
-      await app.request('/test');
+      await app.fetch(new Request('http://localhost/test'));
 
       expect(consoleSpy).toHaveBeenCalledTimes(1);
       expect(secondTransportWrite).toHaveBeenCalledTimes(1);
@@ -207,12 +206,12 @@ describe('Logger integration', () => {
         }
       }
 
-      const app = createHttpApp({
-        controllers: [TestController],
+      const app = createApp({
+        http: { controllers: [TestController] },
       });
       await app.ready();
 
-      await app.request('/test');
+      await app.fetch(new Request('http://localhost/test'));
 
       const raw = consoleSpy.mock.calls[0]?.[0] as string;
       const logged = JSON.parse(raw) as Record<string, unknown>;

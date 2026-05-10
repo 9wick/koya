@@ -8,7 +8,6 @@
     { "path": "packages/cli" },
     { "path": "packages/auth-jwt" },
     { "path": "packages/auth-session" },
-    { "path": "packages/command" },
     { "path": "packages/kv" },
     { "path": "packages/kv-driver-redis" },
     { "path": "packages/rate-limit" },
