@@ -118,4 +118,20 @@ export const initializeHttp = async (
   return hono;
 };
 
+export const createFetch =
+  (getHono: () => Hono | undefined) =>
+  async (req: Request): Promise<Response> => {
+    const hono = getHono();
+    if (!hono) throw new Error('Cannot fetch() before ready() or without http option');
+    return hono.fetch(req);
+  };
+
+export const createRequest =
+  (fetchFn: (req: Request) => Promise<Response>) =>
+  (input: string | Request, init?: RequestInit): Promise<Response> => {
+    const req =
+      typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
+    return fetchFn(req);
+  };
+
 export type { ControllerClass };

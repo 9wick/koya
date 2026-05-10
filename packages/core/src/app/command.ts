@@ -15,3 +15,12 @@ export const validateCommands = (commands: readonly CommandClass[]): Map<string,
   }
   return commandMap;
 };
+
+export const createHasCommand =
+  (commandMap: ReadonlyMap<string, CommandClass>) =>
+  (name: string): boolean =>
+    commandMap.has(name);
+
+export const createGetCommands =
+  (commandMap: ReadonlyMap<string, CommandClass>) => (): ReadonlyMap<string, CommandClass> =>
+    commandMap;

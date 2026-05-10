@@ -7,8 +7,8 @@ import type { ConfigClass } from '../config';
 import { findRootConfigToken } from '../config/token';
 import type { CommandClass } from '../command/types';
 
-import { initializeHttp, type InitializeHttpOptions } from './http';
-import { validateCommands } from './command';
+import { initializeHttp, createFetch, createRequest, type InitializeHttpOptions } from './http';
+import { validateCommands, createHasCommand, createGetCommands } from './command';
 import { registerScheduler } from './scheduler';
 import type {
   App,
@@ -170,29 +170,6 @@ const createShutdown = (state: AppState) => async (): Promise<void> => {
   }
 };
 
-const createFetch =
-  (state: AppState) =>
-  async (req: Request): Promise<Response> => {
-    if (!state.built?.hono) throw new Error('Cannot fetch() before ready() or without http option');
-    return state.built.hono.fetch(req);
-  };
-
-const createHasCommand =
-  (state: AppState) =>
-  (name: string): boolean =>
-    state.commandMap.has(name);
-
-const createGetCommands = (state: AppState) => (): ReadonlyMap<string, CommandClass> =>
-  state.commandMap;
-
-const createRequest =
-  (fetchFn: (req: Request) => Promise<Response>) =>
-  (input: string | Request, init?: RequestInit): Promise<Response> => {
-    const req =
-      typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-    return fetchFn(req);
-  };
-
 const createBaseApp = (options: CreateAppOptions, state: AppState) => ({
   shutdown: createShutdown(state),
   ready: createReady(options, state),
@@ -201,11 +178,11 @@ const createBaseApp = (options: CreateAppOptions, state: AppState) => ({
 });
 
 const buildAppObject = (options: CreateAppOptions, state: AppState): App<CreateAppOptions> => {
-  const fetch = createFetch(state);
+  const fetch = createFetch(() => state.built?.hono);
   const baseApp = createBaseApp(options, state);
   const httpMethods = options.http ? { fetch, request: createRequest(fetch) } : {};
   const commandMethods = options.commands?.length
-    ? { hasCommand: createHasCommand(state), getCommands: createGetCommands(state) }
+    ? { hasCommand: createHasCommand(state.commandMap), getCommands: createGetCommands(state.commandMap) }
     : {};
 
   return { ...baseApp, ...httpMethods, ...commandMethods };
