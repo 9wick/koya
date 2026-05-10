@@ -216,8 +216,8 @@ export default tseslint.config(
     },
   },
   {
-    // CLI command runner uses DI container.get() at dynamic module boundaries
-    // where type assertions are unavoidable.
+    // CLI command runner uses citty parseArgs which returns loosely typed object.
+    // Type assertions are needed at this library boundary.
     files: [
       'packages/cli/src/commands/run/runner.ts',
       'packages/cli/src/commands/run/loader.ts',
@@ -225,11 +225,6 @@ export default tseslint.config(
     ],
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
-      '@typescript-eslint/no-unsafe-argument': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
   {

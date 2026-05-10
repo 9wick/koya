@@ -45,10 +45,14 @@ export type CommandContext<
   readonly options: InferOptions<TOptions>;
 };
 
+import type { SchemaDefinition } from './schema';
+
+export type CommandRunner = {
+  run(): Promise<void> | void;
+};
+
 export type CommandClass = (new (
   ...args: never[]
-) => {
-  run(ctx?: unknown): Promise<void> | void;
-}) & {
-  schema: import('./schema').SchemaDefinition;
+) => CommandRunner) & {
+  schema: SchemaDefinition;
 };

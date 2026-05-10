@@ -43,6 +43,7 @@ export type {
   ArgsDefinition,
   CommandClass,
   CommandContext,
+  CommandRunner,
   InferArgs,
   InferOptions,
   OptionDefinition,

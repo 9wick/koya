@@ -1,4 +1,4 @@
-import type { ArgDef, CommandClass, SchemaDefinition } from '@zeltjs/core';
+import type { ArgDef, CommandClass, CommandRunner, SchemaDefinition } from '@zeltjs/core';
 import { runInCommandContext } from '@zeltjs/core';
 import { Container } from '@needle-di/core';
 import type { ArgsDef, BooleanArgDef, StringArgDef } from 'citty';
@@ -31,8 +31,6 @@ export class SchemaValidationError extends Error {
     this.name = 'SchemaValidationError';
   }
 }
-
-type CommandInstance = InstanceType<CommandClass>;
 
 type ParsedArgs = {
   _: string[];
@@ -135,7 +133,7 @@ const buildNewArgs = (schema: SchemaDefinition, parsed: ParsedArgs): Record<stri
 const parseAndResolve = (
   commandClass: CommandClass,
   argv: string[],
-): { instance: CommandInstance; parsedArgs: Record<string, unknown> } => {
+): { instance: CommandRunner; parsedArgs: Record<string, unknown> } => {
   const schema = commandClass.schema;
 
   validateSchema(schema);
@@ -146,7 +144,7 @@ const parseAndResolve = (
   const parsedArgs = buildNewArgs(schema, parsed);
 
   const container = new Container();
-  const instance = container.get(commandClass) as CommandInstance;
+  const instance = container.get<CommandRunner>(commandClass);
 
   return { instance, parsedArgs };
 };
