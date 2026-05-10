@@ -72,6 +72,7 @@ export default tseslint.config(
     rules: {
       'zelt/config-di-scope': 'warn',
       'zelt/decorator-file-naming': 'warn',
+      'zelt/require-inject-config': 'error',
     },
   },
   {
