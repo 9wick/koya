@@ -3,13 +3,20 @@ import type { Hono } from 'hono';
 import { createContainer } from '../internal/container';
 import { LifecycleManager } from '../lifecycle';
 import type { SchedulerRunner } from '../scheduler/runner';
-import type { ConfigClass } from '../config';
-import { findRootConfigToken } from '../config/token';
 import type { CommandClass } from '../command/types';
 
 import { initializeHttp, createFetch, createRequest, type InitializeHttpOptions } from './http';
 import { validateCommands, createHasCommand, createGetCommands } from './command';
 import { registerScheduler } from './scheduler';
+import {
+  instantiateConfigs,
+  applyOverrides,
+  configHasToken,
+  createReplaceConfig,
+  type AnyConfigClass,
+  type AnyConstructorClass,
+  type Resolver,
+} from './config';
 import type {
   App,
   CreateAppOptions,
@@ -17,19 +24,6 @@ import type {
   ReadyResult,
   ControllerClass,
 } from './types';
-
-type AnyConfigClass = ConfigClass<object>;
-type AnyConstructorClass = new (...args: never[]) => object;
-type Resolver = { get: <T extends object>(cls: new (...args: never[]) => T) => T };
-
-const instantiateConfigs = (
-  configs: readonly AnyConstructorClass[] | undefined,
-  resolver: Resolver,
-): void => {
-  for (const configClass of configs ?? []) {
-    resolver.get(configClass);
-  }
-};
 
 type BuiltApp = {
   readonly hono: Hono | undefined;
@@ -45,14 +39,6 @@ type BuildAppInternalOptions = {
   readonly configOverrides: ReadonlyMap<AnyConstructorClass, AnyConstructorClass>;
   readonly warmup: boolean;
   readonly commandMap: ReadonlyMap<string, CommandClass>;
-};
-
-const applyOverrides = (
-  configs: readonly AnyConstructorClass[],
-  overrides: ReadonlyMap<AnyConstructorClass, AnyConstructorClass>,
-): readonly AnyConstructorClass[] => {
-  if (overrides.size === 0) return configs;
-  return configs.map((cfg) => overrides.get(cfg) ?? cfg);
 };
 
 type LifecycleResult = { ok: true } | { ok: false; cleanup: () => Promise<void> };
@@ -95,29 +81,8 @@ const buildAppInternal = async (buildOptions: BuildAppInternalOptions): Promise<
   };
 };
 
-const assertConfigToken = (
-  tokenClass: AnyConfigClass,
-  configs: readonly AnyConstructorClass[],
-): void => {
-  const targetRoot = findRootConfigToken(tokenClass);
-  const hasToken = configs.some(
-    (cfg) => cfg === tokenClass || findRootConfigToken(cfg) === targetRoot,
-  );
-  if (!hasToken) {
-    throw new Error(`Cannot replaceConfig(): token ${tokenClass.name} is not in configs`);
-  }
-};
-
 const awaitSafe = async (p: Promise<unknown>): Promise<void> => {
   await p.catch(() => {});
-};
-
-const configHasToken = (
-  configs: readonly AnyConstructorClass[],
-  tokenClass: AnyConfigClass,
-): boolean => {
-  const targetRoot = findRootConfigToken(tokenClass);
-  return configs.some((cfg) => cfg === tokenClass || findRootConfigToken(cfg) === targetRoot);
 };
 
 type AppState = {
@@ -127,15 +92,6 @@ type AppState = {
   readonly configOverrides: Map<AnyConfigClass, AnyConfigClass>;
   readonly commandMap: ReadonlyMap<string, CommandClass>;
 };
-
-const createReplaceConfig =
-  (options: CreateAppOptions, state: AppState) =>
-  (token: AnyConfigClass, replacement: AnyConfigClass): void => {
-    if (state.disposed) throw new Error('Cannot replaceConfig() after shutdown()');
-    if (state.built) throw new Error('Cannot replaceConfig() after ready()');
-    assertConfigToken(token, options.configs ?? []);
-    state.configOverrides.set(token, replacement);
-  };
 
 const createReadyResult = (resolver: Resolver): ReadyResult => ({
   get: <T extends object>(cls: new (...args: never[]) => T): T => resolver.get(cls),
