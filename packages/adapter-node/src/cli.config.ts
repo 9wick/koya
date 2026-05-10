@@ -1,4 +1,4 @@
-import { CliConfig, Config } from '@zeltjs/core';
+import { CliConfig, Config, type Signal, type SignalHandler } from '@zeltjs/core';
 
 @Config
 export class NodeCliConfig extends CliConfig {
@@ -12,5 +12,13 @@ export class NodeCliConfig extends CliConfig {
 
   override exit(code: number): never {
     process.exit(code);
+  }
+
+  override onSignal(signal: Signal, handler: SignalHandler): void {
+    process.on(signal, handler);
+  }
+
+  override offSignal(signal: Signal, handler: SignalHandler): void {
+    process.off(signal, handler);
   }
 }

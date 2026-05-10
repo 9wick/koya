@@ -120,4 +120,5 @@ export type {
 } from './modules/logger';
 
 export { CliConfig } from './modules/cli';
+export type { Signal, SignalHandler } from './modules/cli';
 export { EnvConfig, EnvService } from './modules/env';
