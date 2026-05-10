@@ -15,5 +15,3 @@ export const createHandleError =
     const message = options.isDevelopment ? err.message : 'internal server error';
     return Response.json({ code: 'INTERNAL_ERROR', message }, { status: 500 });
   };
-
-export const handleError = createHandleError();
