@@ -16,9 +16,11 @@ export type ResolverHandle = {
 const bindConfigs = (container: Container, configs: readonly Class<unknown>[]): void => {
   for (const configClass of configs) {
     const token = findRootConfigToken(configClass);
-    if (token && token !== configClass) {
+    if (token) {
       container.bind(configClass);
-      container.bind({ provide: token, useExisting: configClass });
+      if (token !== configClass) {
+        container.bind({ provide: token, useExisting: configClass });
+      }
     }
   }
 };

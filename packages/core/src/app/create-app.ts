@@ -8,9 +8,8 @@ import type { ErrorHandlerClass, ErrorHandlerInstance, RequestContext } from '..
 import { createSchedulerRunner, type SchedulerRunner } from '../scheduler/runner';
 import type { ConfigClass } from '../config';
 import { findRootConfigToken } from '../config/token';
-import { createDefaultErrorHandler } from '../http/default-error-handler';
+import { DefaultErrorHandler } from '../http/default-error-handler';
 import { getCommandMetadata } from '../command/metadata';
-import { EnvConfig } from '../modules/env';
 import type { CommandClass } from '../command/types';
 
 import type {
@@ -71,16 +70,13 @@ type SetupHonoOptions = {
   readonly httpOptions: HttpOptions;
   readonly resolver: Resolver;
   readonly lifecycle: LifecycleManager;
-  readonly configs: readonly AnyConstructorClass[];
 };
 
 const setupHono = (options: SetupHonoOptions): Hono => {
-  const { httpOptions, resolver, lifecycle, configs } = options;
+  const { httpOptions, resolver, lifecycle } = options;
   const hono = new Hono({ strict: false });
   const userHandlers = resolveErrorHandlers(httpOptions.errorHandlers ?? [], resolver);
-  const hasEnvConfig = configHasToken(configs, EnvConfig);
-  const envConfig = hasEnvConfig ? resolver.get(EnvConfig) : undefined;
-  const defaultHandler = createDefaultErrorHandler(envConfig);
+  const defaultHandler = resolver.get(DefaultErrorHandler);
   const errorHandlers = [...userHandlers, defaultHandler];
   hono.onError(createErrorHandler(errorHandlers));
   buildRoutes({
@@ -147,7 +143,6 @@ type InitializeHttpOptions = {
   readonly httpOptions: HttpOptions;
   readonly resolver: Resolver;
   readonly lifecycle: LifecycleManager;
-  readonly configs: readonly AnyConstructorClass[];
 };
 
 const initializeHttpSetup = (options: InitializeHttpOptions): HttpResult =>
@@ -218,10 +213,7 @@ const buildAppInternal = async (buildOptions: BuildAppInternalOptions): Promise<
   }
 
   const hono = appOptions.http
-    ? await initializeHttp(
-        { httpOptions: appOptions.http, resolver, lifecycle, configs: effectiveConfigs },
-        warmup,
-      )
+    ? await initializeHttp({ httpOptions: appOptions.http, resolver, lifecycle }, warmup)
     : undefined;
 
   return {
