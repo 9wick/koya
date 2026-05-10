@@ -108,25 +108,34 @@ const handleHttpWarmupResult = async (result: HttpResult): Promise<void> => {
     .exhaustive();
 };
 
-export const httpReady = async (options: HttpReadyOptions): Promise<Hono> => {
-  const { warmup, ...setupOptions } = options;
-  const setupResult = initializeHttpSetup(setupOptions);
+export type HttpBuiltApp = {
+  readonly fetch: (req: Request) => Promise<Response>;
+  readonly controllers: readonly ControllerClass[];
+};
+
+export const httpReady = async (options: HttpReadyOptions): Promise<HttpBuiltApp> => {
+  const { warmup, httpOptions, ...setupOptions } = options;
+  const fullSetupOptions = { ...setupOptions, httpOptions };
+  const setupResult = initializeHttpSetup(fullSetupOptions);
   const hono = await handleHttpSetupResult(setupResult);
 
   if (warmup) {
-    const warmupResult = await initializeHttpWarmup(setupOptions);
+    const warmupResult = await initializeHttpWarmup(fullSetupOptions);
     await handleHttpWarmupResult(warmupResult);
   }
 
-  return hono;
+  return {
+    fetch: (req: Request) => Promise.resolve(hono.fetch(req)),
+    controllers: httpOptions.controllers,
+  };
 };
 
 export const createFetch =
-  (getHono: () => Hono | undefined) =>
+  (getHttpApp: () => HttpBuiltApp | undefined) =>
   async (req: Request): Promise<Response> => {
-    const hono = getHono();
-    if (!hono) throw new Error('Cannot fetch() before ready() or without http option');
-    return hono.fetch(req);
+    const httpApp = getHttpApp();
+    if (!httpApp) throw new Error('Cannot fetch() before ready() or without http option');
+    return httpApp.fetch(req);
   };
 
 export const createRequest =

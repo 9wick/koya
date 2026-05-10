@@ -1,13 +1,10 @@
-import type { Hono } from 'hono';
-
 import { createContainer } from '../internal/container';
 import { LifecycleManager } from '../lifecycle';
-import type { SchedulerRunner } from '../scheduler/runner';
 import type { CommandClass } from '../command/types';
 
-import { httpReady, createFetch, createRequest } from './http';
-import { validateCommands, createHasCommand, createGetCommands } from './command';
-import { schedulerReady } from './scheduler';
+import { httpReady, createFetch, createRequest, type HttpBuiltApp } from './http';
+import { commandReady, type CommandBuiltApp } from './command';
+import { schedulerReady, type SchedulerBuiltApp } from './scheduler';
 import {
   configReady,
   applyOverrides,
@@ -22,23 +19,20 @@ import type {
   CreateAppOptions,
   ReadyOptions,
   ReadyResult,
-  ControllerClass,
 } from './types';
 
 type BuiltApp = {
-  readonly hono: Hono | undefined;
+  readonly http: HttpBuiltApp | undefined;
+  readonly command: CommandBuiltApp | undefined;
+  readonly scheduler: SchedulerBuiltApp | undefined;
   readonly lifecycle: LifecycleManager;
-  readonly schedulerRunner: SchedulerRunner | undefined;
   readonly resolver: Resolver;
-  readonly controllers: readonly ControllerClass[];
-  readonly commandMap: ReadonlyMap<string, CommandClass>;
 };
 
 type BuildAppOptions = {
   readonly appOptions: CreateAppOptions;
   readonly configOverrides: ReadonlyMap<AnyConstructorClass, AnyConstructorClass>;
   readonly warmup: boolean;
-  readonly commandMap: ReadonlyMap<string, CommandClass>;
 };
 
 type LifecycleResult = { ok: true } | { ok: false; cleanup: () => Promise<void> };
@@ -50,14 +44,14 @@ const lifecycleReady = async (lifecycle: LifecycleManager): Promise<LifecycleRes
     .catch((): LifecycleResult => ({ ok: false, cleanup: () => lifecycle.shutdown() }));
 
 const buildApp = async (options: BuildAppOptions): Promise<BuiltApp> => {
-  const { appOptions, configOverrides, warmup, commandMap } = options;
+  const { appOptions, configOverrides, warmup } = options;
 
   const effectiveConfigs = applyOverrides(appOptions.configs ?? [], configOverrides);
   const resolver = createContainer({ configs: effectiveConfigs });
   const lifecycle = resolver.get(LifecycleManager);
 
   configReady({ configs: effectiveConfigs, resolver });
-  schedulerReady({ schedulers: appOptions.schedulers, resolver, lifecycle });
+  const scheduler = schedulerReady({ schedulers: appOptions.schedulers, resolver, lifecycle });
 
   const lifecycleResult = await lifecycleReady(lifecycle);
   if (!lifecycleResult.ok) {
@@ -65,18 +59,13 @@ const buildApp = async (options: BuildAppOptions): Promise<BuiltApp> => {
     throw new Error('Lifecycle startup failed');
   }
 
-  const hono = appOptions.http
+  const http = appOptions.http
     ? await httpReady({ httpOptions: appOptions.http, resolver, lifecycle, warmup })
     : undefined;
 
-  return {
-    hono,
-    lifecycle,
-    schedulerRunner: undefined,
-    resolver,
-    controllers: appOptions.http?.controllers ?? [],
-    commandMap,
-  };
+  const command = commandReady(appOptions.commands);
+
+  return { http, command, scheduler, lifecycle, resolver };
 };
 
 const awaitSafe = async (p: Promise<unknown>): Promise<void> => {
@@ -88,7 +77,6 @@ type AppState = {
   disposed: boolean;
   readyPromise: Promise<ReadyResult> | undefined;
   readonly configOverrides: Map<AnyConfigClass, AnyConfigClass>;
-  readonly commandMap: ReadonlyMap<string, CommandClass>;
 };
 
 const createReadyResult = (resolver: Resolver): ReadyResult => ({
@@ -106,7 +94,6 @@ const createReady =
       appOptions: options,
       configOverrides: state.configOverrides,
       warmup,
-      commandMap: state.commandMap,
     }).then((b) => {
       state.built = b;
       return createReadyResult(b.resolver);
@@ -132,11 +119,14 @@ const createBaseApp = (options: CreateAppOptions, state: AppState) => ({
 });
 
 const buildAppObject = (options: CreateAppOptions, state: AppState): App<CreateAppOptions> => {
-  const fetch = createFetch(() => state.built?.hono);
+  const fetch = createFetch(() => state.built?.http);
   const baseApp = createBaseApp(options, state);
   const httpMethods = options.http ? { fetch, request: createRequest(fetch) } : {};
   const commandMethods = options.commands?.length
-    ? { hasCommand: createHasCommand(state.commandMap), getCommands: createGetCommands(state.commandMap) }
+    ? {
+        hasCommand: (name: string) => state.built?.command?.hasCommand(name) ?? false,
+        getCommands: () => state.built?.command?.getCommands() ?? new Map<string, CommandClass>(),
+      }
     : {};
 
   return { ...baseApp, ...httpMethods, ...commandMethods };
@@ -148,14 +138,11 @@ export function createApp(options: CreateAppOptions): App<CreateAppOptions> {
     throw new Error('createApp requires at least http or commands option');
   }
 
-  const commandMap = options.commands ? validateCommands(options.commands) : new Map();
-
   const state: AppState = {
     built: undefined,
     disposed: false,
     readyPromise: undefined,
     configOverrides: new Map<AnyConfigClass, AnyConfigClass>(),
-    commandMap,
   };
 
   return buildAppObject(options, state);

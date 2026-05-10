@@ -1,6 +1,12 @@
 import { getCommandMetadata } from '../command/metadata';
 import type { CommandClass } from '../command/types';
 
+export type CommandBuiltApp = {
+  readonly commandMap: ReadonlyMap<string, CommandClass>;
+  readonly hasCommand: (name: string) => boolean;
+  readonly getCommands: () => ReadonlyMap<string, CommandClass>;
+};
+
 export const validateCommands = (commands: readonly CommandClass[]): Map<string, CommandClass> => {
   const commandMap = new Map<string, CommandClass>();
   for (const cls of commands) {
@@ -16,11 +22,12 @@ export const validateCommands = (commands: readonly CommandClass[]): Map<string,
   return commandMap;
 };
 
-export const createHasCommand =
-  (commandMap: ReadonlyMap<string, CommandClass>) =>
-  (name: string): boolean =>
-    commandMap.has(name);
-
-export const createGetCommands =
-  (commandMap: ReadonlyMap<string, CommandClass>) => (): ReadonlyMap<string, CommandClass> =>
-    commandMap;
+export const commandReady = (commands: readonly CommandClass[] | undefined): CommandBuiltApp | undefined => {
+  if (!commands || commands.length === 0) return undefined;
+  const commandMap = validateCommands(commands);
+  return {
+    commandMap,
+    hasCommand: (name: string) => commandMap.has(name),
+    getCommands: () => commandMap,
+  };
+};

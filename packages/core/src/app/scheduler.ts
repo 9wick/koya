@@ -11,10 +11,14 @@ export type SchedulerReadyOptions = {
   readonly lifecycle: LifecycleManager;
 };
 
-export const schedulerReady = (options: SchedulerReadyOptions): SchedulerRunner | undefined => {
+export type SchedulerBuiltApp = {
+  readonly runner: SchedulerRunner;
+};
+
+export const schedulerReady = (options: SchedulerReadyOptions): SchedulerBuiltApp | undefined => {
   const { schedulers, resolver, lifecycle } = options;
   if (!schedulers || schedulers.length === 0) return undefined;
   const runner = createSchedulerRunner(schedulers, resolver);
   lifecycle.register(runner);
-  return runner;
+  return { runner };
 };
