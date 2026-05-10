@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url';
 
-import { getCommandMetadata, type CommandClass } from '@zeltjs/command';
+import { getCommandMetadata, type CommandClass } from '@zeltjs/core';
 import { glob } from 'tinyglobby';
 
 export class GlobError extends Error {

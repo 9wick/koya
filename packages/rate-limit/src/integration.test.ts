@@ -1,4 +1,5 @@
-import { Controller, Post, createHttpApp, ip, validated } from '@zeltjs/core';
+import { Controller, Post, createApp, ip } from '@zeltjs/core';
+import { validated } from '@zeltjs/validate-valibot';
 import { object, string } from 'valibot';
 import { describe, expect, it } from 'vitest';
 
@@ -17,7 +18,7 @@ describe('rate-limit integration with primitives', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [AuthController] });
+    const app = createApp({ http: { controllers: [AuthController] } });
     await app.ready();
 
     const r1 = await app.request('/auth/login', {
@@ -58,7 +59,7 @@ describe('rate-limit integration with primitives', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [AuthController2] });
+    const app = createApp({ http: { controllers: [AuthController2] } });
     await app.ready();
 
     const r1 = await app.request('/auth/login', {

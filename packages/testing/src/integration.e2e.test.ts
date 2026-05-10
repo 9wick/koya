@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { Config, Controller, createHttpApp, Get, inject, Injectable } from '@zeltjs/core';
+import { Config, Controller, createApp, Get, inject, Injectable } from '@zeltjs/core';
 
 import { configureTestDefaults } from './global-config';
 import { onTest } from './on-test';
@@ -36,8 +36,8 @@ describe('E2E: onTest with global config', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [DbController],
+    const app = createApp({
+      http: { controllers: [DbController] },
       configs: [DatabaseConfig],
     });
 
@@ -92,8 +92,8 @@ describe('E2E: inline config overrides global', () => {
       }
     }
 
-    const app = createHttpApp({
-      controllers: [CacheController],
+    const app = createApp({
+      http: { controllers: [CacheController] },
       configs: [CacheConfig],
     });
 

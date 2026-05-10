@@ -1,9 +1,8 @@
 import { Container } from '@needle-di/core';
 import { describe, expect, it } from 'vitest';
 
-import { getCommandMetadata } from '../internal/metadata';
-
-import { Command } from './command';
+import { getCommandMetadata } from './metadata';
+import { Command } from './decorator';
 
 describe('@Command', () => {
   it('stores command metadata (name, description)', () => {

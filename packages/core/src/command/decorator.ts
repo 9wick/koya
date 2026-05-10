@@ -1,7 +1,8 @@
 import { injectable } from '@needle-di/core';
 
 import { resolveClassArgs } from '../internal/decorator-context';
-import { setCommandMetadata, type CommandMetadata } from '../internal/metadata';
+
+import { setCommandMetadata, type CommandMetadata } from './metadata';
 
 type CommandOptions = {
   readonly name: string;

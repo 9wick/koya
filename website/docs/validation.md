@@ -5,12 +5,19 @@
 
 Zelt uses [Valibot](https://valibot.dev/) for request validation, providing a type-safe and lightweight validation solution.
 
+## Installation
+
+```bash
+pnpm add @zeltjs/validate-valibot valibot
+```
+
 ## Basic Usage
 
 Use `validated()` with a Valibot schema to validate request bodies:
 
 ```typescript
-import { Controller, Post, validated, response } from '@zeltjs/core';
+import { Controller, Post, response } from '@zeltjs/core';
+import { validated } from '@zeltjs/validate-valibot';
 import * as v from 'valibot';
 
 const CreateUserSchema = v.object({
@@ -34,7 +41,8 @@ export class UserController {
 Use `validated(schema, 'form')` to validate `multipart/form-data` requests, including file uploads:
 
 ```typescript
-import { Controller, Post, validated, response } from '@zeltjs/core';
+import { Controller, Post, response } from '@zeltjs/core';
+import { validated } from '@zeltjs/validate-valibot';
 import * as v from 'valibot';
 
 const UploadSchema = v.object({

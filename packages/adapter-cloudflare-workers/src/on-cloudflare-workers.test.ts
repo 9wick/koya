@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Controller, Get, createHttpApp, EnvConfig } from '@zeltjs/core';
+import { Controller, Get, createApp, EnvConfig } from '@zeltjs/core';
 
 import { CloudflareWorkersEnvConfig } from './cloudflare-workers-env.config';
 import { onCloudflareWorkers } from './on-cloudflare-workers';
@@ -21,7 +21,7 @@ const createMockExecutionContext = () =>
 
 describe('onCloudflareWorkers', () => {
   it('returns CloudflareWorkersApp with get and fetch', async () => {
-    const app = createHttpApp({ controllers: [HelloController] });
+    const app = createApp({ http: { controllers: [HelloController] } });
     const workersApp = await onCloudflareWorkers(app);
 
     expect(workersApp.fetch).toBeDefined();
@@ -31,7 +31,7 @@ describe('onCloudflareWorkers', () => {
   });
 
   it('handles requests and returns responses', async () => {
-    const app = createHttpApp({ controllers: [HelloController] });
+    const app = createApp({ http: { controllers: [HelloController] } });
     const workersApp = await onCloudflareWorkers(app);
     const ctx = createMockExecutionContext();
 
@@ -42,7 +42,7 @@ describe('onCloudflareWorkers', () => {
   });
 
   it('defaults to lazy mode (warmup: false)', async () => {
-    const app = createHttpApp({ controllers: [HelloController] });
+    const app = createApp({ http: { controllers: [HelloController] } });
     const readySpy = vi.spyOn(app, 'ready');
 
     await onCloudflareWorkers(app);
@@ -51,7 +51,7 @@ describe('onCloudflareWorkers', () => {
   });
 
   it('respects warmup: true option', async () => {
-    const app = createHttpApp({ controllers: [HelloController] });
+    const app = createApp({ http: { controllers: [HelloController] } });
     const readySpy = vi.spyOn(app, 'ready');
 
     await onCloudflareWorkers(app, { warmup: true });
@@ -60,7 +60,7 @@ describe('onCloudflareWorkers', () => {
   });
 
   it('ready() is called once during onCloudflareWorkers', async () => {
-    const app = createHttpApp({ controllers: [HelloController] });
+    const app = createApp({ http: { controllers: [HelloController] } });
     const readySpy = vi.spyOn(app, 'ready');
     const ctx = createMockExecutionContext();
 
@@ -73,7 +73,7 @@ describe('onCloudflareWorkers', () => {
   });
 
   it('calls waitUntil on ExecutionContext', async () => {
-    const app = createHttpApp({ controllers: [HelloController] });
+    const app = createApp({ http: { controllers: [HelloController] } });
     const workersApp = await onCloudflareWorkers(app);
     const ctx = createMockExecutionContext();
 
@@ -83,8 +83,8 @@ describe('onCloudflareWorkers', () => {
   });
 
   it('replaces EnvConfig with CloudflareWorkersEnvConfig when EnvConfig is registered', async () => {
-    const app = createHttpApp({
-      controllers: [HelloController],
+    const app = createApp({
+      http: { controllers: [HelloController] },
       configs: [EnvConfig],
     });
     const replaceConfigSpy = vi.spyOn(app, 'replaceConfig');
@@ -95,7 +95,7 @@ describe('onCloudflareWorkers', () => {
   });
 
   it('does not call replaceConfig when EnvConfig is not registered', async () => {
-    const app = createHttpApp({ controllers: [HelloController] });
+    const app = createApp({ http: { controllers: [HelloController] } });
     const replaceConfigSpy = vi.spyOn(app, 'replaceConfig');
 
     await onCloudflareWorkers(app);
@@ -104,8 +104,8 @@ describe('onCloudflareWorkers', () => {
   });
 
   it('provides get() to retrieve dependencies from container', async () => {
-    const app = createHttpApp({
-      controllers: [HelloController],
+    const app = createApp({
+      http: { controllers: [HelloController] },
       configs: [EnvConfig],
     });
     const workersApp = await onCloudflareWorkers(app);

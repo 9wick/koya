@@ -41,7 +41,11 @@ export const generateClient = async (
 
   await mkdir(distDir, { recursive: true });
 
-  const openApiResult = await emitOpenApi(ir, { distDir, tsconfigPath });
+  const emitOptions = options.requestValidator
+    ? { distDir, tsconfigPath, requestValidator: options.requestValidator }
+    : { distDir, tsconfigPath };
+
+  const openApiResult = await emitOpenApi(ir, emitOptions);
   if (openApiResult.isErr()) {
     throw openApiResult.error;
   }

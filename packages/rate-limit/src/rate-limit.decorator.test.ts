@@ -1,4 +1,4 @@
-import { Controller, Get, createHttpApp } from '@zeltjs/core';
+import { Controller, Get, createApp } from '@zeltjs/core';
 import { describe, expect, it } from 'vitest';
 
 import { RateLimit } from './rate-limit.decorator';
@@ -14,7 +14,7 @@ describe('@RateLimit decorator', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
 
     const r1 = await app.request('/limited');
@@ -37,7 +37,7 @@ describe('@RateLimit decorator', () => {
         return { ok: true };
       }
     }
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.request('/headers');
     expect(res.headers.get('X-RateLimit-Limit')).toBe('5');
@@ -58,7 +58,7 @@ describe('@RateLimit decorator', () => {
         return { ok: true };
       }
     }
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     // Different keys per request → both succeed
     const r1 = await app.request('/dyn');
@@ -77,7 +77,7 @@ describe('@RateLimit decorator', () => {
         return { ok: true };
       }
     }
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const r1 = await app.request('/stack');
     expect(r1.status).toBe(200);

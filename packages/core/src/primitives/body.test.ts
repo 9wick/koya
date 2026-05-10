@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Controller } from '../decorators/controller';
 import { Post } from '../decorators/http-method';
-import { createHttpApp } from '../http/app';
+import { createApp } from '../app';
 
 import { body } from './body';
 
@@ -17,7 +17,7 @@ describe('body', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(
       new Request('http://localhost/text', {
@@ -39,7 +39,7 @@ describe('body', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(
       new Request('http://localhost/json', {
@@ -61,7 +61,7 @@ describe('body', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     const formData = new FormData();
     formData.append('name', 'John');
 
@@ -85,7 +85,7 @@ describe('body', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(
       new Request('http://localhost/buffer', {
@@ -106,7 +106,7 @@ describe('body', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(
       new Request('http://localhost/blob', {

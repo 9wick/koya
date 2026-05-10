@@ -311,6 +311,120 @@ const app = createHttpApp({
 | `verify(token)` | Verify and decode a token (throws on invalid) |
 | `decode(token)` | Decode without verification (returns `null` on error) |
 
+## Using @zeltjs/auth-session
+
+For session-based authentication with cookies, Zelt provides the `@zeltjs/auth-session` package.
+
+### Installation
+
+```bash
+pnpm add @zeltjs/auth-session @zeltjs/kv
+```
+
+### Basic Setup
+
+1. Set the `SESSION_SECRET` environment variable
+2. Create a custom config that provides a KV store
+3. Register the middleware:
+
+```typescript
+import { createHttpApp } from '@zeltjs/core';
+import { MemoryKV } from '@zeltjs/kv';
+import { SessionMiddleware, SessionConfig } from '@zeltjs/auth-session';
+import { Config, injectConfig } from '@zeltjs/core';
+
+@Config
+class MySessionConfig extends SessionConfig {
+  private kv = inject(MemoryKV);
+
+  override get store() {
+    return this.kv.namespace('sessions');
+  }
+}
+
+const app = createHttpApp({
+  controllers: [UserController],
+  middlewares: [SessionMiddleware],
+  configs: [MySessionConfig],
+  injectables: [MemoryKV],
+});
+```
+
+### Session Functions
+
+Use the session functions in your handlers:
+
+```typescript
+import { Controller, Get, Post, bodyParam } from '@zeltjs/core';
+import { getSession, setSession, updateSession, destroySession } from '@zeltjs/auth-session';
+
+interface UserSession {
+  userId: string;
+  name: string;
+}
+
+@Controller('/auth')
+class AuthController {
+  @Post('/login')
+  login(body = bodyParam(LoginSchema)) {
+    setSession<UserSession>({ userId: '123', name: body.name });
+    return { success: true };
+  }
+
+  @Get('/me')
+  me() {
+    const session = getSession<UserSession>();
+    if (!session) {
+      throw new HTTPException(401, { message: 'Not logged in' });
+    }
+    return session;
+  }
+
+  @Post('/logout')
+  logout() {
+    destroySession();
+    return { success: true };
+  }
+}
+```
+
+### Session API
+
+| Function | Description |
+|----------|-------------|
+| `getSession<T>()` | Get current session data (returns `undefined` if not logged in) |
+| `setSession<T>(data)` | Set session data (replaces existing) |
+| `updateSession<T>(updater)` | Update session data with a function |
+| `destroySession()` | Destroy the session and clear the cookie |
+| `isNewSession()` | Check if this is a newly created session |
+| `getSessionId()` | Get the current session ID |
+
+### Custom Configuration
+
+Extend `SessionConfig` to customize behavior:
+
+```typescript
+@Config
+class MySessionConfig extends SessionConfig {
+  override get cookieName() {
+    return 'my_session';
+  }
+
+  override get ttlSec() {
+    return 86400 * 7; // 7 days
+  }
+
+  override get cookieOptions() {
+    return {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict' as const,
+      path: '/',
+    };
+  }
+}
+```
+
 ## Best Practices
 
 1. **Set authentication early** — Register auth middleware globally so it runs before route handlers

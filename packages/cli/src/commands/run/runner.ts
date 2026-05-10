@@ -5,8 +5,8 @@ import type {
   LegacyCommandClass,
   NewCommandClass,
   SchemaDefinition,
-} from '@zeltjs/command';
-import { runInCommandContext } from '@zeltjs/command';
+} from '@zeltjs/core';
+import { runInCommandContext } from '@zeltjs/core';
 import { Container } from '@needle-di/core';
 import type { ArgsDef, BooleanArgDef, StringArgDef } from 'citty';
 import { parseArgs } from 'citty';

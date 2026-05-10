@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Controller } from '../decorators/controller';
 import { Get } from '../decorators/http-method';
-import { createHttpApp } from '../http/app';
+import { createApp } from '../app';
 
 import { header } from './header';
 
@@ -16,7 +16,7 @@ describe('header', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(
       new Request('http://localhost/', {
@@ -35,7 +35,7 @@ describe('header', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(new Request('http://localhost/'));
     expect(await res.json()).toEqual({ custom: 'none' });

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Controller } from '../decorators/controller';
 import { Get } from '../decorators/http-method';
-import { createHttpApp } from '../http/app';
+import { createApp } from '../app';
 
 import { queryParam, queryParams } from './query-param';
 
@@ -16,7 +16,7 @@ describe('queryParam', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(new Request('http://localhost/search?q=hello'));
     expect(await res.json()).toEqual({ q: 'hello' });
@@ -31,7 +31,7 @@ describe('queryParam', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(new Request('http://localhost/search'));
     expect(await res.json()).toEqual({ q: 'default' });
@@ -48,7 +48,7 @@ describe('queryParams', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(new Request('http://localhost/filter?tag=a&tag=b&tag=c'));
     expect(await res.json()).toEqual({ tags: ['a', 'b', 'c'] });
@@ -63,7 +63,7 @@ describe('queryParams', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(new Request('http://localhost/filter'));
     expect(await res.json()).toEqual({ tags: [] });

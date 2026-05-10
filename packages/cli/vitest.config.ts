@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import * as path from 'node:path';
 
 import { defineConfig, mergeConfig } from 'vitest/config';
 
@@ -13,7 +13,7 @@ export default mergeConfig(
     },
     resolve: {
       alias: {
-        '@zeltjs/command': resolve(__dirname, '../command/src/index.ts'),
+        '@zeltjs/core': path.resolve(__dirname, '../core/src/index.ts'),
       },
     },
   }),

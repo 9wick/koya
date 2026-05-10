@@ -8,8 +8,10 @@
     "declarationMap": true,
     "sourceMap": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "experimentalDecorators": true,
     "erasableSyntaxOnly": false,
     "types": ["node"]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "references": [{ "path": "../core" }, { "path": "../contract" }]
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Controller } from '../decorators/controller';
 import { Get, Post } from '../decorators/http-method';
-import { createHttpApp } from '../http/app';
+import { createApp } from '../app';
 
 import { method, path, url } from './url';
 
@@ -16,7 +16,7 @@ describe('url', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(new Request('http://localhost/info?foo=bar'));
     expect(await res.json()).toEqual({ url: 'http://localhost/info?foo=bar' });
@@ -33,7 +33,7 @@ describe('path', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
     const res = await app.fetch(new Request('http://localhost/users/123?include=profile'));
     expect(await res.json()).toEqual({ path: '/users/123' });
@@ -55,7 +55,7 @@ describe('method', () => {
       }
     }
 
-    const app = createHttpApp({ controllers: [TestController] });
+    const app = createApp({ http: { controllers: [TestController] } });
     await app.ready();
 
     const getRes = await app.fetch(new Request('http://localhost/test'));

@@ -67,7 +67,7 @@ export class AuthController {
       windowSec: 300,
     });
 
-    if (result.isErr()) {
+    if (!result.ok) {
       return res.json({ error: 'Service unavailable' }, 503);
     }
     if (!result.value.allowed) {
@@ -126,9 +126,13 @@ Use `'open'` for non-critical rate limiting where availability is prioritized. U
 
 ## RateLimitResult Type
 
-The `hit()` method returns a `ResultAsync<RateLimitResult, RateLimitError>`:
+The `hit()` method returns `Promise<RateLimiterHitResult>`:
 
 ```typescript
+type RateLimiterHitResult =
+  | { ok: true; value: RateLimitResult }
+  | { ok: false; error: RateLimitError };
+
 type RateLimitResult = {
   allowed: boolean;      // Whether the request is permitted
   remaining: number;     // Requests remaining in current window

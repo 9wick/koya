@@ -12,5 +12,5 @@
     "erasableSyntaxOnly": false
   },
   "include": ["src/**/*"],
-  "references": [{ "path": "../command" }]
+  "references": [{ "path": "../core" }]
 }

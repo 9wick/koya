@@ -38,6 +38,10 @@ const formatError = (error: ContractError): string =>
       (e) => `${e.exportName} in ${e.modulePath} is not a valibot schema`,
     )
     .with(
+      { type: 'SCHEMA_ADAPTER_FAILED' },
+      (e) => `schema adapter failed for ${e.exportName} in ${e.modulePath}: ${e.reason}`,
+    )
+    .with(
       { type: 'UNRESOLVABLE_RESPONSE_TYPE' },
       () => `handler return type is unknown/any. Add explicit return type.`,
     )
@@ -45,6 +49,11 @@ const formatError = (error: ContractError): string =>
     .with(
       { type: 'INVALID_CONFIG_EXPORT' },
       (e) => `${e.path} must export a default GenerateClientOptions`,
+    )
+    .with(
+      { type: 'REQUEST_VALIDATOR_REQUIRED' },
+      () =>
+        `requestValidator is required when routes use validated(). Provide a SchemaAdapter in config.`,
     )
     .exhaustive();
 

@@ -2,7 +2,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { Command } from '@zeltjs/command';
+import { Command } from '@zeltjs/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadCommands } from './loader';

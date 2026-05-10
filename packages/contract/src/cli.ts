@@ -56,6 +56,11 @@ const formatEmitError = (e: ContractError & { type: string }): string =>
       (x) => `zelt/openapi: ${x.exportName} in ${x.modulePath} is not a valibot schema`,
     )
     .with(
+      { type: 'SCHEMA_ADAPTER_FAILED' },
+      (x) =>
+        `zelt/openapi: schema adapter failed for ${x.exportName} in ${x.modulePath}: ${x.reason}`,
+    )
+    .with(
       { type: 'UNRESOLVABLE_RESPONSE_TYPE' },
       () => `zelt/openapi: handler return type is unknown/any. Add explicit return type.`,
     )
@@ -67,6 +72,11 @@ const formatConfigError = (e: ContractError & { type: string }): string =>
     .with(
       { type: 'INVALID_CONFIG_EXPORT' },
       (x) => `zelt/openapi: ${x.path} must export a default GenerateClientOptions`,
+    )
+    .with(
+      { type: 'REQUEST_VALIDATOR_REQUIRED' },
+      () =>
+        'zelt/openapi: requestValidator is required when routes use validated(). Provide a SchemaAdapter in config.',
     )
     .otherwise(() => '');
 

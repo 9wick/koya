@@ -1,4 +1,4 @@
-import { args, cliSchema, Command } from '@zeltjs/command';
+import { args, cliSchema, Command } from '@zeltjs/core';
 import { describe, expect, it } from 'vitest';
 
 import {

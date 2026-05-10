@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Controller, Get, Post, UseMiddleware, createHttpApp, inject } from '@zeltjs/core';
+import { Controller, Get, Post, UseMiddleware, createApp, inject } from '@zeltjs/core';
 import { MemoryKV } from '@zeltjs/kv';
 import type { KVStore } from '@zeltjs/kv';
 
@@ -71,8 +71,8 @@ class SessionTestController {
 
 describe('SessionMiddleware', () => {
   const buildApp = async () => {
-    const app = createHttpApp({
-      controllers: [SessionTestController],
+    const app = createApp({
+      http: { controllers: [SessionTestController] },
       configs: [TestSessionConfig],
     });
     await app.ready();

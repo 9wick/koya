@@ -104,11 +104,12 @@ export default tseslint.config(
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@9wick/strict-type-rules/no-throw': 'off',
     },
   },
   {
     // framework error strategy: throw + global error handler (spec §4.9 / koya phase2)
-    files: ['packages/core/src/**/*.{ts,tsx}'],
+    files: ['packages/core/src/**/*.{ts,tsx}', 'packages/validate-valibot/src/**/*.{ts,tsx}'],
     rules: {
       '@9wick/strict-type-rules/no-throw': 'off',
       '@9wick/strict-type-rules/no-try-catch': 'off',
@@ -306,18 +307,10 @@ export default tseslint.config(
     // Command module uses AsyncLocalStorage and generic type inference at runtime boundaries.
     // Type assertions are needed for inferred schema types. Throws for developer errors (calling
     // args() outside command context) which should crash immediately during development.
-    files: ['packages/command/src/primitives/args.ts'],
+    files: ['packages/core/src/command/primitives/args.ts'],
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
       '@9wick/strict-type-rules/no-throw': 'off',
-    },
-  },
-  {
-    // TC39/legacy decorator dual-mode adapter: runtime boundary where decorator args are unknown
-    files: ['packages/command/src/internal/decorator-context.ts'],
-    rules: {
-      '@9wick/strict-type-rules/no-as-assertion': 'off',
-      '@9wick/strict-type-rules/no-type-predicate': 'off',
     },
   },
   {
