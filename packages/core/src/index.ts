@@ -45,8 +45,6 @@ export type {
   CommandContext,
   InferArgs,
   InferOptions,
-  LegacyCommandClass,
-  NewCommandClass,
   OptionDefinition,
   OptionsDefinition,
 } from './command/types';
