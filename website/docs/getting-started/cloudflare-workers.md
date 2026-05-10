@@ -78,10 +78,10 @@ Create `src/index.ts` as the Cloudflare Workers entry point:
 import { onCloudflareWorkers } from '@zeltjs/adapter-cloudflare-workers';
 import { app } from './app';
 
-export default onCloudflareWorkers(app);
+export default await onCloudflareWorkers(app);
 ```
 
-The `onCloudflareWorkers()` function wraps your app for the Workers runtime. By default, it uses **lazy initialization** — controllers are resolved on the first request rather than at startup. This optimizes cold start times in serverless environments.
+The `onCloudflareWorkers()` function is async and prepares your app for the Workers runtime. By default, it uses **lazy initialization** (`warmup: false`) — controllers are resolved on the first request rather than at startup. This optimizes cold start times in serverless environments.
 
 ### Step 4: Configure Wrangler
 
@@ -224,7 +224,7 @@ By default, `onCloudflareWorkers()` uses lazy initialization (`warmup: false`) t
 If you prefer to resolve all controllers at initialization (useful for debugging or when cold start time is less critical), set `warmup: true`:
 
 ```typescript
-export default onCloudflareWorkers(app, { warmup: true });
+export default await onCloudflareWorkers(app, { warmup: true });
 ```
 
 | Option | Behavior | Use Case |
