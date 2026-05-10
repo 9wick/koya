@@ -8,8 +8,9 @@ import type { ErrorHandlerClass, ErrorHandlerInstance, RequestContext } from '..
 import { createSchedulerRunner, type SchedulerRunner } from '../scheduler/runner';
 import type { ConfigClass } from '../config';
 import { findRootConfigToken } from '../config/token';
-import { handleError } from '../http/error-handler';
+import { createDefaultErrorHandler } from '../http/default-error-handler';
 import { getCommandMetadata } from '../command/metadata';
+import { EnvConfig } from '../modules/env';
 import type { CommandClass } from '../command/types';
 
 import type {
@@ -33,7 +34,7 @@ const createErrorHandler =
       const result = await handler.onError(err, c);
       if (result) return result;
     }
-    return handleError(err);
+    throw new Error('Unreachable: DefaultErrorHandler should always return a response');
   };
 
 const resolveErrorHandler = (cls: ErrorHandlerClass, resolver: Resolver): ErrorHandlerInstance => {
@@ -66,13 +67,21 @@ const registerScheduler = (
   return runner;
 };
 
-const setupHono = (
-  httpOptions: HttpOptions,
-  resolver: Resolver,
-  lifecycle: LifecycleManager,
-): Hono => {
+type SetupHonoOptions = {
+  readonly httpOptions: HttpOptions;
+  readonly resolver: Resolver;
+  readonly lifecycle: LifecycleManager;
+  readonly configs: readonly AnyConstructorClass[];
+};
+
+const setupHono = (options: SetupHonoOptions): Hono => {
+  const { httpOptions, resolver, lifecycle, configs } = options;
   const hono = new Hono({ strict: false });
-  const errorHandlers = resolveErrorHandlers(httpOptions.errorHandlers ?? [], resolver);
+  const userHandlers = resolveErrorHandlers(httpOptions.errorHandlers ?? [], resolver);
+  const hasEnvConfig = configHasToken(configs, EnvConfig);
+  const envConfig = hasEnvConfig ? resolver.get(EnvConfig) : undefined;
+  const defaultHandler = createDefaultErrorHandler(envConfig);
+  const errorHandlers = [...userHandlers, defaultHandler];
   hono.onError(createErrorHandler(errorHandlers));
   buildRoutes({
     hono,
@@ -134,17 +143,20 @@ const initializeLifecycle = async (lifecycle: LifecycleManager): Promise<Lifecyc
 
 const toHttpError = (e: unknown): Error => (e instanceof Error ? e : new Error(String(e)));
 
-const initializeHttpSetup = (
-  httpOptions: HttpOptions,
-  resolver: Resolver,
-  lifecycle: LifecycleManager,
-): HttpResult =>
+type InitializeHttpOptions = {
+  readonly httpOptions: HttpOptions;
+  readonly resolver: Resolver;
+  readonly lifecycle: LifecycleManager;
+  readonly configs: readonly AnyConstructorClass[];
+};
+
+const initializeHttpSetup = (options: InitializeHttpOptions): HttpResult =>
   match(
     (() => {
       try {
-        return { hono: setupHono(httpOptions, resolver, lifecycle) };
+        return { hono: setupHono(options) };
       } catch (e) {
-        return { error: toHttpError(e), cleanup: () => lifecycle.shutdown() };
+        return { error: toHttpError(e), cleanup: () => options.lifecycle.shutdown() };
       }
     })(),
   )
@@ -152,14 +164,12 @@ const initializeHttpSetup = (
     .with({ error: P._ }, (r) => r)
     .exhaustive();
 
-const initializeHttpWarmup = async (
-  httpOptions: HttpOptions,
-  resolver: Resolver,
-  lifecycle: LifecycleManager,
-): Promise<HttpResult> =>
-  warmupControllers(httpOptions.controllers, resolver, lifecycle)
-    .then((): HttpResult => ({ hono: setupHono(httpOptions, resolver, lifecycle) }))
-    .catch((e): HttpResult => ({ error: toHttpError(e), cleanup: () => lifecycle.shutdown() }));
+const initializeHttpWarmup = async (options: InitializeHttpOptions): Promise<HttpResult> =>
+  warmupControllers(options.httpOptions.controllers, options.resolver, options.lifecycle)
+    .then((): HttpResult => ({ hono: setupHono(options) }))
+    .catch(
+      (e): HttpResult => ({ error: toHttpError(e), cleanup: () => options.lifecycle.shutdown() }),
+    );
 
 const handleHttpSetupResult = async (result: HttpResult): Promise<Hono> =>
   match(result)
@@ -180,17 +190,12 @@ const handleHttpWarmupResult = async (result: HttpResult): Promise<void> => {
     .exhaustive();
 };
 
-const initializeHttp = async (
-  httpOptions: HttpOptions,
-  resolver: Resolver,
-  lifecycle: LifecycleManager,
-  warmup: boolean,
-): Promise<Hono> => {
-  const setupResult = initializeHttpSetup(httpOptions, resolver, lifecycle);
+const initializeHttp = async (options: InitializeHttpOptions, warmup: boolean): Promise<Hono> => {
+  const setupResult = initializeHttpSetup(options);
   const hono = await handleHttpSetupResult(setupResult);
 
   if (warmup) {
-    const warmupResult = await initializeHttpWarmup(httpOptions, resolver, lifecycle);
+    const warmupResult = await initializeHttpWarmup(options);
     await handleHttpWarmupResult(warmupResult);
   }
 
@@ -213,7 +218,10 @@ const buildAppInternal = async (buildOptions: BuildAppInternalOptions): Promise<
   }
 
   const hono = appOptions.http
-    ? await initializeHttp(appOptions.http, resolver, lifecycle, warmup)
+    ? await initializeHttp(
+        { httpOptions: appOptions.http, resolver, lifecycle, configs: effectiveConfigs },
+        warmup,
+      )
     : undefined;
 
   return {
