@@ -1,11 +1,10 @@
 import strictTypes from '@9wick/eslint-plugin-strict-type-rules';
 import eslintComments from '@eslint-community/eslint-plugin-eslint-comments/configs';
+import zeltPlugin from '@zeltjs/eslint-plugin';
 import importX from 'eslint-plugin-import-x';
 import oxlint from 'eslint-plugin-oxlint';
 import sonarjs from 'eslint-plugin-sonarjs';
 import tseslint from 'typescript-eslint';
-
-import zeltPlugin from '@zeltjs/eslint-plugin';
 
 const TEST_FILES = ['**/*.test.{ts,tsx}', '**/*.e2e.test.{ts,tsx}'];
 const FIXTURE_FILES = ['**/_fixtures/**/*.{ts,tsx}', '**/test/fixtures/**/*.{ts,tsx}'];
@@ -67,6 +66,7 @@ export default tseslint.config(
   },
   {
     files: ['**/*.{ts,tsx}'],
+    rules: { 'import-x/order': 'off' },
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -96,13 +96,7 @@ export default tseslint.config(
       '@typescript-eslint/no-non-null-assertion': 'error',
       'max-lines': ['warn', { max: 500, skipBlankLines: true, skipComments: true }],
       'import-x/no-cycle': 'error',
-      'import-x/order': [
-        'error',
-        {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-          'newlines-between': 'always',
-        },
-      ],
+      'import-x/order': 'off',
     },
   },
   {

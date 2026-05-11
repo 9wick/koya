@@ -1,7 +1,6 @@
 import { Container } from '@needle-di/core';
-
-import { overrideConfig, resolveConfig, getConfig } from '../config';
 import type { ConfigClass } from '../config';
+import { getConfig, overrideConfig, resolveConfig } from '../config';
 import { LifecycleManager } from '../lifecycle';
 
 type Class<T> = new (...args: never[]) => T;

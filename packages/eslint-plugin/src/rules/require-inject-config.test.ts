@@ -1,5 +1,5 @@
-import { RuleTester } from 'eslint';
 import tsParser from '@typescript-eslint/parser';
+import { RuleTester } from 'eslint';
 
 import rule from './require-inject-config';
 

@@ -1,4 +1,5 @@
-import { CliConfig, Config, type Signal, type SignalHandler } from '@zeltjs/core';
+import type { Signal, SignalHandler } from '@zeltjs/core';
+import { CliConfig, Config } from '@zeltjs/core';
 
 @Config
 export class NodeCliConfig extends CliConfig {

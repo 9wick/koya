@@ -1,7 +1,8 @@
-import { inject, Injectable, injectConfig, Logger } from '@zeltjs/core';
+import { Injectable, inject, injectConfig, Logger } from '@zeltjs/core';
 import { KVError } from '@zeltjs/kv';
 
-import { kvFailed, type RateLimitError } from './errors';
+import type { RateLimitError } from './errors';
+import { kvFailed } from './errors';
 import { RateLimitConfig } from './rate-limit.config';
 import type { RateLimitResult } from './types';
 

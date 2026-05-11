@@ -1,15 +1,14 @@
-import { describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import * as v from 'valibot';
-
-import { Controller } from '../decorators/controller';
-import { Get, Post } from '../decorators/http-method';
+import { describe, expect, it } from 'vitest';
+import { createContainer } from '../../di/container';
 import { LifecycleManager } from '../../lifecycle';
 import { validated } from '../../test-helpers/validated';
-import { createContainer } from '../../di/container';
+import { Controller } from '../decorators/controller';
+import { Get, Post } from '../decorators/http-method';
 
-import { collectRoutes, joinPath, buildRoutes } from './route-builder';
+import { buildRoutes, collectRoutes, joinPath } from './route-builder';
 
 describe('joinPath', () => {
   it.each([

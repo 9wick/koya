@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { match, P } from 'ts-pattern';
-
+import type { ResolverHandle } from '../../di/container';
 import { DefaultErrorHandler } from '../../http/default.error-handler';
 import { buildRoutes, warmupControllers } from '../../http/internal/route-builder';
 import type {
@@ -9,7 +9,6 @@ import type {
   MiddlewareInput,
   RequestContext,
 } from '../../http/middleware/types';
-import type { ResolverHandle } from '../../di/container';
 import type { LifecycleManager } from '../../lifecycle';
 import type { Module, ReadyContext } from '../module';
 

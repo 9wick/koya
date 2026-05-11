@@ -27,19 +27,31 @@
     "rules": {
       "complexity": {
         "useLiteralKeys": "off"
+      },
+      "style": {
+        "useImportType": {
+          "level": "error",
+          "options": {
+            "style": "separatedType"
+          }
+        }
       }
     }
   },
   "assist": {
     "actions": {
       "source": {
-        "organizeImports": "off"
+        "organizeImports": "on"
       }
     }
   },
   "css": {
-    "linter": { "enabled": false },
-    "formatter": { "enabled": false }
+    "linter": {
+      "enabled": false
+    },
+    "formatter": {
+      "enabled": false
+    }
   },
   "files": {
     "includes": ["**", "!node_modules", "!dist", "!.nx", "!pnpm-lock.yaml", "!**/generated"]

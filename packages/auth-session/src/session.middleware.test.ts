@@ -1,11 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { Controller, Get, Post, UseMiddleware, createApp, inject } from '@zeltjs/core';
-import { MemoryKV } from '@zeltjs/kv';
+import { Controller, createApp, Get, inject, Post, UseMiddleware } from '@zeltjs/core';
 import type { KVStore } from '@zeltjs/kv';
-
-import { SessionMiddleware } from './session.middleware';
+import { MemoryKV } from '@zeltjs/kv';
+import { describe, expect, it } from 'vitest';
 import { SessionConfig } from './session.config';
-import { getSession, setSession, destroySession, isNewSession } from './session.functions.lib';
+import { destroySession, getSession, isNewSession, setSession } from './session.functions.lib';
+import { SessionMiddleware } from './session.middleware';
 import type { SessionSchema } from './session.types';
 
 declare module '@zeltjs/auth-session' {

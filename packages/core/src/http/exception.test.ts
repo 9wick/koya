@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { HTTPException as HonoHTTPException } from 'hono/http-exception';
+import { describe, expect, it } from 'vitest';
 
 import { HTTPException } from '../index';
 

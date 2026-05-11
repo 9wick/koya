@@ -1,5 +1,5 @@
-import type { Context } from 'hono';
 import { Injectable } from '@zeltjs/core';
+import type { Context } from 'hono';
 
 import type { Env } from '../env';
 

@@ -1,5 +1,5 @@
-import { serve } from '@hono/node-server';
 import type { ServerType } from '@hono/node-server';
+import { serve } from '@hono/node-server';
 
 export type ServeOptions = {
   port?: number;

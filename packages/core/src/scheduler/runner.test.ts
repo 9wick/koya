@@ -4,7 +4,8 @@ import { createContainer } from '../di/container';
 
 import { Cron } from './decorators/cron';
 import { Scheduled } from './decorators/scheduled';
-import { type SchedulerRunner, createSchedulerRunner } from './runner';
+import type { SchedulerRunner } from './runner';
+import { createSchedulerRunner } from './runner';
 
 describe('SchedulerRunner', () => {
   let runner: SchedulerRunner | undefined;

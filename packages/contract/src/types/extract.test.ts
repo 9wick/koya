@@ -1,7 +1,7 @@
-import { describe, expectTypeOf, it } from 'vitest';
+import type { ValidationErrorBody } from '@zeltjs/core';
 import type { TypedResponse } from 'hono';
 import * as v from 'valibot';
-import type { ValidationErrorBody } from '@zeltjs/core';
+import { describe, expectTypeOf, it } from 'vitest';
 
 import type {
   ExtractPathParams,

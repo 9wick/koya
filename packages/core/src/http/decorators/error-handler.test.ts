@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { Container } from '@needle-di/core';
 import type { Context } from 'hono';
+import { describe, expect, it } from 'vitest';
 
 import { ErrorHandler } from './error-handler';
 

@@ -1,6 +1,9 @@
 // packages/contract/src/analyzer/handler.ts
-import { type CallExpression, type MethodDeclaration, Node, SyntaxKind } from 'ts-morph';
-import { ok, err, type Result } from 'neverthrow';
+
+import type { Result } from 'neverthrow';
+import { err, ok } from 'neverthrow';
+import type { CallExpression, MethodDeclaration } from 'ts-morph';
+import { Node, SyntaxKind } from 'ts-morph';
 
 import type { AnalyzerError } from '../errors';
 

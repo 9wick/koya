@@ -1,6 +1,6 @@
-import { beforeAll, describe, expect, it } from 'vitest';
-import { MemoryKV } from '@zeltjs/kv';
 import { createTestTargetBase } from '@zeltjs/core/internal-bridge/testing';
+import { MemoryKV } from '@zeltjs/kv';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { RateLimitConfig } from './rate-limit.config';
 

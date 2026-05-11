@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ValidationErrorBody, ErrorBody } from './error-schema';
+import type { ErrorBody, ValidationErrorBody } from './error-schema';
 
 describe('ValidationErrorBody', () => {
   it('type matches expected structure', () => {

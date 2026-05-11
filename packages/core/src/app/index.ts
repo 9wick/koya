@@ -1,9 +1,9 @@
 export {
-  createApp,
   type App,
-  type HttpApp,
   type CommandApp,
   type CreateAppOptions,
+  createApp,
+  type HttpApp,
   type ReadyOptions,
   type ReadyResult,
 } from './create-app';

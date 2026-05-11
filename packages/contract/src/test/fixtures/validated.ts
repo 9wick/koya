@@ -1,5 +1,5 @@
-import type { GenericSchema, InferOutput } from 'valibot';
 import type { ValidatedMarker, ValidationTarget } from '@zeltjs/core';
+import type { GenericSchema, InferOutput } from 'valibot';
 
 export function validated<Schema extends GenericSchema>(
   schema: Schema,

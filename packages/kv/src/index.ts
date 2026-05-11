@@ -1,11 +1,11 @@
+export { KVError, type KVErrorType } from './errors';
 export {
   MemoryKVDriver,
   MemoryKVDriver as MemoryKVService,
   MemoryKVDriver as MemoryKV,
 } from './memory-kv.driver';
-
-export { KVError, type KVErrorType } from './errors';
-
+export { joinPrefix } from './namespace';
+export { deserialize, serialize } from './serialize';
 export type {
   AtomicKVDriver,
   AtomicKVStore,
@@ -15,7 +15,3 @@ export type {
   NonEmptyString,
   SetOptions,
 } from './types';
-
-export { joinPrefix } from './namespace';
-
-export { serialize, deserialize } from './serialize';

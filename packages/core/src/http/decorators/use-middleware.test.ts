@@ -1,9 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import type { MiddlewareHandler } from 'hono';
-
+import { describe, expect, it } from 'vitest';
+import { Injectable } from '../../di/injectable';
 import { getControllerMiddlewareMetadata, getMethodMiddlewareMetadata } from '../internal/metadata';
 import type { MiddlewareInputWithOptions } from '../middleware/types';
-import { Injectable } from '../../di/injectable';
 
 import { Controller } from './controller';
 import { Get } from './http-method';

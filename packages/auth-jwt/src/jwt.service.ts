@@ -1,6 +1,6 @@
-import { SignJWT, jwtVerify, decodeJwt } from 'jose';
-import { fromThrowable } from 'neverthrow';
 import { Injectable, injectConfig } from '@zeltjs/core';
+import { decodeJwt, jwtVerify, SignJWT } from 'jose';
+import { fromThrowable } from 'neverthrow';
 
 import { JwtConfig } from './jwt.config';
 import type { JwtPayload } from './jwt.types';

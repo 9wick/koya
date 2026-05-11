@@ -1,4 +1,4 @@
-import { Controller, Get, Post, inject, pathParam, response } from '@zeltjs/core';
+import { Controller, Get, inject, Post, pathParam, response } from '@zeltjs/core';
 import { validated } from '@zeltjs/validate-valibot';
 import * as v from 'valibot';
 

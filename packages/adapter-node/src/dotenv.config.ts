@@ -1,6 +1,5 @@
-import { config } from 'dotenv';
-
 import { Config, EnvConfig } from '@zeltjs/core';
+import { config } from 'dotenv';
 
 @Config
 export class DotEnvConfig extends EnvConfig {

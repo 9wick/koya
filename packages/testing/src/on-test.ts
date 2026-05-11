@@ -1,4 +1,4 @@
-import type { HttpApp, ConfigClass } from '@zeltjs/core';
+import type { ConfigClass, HttpApp } from '@zeltjs/core';
 
 import { getTestDefaults } from './global-config';
 import { registerShutdown } from './shutdown-registry';

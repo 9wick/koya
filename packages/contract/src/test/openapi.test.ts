@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeControllers } from '../analyzer/internal-representation';
 import { createProject } from '../analyzer/project';
 import { emitOpenApi } from '../emit/openapi';
-import type { SchemaAdapter, JsonSchema } from '../types/schema-adapter';
+import type { JsonSchema, SchemaAdapter } from '../types/schema-adapter';
 
 const fixturePath = resolve(import.meta.dirname, 'fixtures/sample.controller.ts');
 const uploadFixturePath = resolve(import.meta.dirname, 'fixtures/upload.controller.ts');

@@ -1,13 +1,17 @@
-import { createContainer } from '../di/container';
-import type { ConfigClass } from '../config';
 import type { CommandClass } from '../command/types';
+import type { ConfigClass } from '../config';
+import { createContainer } from '../di/container';
 import { LifecycleManager } from '../lifecycle';
 
 import type { Module, ReadyContext } from './module';
-import { createConfigModule, type ConfigModule } from './modules/config-module';
-import { createCommandModule, type CommandModule } from './modules/command-module';
-import { createSchedulerModule, type SchedulerClass } from './modules/scheduler-module';
-import { createHttpModule, type HttpModule, type HttpOptions } from './modules/http-module';
+import type { CommandModule } from './modules/command-module';
+import { createCommandModule } from './modules/command-module';
+import type { ConfigModule } from './modules/config-module';
+import { createConfigModule } from './modules/config-module';
+import type { HttpModule, HttpOptions } from './modules/http-module';
+import { createHttpModule } from './modules/http-module';
+import type { SchedulerClass } from './modules/scheduler-module';
+import { createSchedulerModule } from './modules/scheduler-module';
 
 // --- Types ---
 

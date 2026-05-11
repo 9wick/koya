@@ -1,6 +1,6 @@
+import type { Next, RequestContext } from '@zeltjs/core';
+import { injectConfig, Middleware } from '@zeltjs/core';
 import { getCookie } from 'hono/cookie';
-import { Middleware, injectConfig } from '@zeltjs/core';
-import type { RequestContext, Next } from '@zeltjs/core';
 
 import { SessionConfig } from './session.config';
 import { runWithSessionContext } from './session.context.lib';

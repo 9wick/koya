@@ -1,4 +1,4 @@
-import { Controller, Get, createApp } from '@zeltjs/core';
+import { Controller, createApp, Get } from '@zeltjs/core';
 import { describe, expect, it } from 'vitest';
 
 import { RateLimit } from './rate-limit.decorator';

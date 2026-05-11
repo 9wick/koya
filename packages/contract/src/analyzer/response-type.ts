@@ -1,4 +1,5 @@
-import { type MethodDeclaration, Node, type Type } from 'ts-morph';
+import type { MethodDeclaration, Type } from 'ts-morph';
+import { Node } from 'ts-morph';
 
 export type ResponseTypeInfo =
   | { kind: 'ts-named'; readonly name: string; readonly module: string }

@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { Rule } from 'eslint';
-import type { Identifier, Expression } from 'estree';
+import type { Expression, Identifier } from 'estree';
 
 interface Decorator {
   expression: Expression;

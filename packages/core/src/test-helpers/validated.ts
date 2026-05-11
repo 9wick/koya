@@ -1,9 +1,8 @@
 import { HTTPException } from 'hono/http-exception';
-import { safeParse } from 'valibot';
 import type { GenericSchema, InferOutput } from 'valibot';
-
-import { getEntryContext } from '../runtime/index';
+import { safeParse } from 'valibot';
 import type { ValidatedMarker, ValidationTarget } from '../http/primitives/validated-types';
+import { getEntryContext } from '../runtime/index';
 
 export function validated<Schema extends GenericSchema>(
   schema: Schema,

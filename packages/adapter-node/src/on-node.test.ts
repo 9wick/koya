@@ -1,8 +1,9 @@
+import { CliConfig, Command, Controller, cliSchema, createApp, EnvConfig, Get } from '@zeltjs/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createApp, Controller, Get, EnvConfig, CliConfig, Command, cliSchema } from '@zeltjs/core';
 
 import { NodeCliConfig } from './cli.config';
-import { onNode, type ServerHandle, type HttpNodeApp, type CommandNodeApp } from './on-node';
+import type { CommandNodeApp, HttpNodeApp, ServerHandle } from './on-node';
+import { onNode } from './on-node';
 import { ProcessEnvConfig } from './process-env.config';
 
 describe('onNode with HTTP', () => {

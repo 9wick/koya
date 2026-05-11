@@ -1,5 +1,5 @@
-import { Config } from '@zeltjs/core';
 import type { RequestContextSchema } from '@zeltjs/core';
+import { Config } from '@zeltjs/core';
 
 import type { JwtDriver, JwtPayload } from './jwt.types';
 

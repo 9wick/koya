@@ -3,13 +3,12 @@
 import { NodeCliConfig } from '@zeltjs/adapter-node';
 import { cac } from 'cac';
 import { match } from 'ts-pattern';
-
+import { cliError, cliPrint } from './cli-output';
 import type { GenerateClientOptions } from './config/options';
-import type { ContractError, ConfigError } from './errors';
+import type { ConfigError, ContractError } from './errors';
 import { generateClient } from './generate-client';
-import { findConfigFile, loadConfig, isLoadConfigError } from './load-config';
+import { findConfigFile, isLoadConfigError, loadConfig } from './load-config';
 import { watchClient } from './watch';
-import { cliPrint, cliError } from './cli-output';
 
 const cliConfig = new NodeCliConfig();
 

@@ -2,11 +2,11 @@ import { injectable } from '@needle-di/core';
 
 import { resolveClassArgs } from '../../internal/decorator-context';
 import {
-  setControllerMetadata,
-  resolveRouteMetadata,
-  resolveMethodMiddlewareMetadata,
-  resolveSkipMiddlewareMetadata,
   resolveAuthorizedMetadata,
+  resolveMethodMiddlewareMetadata,
+  resolveRouteMetadata,
+  resolveSkipMiddlewareMetadata,
+  setControllerMetadata,
 } from '../internal/metadata';
 
 export const Controller =

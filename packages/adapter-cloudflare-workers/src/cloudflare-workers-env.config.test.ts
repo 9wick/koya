@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'vitest';
 import { env } from 'cloudflare:workers';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { CloudflareWorkersEnvConfig } from './cloudflare-workers-env.config';
 

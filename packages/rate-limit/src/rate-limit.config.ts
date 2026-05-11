@@ -1,5 +1,6 @@
 import { Config, inject } from '@zeltjs/core';
-import { MemoryKV, type AtomicKVStore } from '@zeltjs/kv';
+import type { AtomicKVStore } from '@zeltjs/kv';
+import { MemoryKV } from '@zeltjs/kv';
 
 @Config
 export class RateLimitConfig {

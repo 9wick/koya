@@ -4,9 +4,8 @@ import { isAbsolute, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import type { CliConfig } from '@zeltjs/core';
-
-import type { ConfigError } from './errors';
 import type { GenerateClientOptions } from './config/options';
+import type { ConfigError } from './errors';
 
 const DEFAULT_CONFIG_NAMES = [
   'zelt.config.ts',

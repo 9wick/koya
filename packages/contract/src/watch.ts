@@ -2,11 +2,10 @@
 import chokidar from 'chokidar';
 import fg from 'fast-glob';
 import { match } from 'ts-pattern';
-
-import type { ContractError } from './errors';
+import { cliError, cliPrint } from './cli-output';
 import type { GenerateClientOptions } from './config/options';
+import type { ContractError } from './errors';
 import { generateClient } from './generate-client';
-import { cliPrint, cliError } from './cli-output';
 
 const formatError = (error: ContractError): string =>
   match(error)

@@ -3,9 +3,9 @@ import {
   Delete,
   Get,
   HTTPException,
+  inject,
   Patch,
   Post,
-  inject,
   pathParam,
   response,
 } from '@zeltjs/core';

@@ -1,7 +1,8 @@
-import { HTTPException } from 'hono/http-exception';
-import { safeParse, type GenericSchema, type InferOutput } from 'valibot';
-import { getEntryContext } from '@zeltjs/core/runtime';
 import type { ValidatedMarker, ValidationTarget } from '@zeltjs/core';
+import { getEntryContext } from '@zeltjs/core/runtime';
+import { HTTPException } from 'hono/http-exception';
+import type { GenericSchema, InferOutput } from 'valibot';
+import { safeParse } from 'valibot';
 
 export function validated<Schema extends GenericSchema>(
   schema: Schema,

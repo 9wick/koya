@@ -1,3 +1,3 @@
 export { defineConfig } from './define-config';
-export { loadZeltConfig, ConfigLoadError, type LoadConfigOptions } from './loader';
-export type { ZeltConfig, BuildConfig, DevConfig, OpenApiConfig } from './schema';
+export { ConfigLoadError, type LoadConfigOptions, loadZeltConfig } from './loader';
+export type { BuildConfig, DevConfig, OpenApiConfig, ZeltConfig } from './schema';

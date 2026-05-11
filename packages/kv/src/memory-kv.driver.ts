@@ -1,4 +1,5 @@
-import { inject, Injectable, LifecycleManager, type Lifecycle } from '@zeltjs/core';
+import type { Lifecycle } from '@zeltjs/core';
+import { Injectable, inject, LifecycleManager } from '@zeltjs/core';
 
 import { KVError } from './errors';
 import { joinPrefix } from './namespace';

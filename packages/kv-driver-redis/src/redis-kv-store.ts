@@ -1,13 +1,5 @@
-import {
-  joinPrefix,
-  serialize,
-  deserialize,
-  KVError,
-  type AtomicKVStore,
-  type Defined,
-  type NonEmptyString,
-  type SetOptions,
-} from '@zeltjs/kv';
+import type { AtomicKVStore, Defined, NonEmptyString, SetOptions } from '@zeltjs/kv';
+import { deserialize, joinPrefix, KVError, serialize } from '@zeltjs/kv';
 
 import type { ZeltRedis } from './zelt-redis';
 

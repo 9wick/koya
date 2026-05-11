@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { defineConfig, type GenerateClientOptions } from './options';
+import type { GenerateClientOptions } from './options';
+import { defineConfig } from './options';
 
 describe('defineConfig', () => {
   it('returns the input as-is (identity function)', () => {

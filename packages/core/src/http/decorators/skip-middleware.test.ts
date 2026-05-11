@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { MiddlewareHandler } from 'hono';
+import { describe, expect, it } from 'vitest';
 
 import { getSkipMiddlewareMetadata } from '../internal/metadata';
 
