@@ -2,12 +2,12 @@ import { Injectable, inject } from '@zeltjs/core';
 import type { RequestContext, Next } from '@zeltjs/core';
 
 import { tooManyRequestsResponse } from './errors';
-import { RateLimiter } from './rate-limiter.service';
+import { RateLimitService } from './rate-limit.service';
 import type { RateLimitOptions } from './types';
 
 @Injectable()
 export class RateLimitMiddleware {
-  constructor(private readonly limiter = inject(RateLimiter)) {}
+  constructor(private readonly limiter = inject(RateLimitService)) {}
 
   async use(c: RequestContext, next: Next, opts: RateLimitOptions): Promise<Response | undefined> {
     const key = typeof opts.key === 'string' ? opts.key : opts.key();
