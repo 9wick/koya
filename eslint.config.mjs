@@ -198,14 +198,6 @@ export default tseslint.config(
     },
   },
   {
-    // injectConfig uses multi: true to handle needle-di's inheritance-based auto-binding.
-    // inject() returns any[] which requires unsafe assignment.
-    files: ['packages/core/src/config/inject.ts'],
-    rules: {
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-    },
-  },
-  {
     // Env module needs process.env access
     files: ['packages/core/src/modules/env/env.service.ts'],
     rules: {
