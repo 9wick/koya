@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { MemoryKVService, type AtomicKVStore, KVError } from '@zeltjs/kv';
 import type { LoggerService } from '@zeltjs/core';
-import { createTestTargetBase } from '@zeltjs/core';
+import { createTestTargetBase } from '@zeltjs/core/internal-bridge/testing';
 
 import { RateLimitConfig } from './rate-limit.config';
 import { RateLimitService } from './rate-limit.service';

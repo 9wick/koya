@@ -12,6 +12,10 @@ export default mergeConfig(
     resolve: {
       alias: {
         // Resolve @zeltjs/core from source to share the same @needle-di/core instance as direct imports.
+        '@zeltjs/core/internal-bridge/testing': resolve(
+          __dirname,
+          '../core/src/internal-bridge/testing.ts',
+        ),
         '@zeltjs/core': resolve(__dirname, '../core/src/index.ts'),
       },
     },

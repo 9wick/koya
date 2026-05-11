@@ -1,10 +1,16 @@
-import { createTestTargetBase } from '@zeltjs/core';
-import type { CreateTestTargetOptions, TestTargetResult } from '@zeltjs/core';
+import { createTestTargetBase } from '@zeltjs/core/internal-bridge/testing';
+import type {
+  CreateTestTargetOptions,
+  TestTargetResult,
+} from '@zeltjs/core/internal-bridge/testing';
 
 import { getTestDefaults } from './global-config';
 import { registerShutdown } from './shutdown-registry';
 
-export type { CreateTestTargetOptions, TestTargetResult } from '@zeltjs/core';
+export type {
+  CreateTestTargetOptions,
+  TestTargetResult,
+} from '@zeltjs/core/internal-bridge/testing';
 
 type AnyConstructor = new (...args: never[]) => unknown;
 

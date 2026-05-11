@@ -93,9 +93,6 @@ export type {
 export { Config, injectConfig, overrideConfig } from './config';
 export type { ConfigClass } from './config';
 
-export { createTestTargetBase } from './internal/container';
-export type { CreateTestTargetOptions, TestTargetResult } from './internal/container';
-
 export { LifecycleManager } from './lifecycle';
 export type { Lifecycle, Disposable } from './lifecycle';
 

@@ -1,4 +1,5 @@
-import { createTestTargetBase, LifecycleManager } from '@zeltjs/core';
+import { LifecycleManager } from '@zeltjs/core';
+import { createTestTargetBase } from '@zeltjs/core/internal-bridge/testing';
 import { describe, expect, it, vi } from 'vitest';
 
 import { RedisKVConfig } from './redis-kv.config';
