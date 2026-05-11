@@ -35,6 +35,10 @@
     "./runtime": {
       "types": "./dist/runtime/index.d.ts",
       "import": "./dist/runtime/index.js"
+    },
+    "./internal-bridge/testing": {
+      "types": "./dist/internal-bridge/testing.d.ts",
+      "import": "./dist/internal-bridge/testing.js"
     }
   },
   "files": [

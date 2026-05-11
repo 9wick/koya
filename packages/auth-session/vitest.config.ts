@@ -11,6 +11,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@zeltjs/core/internal-bridge/testing': resolve(
+        __dirname,
+        '../core/src/internal-bridge/testing.ts',
+      ),
       '@zeltjs/core': resolve(__dirname, '../core/src/index.ts'),
       '@zeltjs/kv': resolve(__dirname, '../kv/src/index.ts'),
     },
