@@ -1,4 +1,5 @@
-import { getContext, setContext, type RequestContextSchema } from './get-context';
+import type { RequestContextSchema } from './get-context';
+import { getContext, setContext } from './get-context';
 
 export const setUser = <U extends RequestContextSchema['user']>(
   user: U,

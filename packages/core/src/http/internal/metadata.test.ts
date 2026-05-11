@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  appendRouteMetadata,
-  getControllerMetadata,
-  getRouteMetadata,
-  setControllerMetadata,
-  appendPendingRouteMetadata,
-  resolveRouteMetadata,
-  appendPendingMethodMiddlewareMetadata,
-  resolveMethodMiddlewareMetadata,
-  getMethodMiddlewareMetadata,
-  appendPendingSkipMiddlewareMetadata,
-  resolveSkipMiddlewareMetadata,
-  getSkipMiddlewareMetadata,
   appendPendingAuthorizedMetadata,
-  resolveAuthorizedMetadata,
+  appendPendingMethodMiddlewareMetadata,
+  appendPendingRouteMetadata,
+  appendPendingSkipMiddlewareMetadata,
+  appendRouteMetadata,
   getAuthorizedMetadata,
+  getControllerMetadata,
+  getMethodMiddlewareMetadata,
+  getRouteMetadata,
+  getSkipMiddlewareMetadata,
+  resolveAuthorizedMetadata,
+  resolveMethodMiddlewareMetadata,
+  resolveRouteMetadata,
+  resolveSkipMiddlewareMetadata,
+  setControllerMetadata,
 } from './metadata';
 
 describe('metadata', () => {

@@ -1,11 +1,10 @@
-import { describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-
+import { describe, expect, it } from 'vitest';
+import { createContainer } from '../../di/container';
+import { LifecycleManager } from '../../lifecycle';
 import { Controller } from '../decorators/controller';
 import { Get, Post } from '../decorators/http-method';
-import { createContainer } from '../../di/container';
 import { buildRoutes } from '../internal/route-builder';
-import { LifecycleManager } from '../../lifecycle';
 
 import { response } from './response';
 

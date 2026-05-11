@@ -1,5 +1,13 @@
-export type { SchemaAdapter, JsonSchema } from './types/schema-adapter';
-export type { Route } from './types/route';
+export type { GenerateClientOptions } from './config/options';
+export { defineConfig } from './config/options';
+export type {
+  AnalyzerError,
+  ConfigError,
+  ContractError,
+  EmitError,
+} from './errors';
+export type { GenerateClientResult } from './generate-client';
+export { generateClient } from './generate-client';
 export type { BuildAppType } from './types/build-app-type';
 export type {
   ExtractPathParams,
@@ -7,18 +15,7 @@ export type {
   ExtractResponse,
   ExtractValidationErrors,
 } from './types/extract';
-export type { ValidatedMarker, UnwrapValidated } from './types/validated-marker';
-
-export { defineConfig } from './config/options';
-export type { GenerateClientOptions } from './config/options';
-
-export { generateClient } from './generate-client';
-export type { GenerateClientResult } from './generate-client';
+export type { Route } from './types/route';
+export type { JsonSchema, SchemaAdapter } from './types/schema-adapter';
+export type { UnwrapValidated, ValidatedMarker } from './types/validated-marker';
 export { watchClient } from './watch';
-
-export type {
-  AnalyzerError,
-  EmitError,
-  ConfigError,
-  ContractError,
-} from './errors';

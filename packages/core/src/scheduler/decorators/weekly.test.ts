@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { getScheduleMetadata, resolveScheduleMetadata } from '../internal/scheduler-metadata';
-
-import { Weekly } from './weekly';
 import { Scheduled } from './scheduled';
+import { Weekly } from './weekly';
 
 describe('@Weekly', () => {
   it('converts day and hour to cron expression', () => {

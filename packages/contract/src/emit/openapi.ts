@@ -1,13 +1,15 @@
 // packages/contract/src/emit/openapi.ts
-import { okAsync, errAsync, type ResultAsync } from 'neverthrow';
-
-import type { ContractError } from '../errors';
+import type { ResultAsync } from 'neverthrow';
+import { errAsync, okAsync } from 'neverthrow';
 import type { RequestSchemaRef } from '../analyzer/handler';
 import type { ControllerIR, RouteIR } from '../analyzer/internal-representation';
+import type { ContractError } from '../errors';
 import type { SchemaAdapter } from '../types/schema-adapter';
 
-import { resolveRequestSchema, type RequestSchemaJson } from './json-schema-input';
-import { resolveResponseSchema, type ResponseSchemaJson } from './json-schema-output';
+import type { RequestSchemaJson } from './json-schema-input';
+import { resolveRequestSchema } from './json-schema-input';
+import type { ResponseSchemaJson } from './json-schema-output';
+import { resolveResponseSchema } from './json-schema-output';
 import { validationErrorBodyJsonSchema } from './validation-error-schema';
 
 type EmitOpenApiOptions = {

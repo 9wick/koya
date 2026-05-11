@@ -1,8 +1,7 @@
 import fg from 'fast-glob';
 import type { Project } from 'ts-morph';
-
-import type { ControllerSpec } from './internal-representation';
 import { extractControllerDecorator } from './decorator';
+import type { ControllerSpec } from './internal-representation';
 
 export const discoverControllers = (
   project: Project,

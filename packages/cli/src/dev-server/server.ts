@@ -1,4 +1,5 @@
-import { type ChildProcess, spawn } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
+import { spawn } from 'node:child_process';
 
 import { NodeCliConfig } from '@zeltjs/adapter-node';
 import type { SignalHandler } from '@zeltjs/core';
@@ -6,7 +7,8 @@ import consola from 'consola';
 
 import type { DevConfig } from '../config/schema';
 
-import { createWatcher, type WatcherHandle } from './watcher';
+import type { WatcherHandle } from './watcher';
+import { createWatcher } from './watcher';
 
 const cliConfig = new NodeCliConfig();
 

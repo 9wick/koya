@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
-
+import { createApp } from '../../app';
 import { Controller } from '../decorators/controller';
 import { Get, Post } from '../decorators/http-method';
-import { createApp } from '../../app';
 
 import { method, path, url } from './url';
 

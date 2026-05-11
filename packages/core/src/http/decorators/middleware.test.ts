@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { Container } from '@needle-di/core';
 import type { Context, Next } from 'hono';
+import { describe, expect, it } from 'vitest';
 
 import { Middleware } from './middleware';
 

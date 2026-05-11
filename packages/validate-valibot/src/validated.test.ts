@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import * as v from 'valibot';
+import { runInEntryContext } from '@zeltjs/core/runtime';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { runInEntryContext } from '@zeltjs/core/runtime';
+import * as v from 'valibot';
+import { describe, expect, it } from 'vitest';
 
 import { validated } from './validated';
 

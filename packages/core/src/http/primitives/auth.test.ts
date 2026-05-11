@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
 import type { Context } from 'hono';
+import { describe, expect, it } from 'vitest';
 
-import { runInEntryContext, type EntryContext } from '../internal/entry-context';
+import type { EntryContext } from '../internal/entry-context';
+import { runInEntryContext } from '../internal/entry-context';
 
-import { setUser, currentUser, currentRoles } from './auth';
+import { currentRoles, currentUser, setUser } from './auth';
 
 const createMockEntryContext = (): EntryContext => {
   const store: Record<string, unknown> = {};

@@ -1,7 +1,7 @@
-import { describe, expectTypeOf, it } from 'vitest';
-import { hc } from 'hono/client';
 import type { TypedResponse } from 'hono';
+import { hc } from 'hono/client';
 import * as v from 'valibot';
+import { describe, expectTypeOf, it } from 'vitest';
 
 import type { BuildAppType } from './build-app-type';
 import type { Route } from './route';

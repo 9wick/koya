@@ -1,5 +1,5 @@
-import { Injectable } from '../../di/injectable';
 import { injectConfig } from '../../config';
+import { Injectable } from '../../di/injectable';
 
 import { EnvConfig } from './env.config';
 

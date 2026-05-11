@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LifecycleManager } from '@zeltjs/core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MemoryKVDriver } from './memory-kv.driver';
 

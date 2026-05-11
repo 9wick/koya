@@ -1,9 +1,5 @@
-import {
-  Container,
-  type Container as ContainerType,
-  inject,
-  InjectionToken,
-} from '@needle-di/core';
+import type { Container as ContainerType } from '@needle-di/core';
+import { Container, InjectionToken, inject } from '@needle-di/core';
 
 import type { ConfigClass } from './types';
 

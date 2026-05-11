@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { injectable } from '@needle-di/core';
+import { describe, expect, it } from 'vitest';
 
 import { Config, injectConfig } from '../config';
-import { Injectable, inject, LifecycleManager } from '../index';
 import type { Lifecycle } from '../index';
+import { Injectable, inject, LifecycleManager } from '../index';
 
 import { createContainer, createTestTargetBase } from './container';
 

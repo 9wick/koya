@@ -1,6 +1,6 @@
 import { toJsonSchema } from '@valibot/to-json-schema';
+import type { JsonSchema, SchemaAdapter } from '@zeltjs/openapi';
 import type { GenericSchema } from 'valibot';
-import type { SchemaAdapter, JsonSchema } from '@zeltjs/openapi';
 
 // Access the ~standard.vendor marker without type predicates.
 // Returns true only for genuine valibot schemas implementing Standard Schema.

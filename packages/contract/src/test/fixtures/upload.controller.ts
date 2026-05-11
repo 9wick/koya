@@ -1,5 +1,5 @@
-import * as v from 'valibot';
 import { Controller, Post } from '@zeltjs/core';
+import * as v from 'valibot';
 
 import { validated } from './validated';
 

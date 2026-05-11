@@ -1,5 +1,5 @@
+import { Config, Controller, createApp, Get, injectConfig } from '@zeltjs/core';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createApp, Controller, Get, Config, injectConfig } from '@zeltjs/core';
 
 import { configureTestDefaults } from './global-config';
 import { onTest } from './on-test';

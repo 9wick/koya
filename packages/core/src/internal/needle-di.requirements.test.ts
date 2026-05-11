@@ -1,5 +1,5 @@
+import { Container, InjectionToken, inject, injectable } from '@needle-di/core';
 import { describe, expect, it } from 'vitest';
-import { Container, inject, injectable, InjectionToken } from '@needle-di/core';
 
 describe('needle-di InjectionToken requirements', () => {
   it('later bind wins over earlier bind', () => {

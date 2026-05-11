@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
 import type { Context } from 'hono';
+import { describe, expect, it, vi } from 'vitest';
 
-import { runInEntryContext, type EntryContext } from '../internal/entry-context';
+import type { EntryContext } from '../internal/entry-context';
+import { runInEntryContext } from '../internal/entry-context';
 
 import { getContext, setContext } from './get-context';
 

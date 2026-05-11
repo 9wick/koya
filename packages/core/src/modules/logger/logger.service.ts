@@ -1,9 +1,9 @@
-import { Injectable } from '../../di/injectable';
 import { injectConfig } from '../../config';
-
-import { getLogContext } from './logger.context.lib';
+import { Injectable } from '../../di/injectable';
 import { LoggerConfig } from './logger.config';
-import { LOG_LEVEL_PRIORITY, type LogContext, type LogEntry, type LogLevel } from './logger.lib';
+import { getLogContext } from './logger.context.lib';
+import type { LogContext, LogEntry, LogLevel } from './logger.lib';
+import { LOG_LEVEL_PRIORITY } from './logger.lib';
 
 @Injectable()
 export class LoggerService {

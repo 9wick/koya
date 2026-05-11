@@ -1,13 +1,14 @@
 import { injectable } from '@needle-di/core';
-import type { MiddlewareHandler, Context, Next } from 'hono';
+import type { Context, MiddlewareHandler, Next } from 'hono';
 import * as v from 'valibot';
 import { afterEach, describe, expect, it } from 'vitest';
-
-import { LifecycleManager, type Lifecycle } from '../lifecycle';
-import { inject } from '../di/inject';
-import { validated } from '../test-helpers/validated';
+import type { App, ControllerClass } from '../app';
+import { createApp } from '../app';
 import { Config, injectConfig } from '../config';
-import { createApp, type App, type ControllerClass } from '../app';
+import { inject } from '../di/inject';
+import type { Lifecycle } from '../lifecycle';
+import { LifecycleManager } from '../lifecycle';
+import { validated } from '../test-helpers/validated';
 
 import { Controller } from './decorators/controller';
 import { ErrorHandler } from './decorators/error-handler';

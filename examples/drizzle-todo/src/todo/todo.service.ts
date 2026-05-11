@@ -2,7 +2,8 @@ import { Injectable, inject } from '@zeltjs/core';
 import { eq } from 'drizzle-orm';
 
 import { DrizzleService } from '../db/drizzle.service';
-import { type NewTodo, type Todo, todos } from '../db/schema';
+import type { NewTodo, Todo } from '../db/schema';
+import { todos } from '../db/schema';
 
 @Injectable()
 export class TodoService {

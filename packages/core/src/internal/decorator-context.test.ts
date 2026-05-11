@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveMethodArgs, resolveClassArgs } from './decorator-context';
+import { resolveClassArgs, resolveMethodArgs } from './decorator-context';
 
 describe('resolveMethodArgs', () => {
   it('parses legacy instance method arguments', () => {

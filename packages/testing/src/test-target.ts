@@ -1,8 +1,8 @@
-import { createTestTargetBase } from '@zeltjs/core/internal-bridge/testing';
 import type {
   CreateTestTargetOptions,
   TestTargetResult,
 } from '@zeltjs/core/internal-bridge/testing';
+import { createTestTargetBase } from '@zeltjs/core/internal-bridge/testing';
 
 import { getTestDefaults } from './global-config';
 import { registerShutdown } from './shutdown-registry';

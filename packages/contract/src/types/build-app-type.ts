@@ -1,6 +1,6 @@
 import type { Hono } from 'hono';
-import type { StatusCode } from 'hono/utils/http-status';
 import type { BlankEnv, Schema, TypedResponse } from 'hono/types';
+import type { StatusCode } from 'hono/utils/http-status';
 
 type MethodKey<M extends string> = M extends 'GET'
   ? '$get'

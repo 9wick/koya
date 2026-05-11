@@ -1,6 +1,9 @@
 // packages/contract/src/analyzer/decorator.ts
-import { type ClassDeclaration, type MethodDeclaration, type Node, SyntaxKind } from 'ts-morph';
-import { ok, err, type Result } from 'neverthrow';
+
+import type { Result } from 'neverthrow';
+import { err, ok } from 'neverthrow';
+import type { ClassDeclaration, MethodDeclaration, Node } from 'ts-morph';
+import { SyntaxKind } from 'ts-morph';
 
 import type { AnalyzerError } from '../errors';
 

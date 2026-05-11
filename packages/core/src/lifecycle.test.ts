@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { LifecycleManager, type Lifecycle } from './lifecycle';
+import type { Lifecycle } from './lifecycle';
+import { LifecycleManager } from './lifecycle';
 
 describe('LifecycleManager', () => {
   it('calls startup in registration order', async () => {

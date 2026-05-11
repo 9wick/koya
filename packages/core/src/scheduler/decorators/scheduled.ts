@@ -1,7 +1,7 @@
 import { injectable } from '@needle-di/core';
 
 import { resolveClassArgs } from '../../internal/decorator-context';
-import { setScheduledMetadata, resolveScheduleMetadata } from '../internal/scheduler-metadata';
+import { resolveScheduleMetadata, setScheduledMetadata } from '../internal/scheduler-metadata';
 
 export const Scheduled =
   () =>

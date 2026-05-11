@@ -1,6 +1,6 @@
+import type { Next, RequestContext } from '@zeltjs/core';
+import { inject, injectConfig, Middleware, setUser } from '@zeltjs/core';
 import { getCookie } from 'hono/cookie';
-import { Middleware, inject, injectConfig, setUser } from '@zeltjs/core';
-import type { RequestContext, Next } from '@zeltjs/core';
 
 import { JwtConfig } from './jwt.config';
 import { JwtService } from './jwt.service';

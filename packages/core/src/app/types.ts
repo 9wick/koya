@@ -1,5 +1,5 @@
-import type { ConfigClass } from '../config';
 import type { CommandClass } from '../command/types';
+import type { ConfigClass } from '../config';
 import type { ErrorHandlerClass, MiddlewareInput } from '../http/middleware/types';
 
 type ControllerClass = new (...args: never[]) => object;

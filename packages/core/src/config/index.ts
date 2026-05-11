@@ -1,3 +1,3 @@
-export { overrideConfig, resolveConfig, injectConfig, getConfig } from './token';
 export { Config } from './decorator';
+export { getConfig, injectConfig, overrideConfig, resolveConfig } from './token';
 export type { ConfigClass } from './types';

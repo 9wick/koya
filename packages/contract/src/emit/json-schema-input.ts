@@ -2,10 +2,9 @@
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { okAsync, errAsync, fromThrowable, ResultAsync } from 'neverthrow';
-
-import type { EmitError } from '../errors';
+import { errAsync, fromThrowable, okAsync, ResultAsync } from 'neverthrow';
 import type { RequestSchemaRef, ValidationTarget } from '../analyzer/handler';
+import type { EmitError } from '../errors';
 import type { SchemaAdapter } from '../types/schema-adapter';
 
 export type RequestSchemaJson =

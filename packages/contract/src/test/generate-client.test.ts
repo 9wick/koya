@@ -8,7 +8,7 @@ import type { GenericSchema } from 'valibot';
 import { describe, expect, it } from 'vitest';
 
 import { generateClient } from '../generate-client';
-import type { SchemaAdapter, JsonSchema } from '../types/schema-adapter';
+import type { JsonSchema, SchemaAdapter } from '../types/schema-adapter';
 
 const fixtureGlob = resolve(import.meta.dirname, 'fixtures/*.controller.ts');
 const tsconfigPath = resolve(import.meta.dirname, '../../tsconfig.json');

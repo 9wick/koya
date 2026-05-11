@@ -1,6 +1,6 @@
-import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import { LifecycleManager } from '@zeltjs/core';
 import { KVError } from '@zeltjs/kv';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { RedisKVConfig } from './redis-kv.config';
 import { RedisKVDriver } from './redis-kv.driver';

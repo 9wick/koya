@@ -1,6 +1,6 @@
-import { serve } from '@hono/node-server';
 import type { ServerType } from '@hono/node-server';
-import type { HttpApp, CommandApp, ReadyOptions, ReadyResult, CommandClass } from '@zeltjs/core';
+import { serve } from '@hono/node-server';
+import type { CommandApp, CommandClass, HttpApp, ReadyOptions, ReadyResult } from '@zeltjs/core';
 
 import { NodeCliConfig } from './cli.config';
 import { ProcessEnvConfig } from './process-env.config';

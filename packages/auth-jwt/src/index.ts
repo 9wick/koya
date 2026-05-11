@@ -1,5 +1,5 @@
-export { JwtConfig } from './jwt.config';
 export type { ResolveUserResult } from './jwt.config';
-export { JwtService } from './jwt.service';
+export { JwtConfig } from './jwt.config';
 export { JwtMiddleware } from './jwt.middleware';
+export { JwtService } from './jwt.service';
 export type { JwtDriver, JwtPayload } from './jwt.types';

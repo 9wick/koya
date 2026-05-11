@@ -1,5 +1,5 @@
-import { createApp } from '@zeltjs/core';
 import { onNode } from '@zeltjs/adapter-node';
+import { createApp } from '@zeltjs/core';
 
 import { controllers } from './controllers';
 import { loggingMiddleware } from './middlewares';

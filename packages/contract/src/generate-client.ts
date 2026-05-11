@@ -1,6 +1,6 @@
 // packages/contract/src/generate-client.ts
 import { existsSync } from 'node:fs';
-import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { discoverControllers } from './analyzer/discover-controllers';

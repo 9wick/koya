@@ -1,7 +1,7 @@
-import { describe, expectTypeOf, it } from 'vitest';
-import type { TypedResponse } from 'hono';
 import type { ValidationErrorBody } from '@zeltjs/core';
+import type { TypedResponse } from 'hono';
 import * as v from 'valibot';
+import { describe, expectTypeOf, it } from 'vitest';
 
 import type { Route } from './route';
 import type { ValidatedMarker } from './validated-marker';

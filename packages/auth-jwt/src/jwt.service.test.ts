@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createTestTarget, type TestTargetResult } from '@zeltjs/testing';
-
-import { JwtService } from './jwt.service';
+import type { TestTargetResult } from '@zeltjs/testing';
+import { createTestTarget } from '@zeltjs/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { JwtConfig } from './jwt.config';
+import { JwtService } from './jwt.service';
 
 class TestJwtConfig extends JwtConfig {
   override get secret(): string {

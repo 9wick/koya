@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { runInCommandContext } from '../command-context';
-import { cliSchema, type InferSchema } from '../schema';
+import type { InferSchema } from '../schema';
+import { cliSchema } from '../schema';
 
 import { args } from './args';
 

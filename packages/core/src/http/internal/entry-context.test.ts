@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import type { Context } from 'hono';
+import { describe, expect, it } from 'vitest';
 
-import { getEntryContext, runInEntryContext, type EntryContext } from './entry-context';
+import type { EntryContext } from './entry-context';
+import { getEntryContext, runInEntryContext } from './entry-context';
 
 describe('entry-context', () => {
   it('returns the running context inside runInEntryContext', () => {

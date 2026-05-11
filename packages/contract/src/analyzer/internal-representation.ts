@@ -1,20 +1,17 @@
 // packages/contract/src/analyzer/internal-representation.ts
-import type { Project, ClassDeclaration, MethodDeclaration } from 'ts-morph';
-import { ok, err, type Result } from 'neverthrow';
+
+import type { Result } from 'neverthrow';
+import { err, ok } from 'neverthrow';
+import type { ClassDeclaration, MethodDeclaration, Project } from 'ts-morph';
 
 import type { AnalyzerError } from '../errors';
 
-import {
-  extractControllerDecorator,
-  extractRouteDecorator,
-  type RouteDecoratorInfo,
-} from './decorator';
-import {
-  analyzeHandlerSignature,
-  type HandlerSignatureInfo,
-  type RequestSchemaRef,
-} from './handler';
-import { analyzeResponseType, type ResponseTypeInfo } from './response-type';
+import type { RouteDecoratorInfo } from './decorator';
+import { extractControllerDecorator, extractRouteDecorator } from './decorator';
+import type { HandlerSignatureInfo, RequestSchemaRef } from './handler';
+import { analyzeHandlerSignature } from './handler';
+import type { ResponseTypeInfo } from './response-type';
+import { analyzeResponseType } from './response-type';
 
 const stripTrailingSlash = (s: string): string =>
   s.length > 1 && s.endsWith('/') ? s.slice(0, -1) : s;

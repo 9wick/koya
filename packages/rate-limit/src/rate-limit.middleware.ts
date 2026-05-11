@@ -1,5 +1,5 @@
+import type { Next, RequestContext } from '@zeltjs/core';
 import { Injectable, inject } from '@zeltjs/core';
-import type { RequestContext, Next } from '@zeltjs/core';
 
 import { tooManyRequestsResponse } from './errors';
 import { RateLimitService } from './rate-limit.service';

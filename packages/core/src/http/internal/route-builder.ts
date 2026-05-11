@@ -11,6 +11,7 @@ import type {
 import { currentRoles, currentUser } from '../primitives/auth';
 
 import { runInEntryContext } from './entry-context';
+import type { HttpMethod } from './metadata';
 import {
   getAuthorizedMetadata,
   getControllerMetadata,
@@ -18,7 +19,6 @@ import {
   getMethodMiddlewareMetadata,
   getRouteMetadata,
   getSkipMiddlewareMetadata,
-  type HttpMethod,
 } from './metadata';
 
 type MiddlewareContext = Context<Env, string, Input>;

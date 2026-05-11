@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it } from 'vitest';
 import type { ServerType } from '@hono/node-server';
+import { afterEach, describe, expect, it } from 'vitest';
 
-import { serve, type AddressInfo } from './index';
+import type { AddressInfo } from './index';
+import { serve } from './index';
 
 const createMockApp = () => ({
   fetch: async (req: Request) => new Response(`Hello from ${req.url}`),

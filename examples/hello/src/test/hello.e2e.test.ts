@@ -1,8 +1,7 @@
 import { hc } from 'hono/client';
 import { beforeAll, describe, expect, it } from 'vitest';
-
-import { app } from '../app';
 import type { AppType } from '../../generated/app.gen';
+import { app } from '../app';
 
 beforeAll(async () => {
   await app.ready();

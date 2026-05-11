@@ -1,10 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { Controller, createApp, currentRoles, currentUser, Get, UseMiddleware } from '@zeltjs/core';
 import { createTestTarget } from '@zeltjs/testing';
-import { Controller, Get, UseMiddleware, createApp, currentUser, currentRoles } from '@zeltjs/core';
-
+import { describe, expect, it } from 'vitest';
+import { JwtConfig } from './jwt.config';
 import { JwtMiddleware } from './jwt.middleware';
 import { JwtService } from './jwt.service';
-import { JwtConfig } from './jwt.config';
 import type { JwtPayload } from './jwt.types';
 
 class TestJwtConfig extends JwtConfig {

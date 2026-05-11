@@ -1,20 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  createApp,
-  Controller,
-  Get,
-  inject,
-  Config,
-  Middleware,
-  type Next,
-  type RequestContext,
-} from '../../index';
+import type { Next, RequestContext } from '../../index';
+import { Config, Controller, createApp, Get, inject, Middleware } from '../../index';
 
 import { JsonlFormatter, PrettyFormatter } from './formatter';
+import type { TransportBinding } from './index';
+import { Logger, LoggerConfig, withLogContext } from './index';
 import { ConsoleTransport } from './transport';
-
-import { Logger, LoggerConfig, withLogContext, type TransportBinding } from './index';
 
 describe('Logger integration', () => {
   const consoleSpy = vi.spyOn(console, 'log');

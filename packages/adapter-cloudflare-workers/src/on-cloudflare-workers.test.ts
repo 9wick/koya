@@ -1,5 +1,5 @@
+import { Controller, createApp, EnvConfig, Get } from '@zeltjs/core';
 import { describe, expect, it, vi } from 'vitest';
-import { Controller, Get, createApp, EnvConfig } from '@zeltjs/core';
 
 import { CloudflareWorkersEnvConfig } from './cloudflare-workers-env.config';
 import { onCloudflareWorkers } from './on-cloudflare-workers';

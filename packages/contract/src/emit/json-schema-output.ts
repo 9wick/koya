@@ -1,9 +1,11 @@
 // packages/contract/src/emit/json-schema-output.ts
-import { createGenerator, type Config } from 'ts-json-schema-generator';
-import { ok, err, type Result } from 'neverthrow';
 
-import type { EmitError } from '../errors';
+import type { Result } from 'neverthrow';
+import { err, ok } from 'neverthrow';
+import type { Config } from 'ts-json-schema-generator';
+import { createGenerator } from 'ts-json-schema-generator';
 import type { ResponseTypeInfo } from '../analyzer/response-type';
+import type { EmitError } from '../errors';
 
 export type ResponseSchemaJson =
   | {

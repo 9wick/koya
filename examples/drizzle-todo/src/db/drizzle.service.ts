@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync } from 'node:fs';
-
-import { Injectable } from '@zeltjs/core';
 import type { Disposable } from '@zeltjs/core';
+import { Injectable } from '@zeltjs/core';
 import Database from 'better-sqlite3';
-import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 
 import * as schema from './schema';
 
