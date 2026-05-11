@@ -1,13 +1,13 @@
-import { Container } from '@needle-di/core';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { Config } from '../../config';
+import { createTestTargetBase } from '../../internal/container';
 
 import { LoggerConfig } from './logger.config';
 import type { LogLevel } from './logger.lib';
-import { Logger } from './logger.service';
+import { LoggerService } from './logger.service';
 
-describe('Logger', () => {
+describe('LoggerService', () => {
   const consoleSpy = vi.spyOn(console, 'log');
 
   beforeEach(() => {
@@ -19,9 +19,8 @@ describe('Logger', () => {
   });
 
   describe('child logger', () => {
-    it('child inherits parent bindings and merges context', () => {
-      const container = new Container();
-      const logger = container.get(Logger);
+    it('child inherits parent bindings and merges context', async () => {
+      const { target: logger, shutdown } = await createTestTargetBase(LoggerService);
       const child1 = logger.child({ service: 'auth' });
       const child2 = child1.child({ module: 'jwt' });
 
@@ -31,20 +30,21 @@ describe('Logger', () => {
       const logged = JSON.parse(rawCall) as Record<string, unknown>;
       expect(logged['service']).toBe('auth');
       expect(logged['module']).toBe('jwt');
+      await shutdown();
     });
 
-    it('child is not DI-managed (lightweight wrapper)', () => {
-      const container = new Container();
-      const logger = container.get(Logger);
+    it('child is not DI-managed (lightweight wrapper)', async () => {
+      const { target: logger, shutdown } = await createTestTargetBase(LoggerService);
       const child = logger.child({ service: 'test' });
 
       expect(child).not.toBe(logger);
-      expect(child).toBeInstanceOf(Logger);
+      expect(child).toBeInstanceOf(LoggerService);
+      await shutdown();
     });
   });
 
   describe('log level filtering', () => {
-    it('uses O(1) priority lookup for level comparison', () => {
+    it('uses O(1) priority lookup for level comparison', async () => {
       @Config
       class WarnOnlyConfig extends LoggerConfig {
         override get level(): LogLevel {
@@ -52,17 +52,17 @@ describe('Logger', () => {
         }
       }
 
-      const container = new Container();
-      container.bind({ provide: WarnOnlyConfig, useClass: WarnOnlyConfig });
-      container.bind({ provide: LoggerConfig, useExisting: WarnOnlyConfig });
+      const { target: logger, shutdown } = await createTestTargetBase(LoggerService, {
+        configs: [WarnOnlyConfig],
+      });
 
-      const logger = container.get(Logger);
       logger.debug('skip');
       logger.info('skip');
       logger.warn('log');
       logger.error('log');
 
       expect(consoleSpy).toHaveBeenCalledTimes(2);
+      await shutdown();
     });
   });
 });

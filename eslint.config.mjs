@@ -5,6 +5,8 @@ import oxlint from 'eslint-plugin-oxlint';
 import sonarjs from 'eslint-plugin-sonarjs';
 import tseslint from 'typescript-eslint';
 
+import zeltPlugin from '@zeltjs/eslint-plugin';
+
 const TEST_FILES = ['**/*.test.{ts,tsx}', '**/*.e2e.test.{ts,tsx}'];
 const FIXTURE_FILES = ['**/_fixtures/**/*.{ts,tsx}', '**/test/fixtures/**/*.{ts,tsx}'];
 const EXAMPLE_FILES = ['examples/**/*.{ts,tsx}'];
@@ -22,20 +24,31 @@ export default tseslint.config(
       '**/generated/**',
       'website/**',
       'vitest.shared.ts',
+      'packages/eslint-plugin/**',
     ],
   },
   tseslint.configs.recommended,
   ...oxlint.configs['flat/all'],
   eslintComments.recommended,
   {
-    plugins: { 'import-x': importX, sonarjs },
+    plugins: {
+      'import-x': importX,
+      sonarjs,
+      zelt: zeltPlugin,
+    },
   },
   ...strictTypes.configs.recommended,
   ...strictTypes.configs.test,
   ...strictTypes.configs.barrel,
   {
     files: ['**/*.*.{ts,tsx}'],
-    ignores: ['**/*.lib.{ts,tsx}', '**/*.types.{ts,tsx}', '**/*.decorator.{ts,tsx}'],
+    ignores: [
+      '**/*.lib.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+      '**/*.test.{ts,tsx}',
+      '**/*.type.{ts,tsx}',
+      '**/*.types.{ts,tsx}',
+    ],
     rules: {
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': [
         'error',
@@ -47,6 +60,7 @@ export default tseslint.config(
             'ErrorHandler',
             'Config',
           ],
+          allowClassFieldsInPaths: ['**/*.driver.ts'],
         },
       ],
     },
@@ -57,6 +71,15 @@ export default tseslint.config(
       parserOptions: {
         projectService: true,
       },
+    },
+  },
+  {
+    files: ['packages/**/*.{ts,tsx}'],
+    ignores: [...TEST_FILES, ...EXAMPLE_FILES, ...FIXTURE_FILES],
+    rules: {
+      'zelt/config-di-scope': 'warn',
+      'zelt/decorator-file-naming': 'warn',
+      'zelt/require-inject-config': 'error',
     },
   },
   {
@@ -257,8 +280,8 @@ export default tseslint.config(
     },
   },
   {
-    // KV uses throw for TTL validation.
-    files: ['packages/kv/src/memory-kv.ts'],
+    // KV driver uses throw for TTL validation.
+    files: ['packages/kv/src/memory-kv.driver.ts'],
     rules: {
       '@9wick/strict-type-rules/no-throw': 'off',
     },
@@ -307,9 +330,17 @@ export default tseslint.config(
   },
   {
     // Rate limiter wraps KV errors at the service boundary.
-    files: ['packages/rate-limit/src/rate-limiter.service.ts'],
+    files: ['packages/rate-limit/src/rate-limit.service.ts'],
     rules: {
       '@9wick/strict-type-rules/no-try-catch': 'off',
+    },
+  },
+  {
+    // RateLimit decorator defines a dynamic middleware class inline.
+    // The class name cannot match the file name pattern.
+    files: ['packages/rate-limit/src/rate-limit.decorator.ts'],
+    rules: {
+      'zelt/decorator-file-naming': 'off',
     },
   },
   {

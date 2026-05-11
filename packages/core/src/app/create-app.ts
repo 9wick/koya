@@ -1,71 +1,222 @@
+import { Hono } from 'hono';
+import { match, P } from 'ts-pattern';
+
 import { createContainer } from '../internal/container';
 import { LifecycleManager } from '../lifecycle';
+import { buildRoutes, warmupControllers } from '../internal/route-builder';
+import type { ErrorHandlerClass, ErrorHandlerInstance, RequestContext } from '../middleware/types';
+import { createSchedulerRunner, type SchedulerRunner } from '../scheduler/runner';
+import type { ConfigClass } from '../config';
+import { DefaultErrorHandler } from '../http/default.error-handler';
+import { getCommandMetadata } from '../command/metadata';
 import type { CommandClass } from '../command/types';
 
-import { httpReady, createFetch, createRequest, type HttpBuiltApp } from './http';
-import { commandReady, type CommandBuiltApp } from './command';
-import { schedulerReady, type SchedulerBuiltApp } from './scheduler';
-import {
-  configReady,
-  applyOverrides,
-  configHasToken,
-  createReplaceConfig,
-  type AnyConfigClass,
-  type AnyConstructorClass,
-  type Resolver,
-} from './config';
 import type {
   App,
   CreateAppOptions,
+  HttpOptions,
   ReadyOptions,
   ReadyResult,
+  ControllerClass,
+  SchedulerClass,
 } from './types';
 
-type BuiltApp = {
-  readonly http: HttpBuiltApp | undefined;
-  readonly command: CommandBuiltApp | undefined;
-  readonly scheduler: SchedulerBuiltApp | undefined;
-  readonly lifecycle: LifecycleManager;
-  readonly resolver: Resolver;
+type AnyConstructorClass = new (...args: never[]) => object;
+type Resolver = {
+  get: <T extends object>(cls: new (...args: never[]) => T) => T;
+  getConfig: <T extends object>(configClass: ConfigClass<T>) => T;
 };
 
-type BuildAppOptions = {
+const createErrorHandler =
+  (errorHandlers: readonly ErrorHandlerInstance[], fallback: ErrorHandlerInstance) =>
+  async (err: Error, c: RequestContext): Promise<Response> => {
+    for (const handler of errorHandlers) {
+      const result = await handler.onError(err, c);
+      if (result) return result;
+    }
+    const fallbackResult = await fallback.onError(err, c);
+    return (
+      fallbackResult ??
+      Response.json({ code: 'INTERNAL_ERROR', message: 'internal server error' }, { status: 500 })
+    );
+  };
+
+const resolveErrorHandler = (cls: ErrorHandlerClass, resolver: Resolver): ErrorHandlerInstance => {
+  const instance: ErrorHandlerInstance = resolver.get(cls);
+  return instance;
+};
+
+const resolveErrorHandlers = (
+  classes: readonly ErrorHandlerClass[],
+  resolver: Resolver,
+): ErrorHandlerInstance[] => classes.map((cls) => resolveErrorHandler(cls, resolver));
+
+const registerScheduler = (
+  schedulers: readonly SchedulerClass[] | undefined,
+  resolver: Resolver,
+  lifecycle: LifecycleManager,
+): SchedulerRunner | undefined => {
+  if (!schedulers || schedulers.length === 0) return undefined;
+  const runner = createSchedulerRunner(schedulers, resolver);
+  lifecycle.register(runner);
+  return runner;
+};
+
+const setupHono = (
+  httpOptions: HttpOptions,
+  resolver: Resolver,
+  lifecycle: LifecycleManager,
+): Hono => {
+  const hono = new Hono({ strict: false });
+  const errorHandlers = resolveErrorHandlers(httpOptions.errorHandlers ?? [], resolver);
+  const fallbackHandler = resolver.get(DefaultErrorHandler);
+  hono.onError(createErrorHandler(errorHandlers, fallbackHandler));
+  buildRoutes({
+    hono,
+    controllers: httpOptions.controllers,
+    resolver,
+    lifecycle,
+    globalMiddlewares: httpOptions.middlewares ?? [],
+  });
+  return hono;
+};
+
+const validateCommands = (commands: readonly CommandClass[]): Map<string, CommandClass> => {
+  const commandMap = new Map<string, CommandClass>();
+  for (const cls of commands) {
+    const meta = getCommandMetadata(cls);
+    if (!meta) {
+      throw new Error(`Command class ${cls.name} is missing @Command decorator`);
+    }
+    if (commandMap.has(meta.name)) {
+      throw new Error(`Duplicate command name: ${meta.name}`);
+    }
+    commandMap.set(meta.name, cls);
+  }
+  return commandMap;
+};
+
+type BuiltApp = {
+  readonly hono: Hono | undefined;
+  readonly lifecycle: LifecycleManager;
+  readonly schedulerRunner: SchedulerRunner | undefined;
+  readonly resolver: Resolver;
+  readonly controllers: readonly ControllerClass[];
+  readonly commandMap: ReadonlyMap<string, CommandClass>;
+};
+
+type BuildAppInternalOptions = {
   readonly appOptions: CreateAppOptions;
-  readonly configOverrides: ReadonlyMap<AnyConstructorClass, AnyConstructorClass>;
+  readonly configDefaults: readonly AnyConstructorClass[];
+  readonly configOverrides: readonly AnyConstructorClass[];
   readonly warmup: boolean;
+  readonly commandMap: ReadonlyMap<string, CommandClass>;
 };
 
 type LifecycleResult = { ok: true } | { ok: false; cleanup: () => Promise<void> };
+type HttpResult = { hono: Hono } | { error: Error; cleanup: () => Promise<void> };
 
-const lifecycleReady = async (lifecycle: LifecycleManager): Promise<LifecycleResult> =>
+const initializeLifecycle = async (lifecycle: LifecycleManager): Promise<LifecycleResult> =>
   lifecycle
     .startupPending()
     .then((): LifecycleResult => ({ ok: true }))
     .catch((): LifecycleResult => ({ ok: false, cleanup: () => lifecycle.shutdown() }));
 
-const buildApp = async (options: BuildAppOptions): Promise<BuiltApp> => {
-  const { appOptions, configOverrides, warmup } = options;
+const toHttpError = (e: unknown): Error => (e instanceof Error ? e : new Error(String(e)));
 
-  const effectiveConfigs = applyOverrides(appOptions.configs ?? [], configOverrides);
-  const resolver = createContainer({ configs: effectiveConfigs });
+const initializeHttpSetup = (
+  httpOptions: HttpOptions,
+  resolver: Resolver,
+  lifecycle: LifecycleManager,
+): HttpResult =>
+  match(
+    (() => {
+      try {
+        return { hono: setupHono(httpOptions, resolver, lifecycle) };
+      } catch (e) {
+        return { error: toHttpError(e), cleanup: () => lifecycle.shutdown() };
+      }
+    })(),
+  )
+    .with({ hono: P._ }, (r) => r)
+    .with({ error: P._ }, (r) => r)
+    .exhaustive();
+
+const initializeHttpWarmup = async (
+  httpOptions: HttpOptions,
+  resolver: Resolver,
+  lifecycle: LifecycleManager,
+): Promise<HttpResult> =>
+  warmupControllers(httpOptions.controllers, resolver, lifecycle)
+    .then((): HttpResult => ({ hono: setupHono(httpOptions, resolver, lifecycle) }))
+    .catch((e): HttpResult => ({ error: toHttpError(e), cleanup: () => lifecycle.shutdown() }));
+
+const handleHttpSetupResult = async (result: HttpResult): Promise<Hono> =>
+  match(result)
+    .with({ hono: P._ }, (r) => r.hono)
+    .with({ error: P._ }, async (r) => {
+      await r.cleanup();
+      throw r.error;
+    })
+    .exhaustive();
+
+const handleHttpWarmupResult = async (result: HttpResult): Promise<void> => {
+  await match(result)
+    .with({ hono: P._ }, () => Promise.resolve())
+    .with({ error: P._ }, async (r) => {
+      await r.cleanup();
+      throw r.error;
+    })
+    .exhaustive();
+};
+
+const initializeHttp = async (
+  httpOptions: HttpOptions,
+  resolver: Resolver,
+  lifecycle: LifecycleManager,
+  warmup: boolean,
+): Promise<Hono> => {
+  const setupResult = initializeHttpSetup(httpOptions, resolver, lifecycle);
+  const hono = await handleHttpSetupResult(setupResult);
+
+  if (warmup) {
+    const warmupResult = await initializeHttpWarmup(httpOptions, resolver, lifecycle);
+    await handleHttpWarmupResult(warmupResult);
+  }
+
+  return hono;
+};
+
+const buildAppInternal = async (buildOptions: BuildAppInternalOptions): Promise<BuiltApp> => {
+  const { appOptions, configDefaults, configOverrides, warmup, commandMap } = buildOptions;
+  const configs = appOptions.configs ?? [];
+  const resolver = createContainer({
+    defaults: configDefaults,
+    configs,
+    overrides: configOverrides,
+  });
   const lifecycle = resolver.get(LifecycleManager);
 
-  configReady({ configs: effectiveConfigs, resolver });
-  const scheduler = schedulerReady({ schedulers: appOptions.schedulers, resolver, lifecycle });
+  const schedulerRunner = registerScheduler(appOptions.schedulers, resolver, lifecycle);
 
-  const lifecycleResult = await lifecycleReady(lifecycle);
+  const lifecycleResult = await initializeLifecycle(lifecycle);
   if (!lifecycleResult.ok) {
     await lifecycleResult.cleanup();
     throw new Error('Lifecycle startup failed');
   }
 
-  const http = appOptions.http
-    ? await httpReady({ httpOptions: appOptions.http, resolver, lifecycle, warmup })
+  const hono = appOptions.http
+    ? await initializeHttp(appOptions.http, resolver, lifecycle, warmup)
     : undefined;
 
-  const command = commandReady(appOptions.commands);
-
-  return { http, command, scheduler, lifecycle, resolver };
+  return {
+    hono,
+    lifecycle,
+    schedulerRunner,
+    resolver,
+    controllers: appOptions.http?.controllers ?? [],
+    commandMap,
+  };
 };
 
 const awaitSafe = async (p: Promise<unknown>): Promise<void> => {
@@ -76,11 +227,30 @@ type AppState = {
   built: BuiltApp | undefined;
   disposed: boolean;
   readyPromise: Promise<ReadyResult> | undefined;
-  readonly configOverrides: Map<AnyConfigClass, AnyConfigClass>;
+  readonly configDefaults: AnyConstructorClass[];
+  readonly configOverrides: AnyConstructorClass[];
+  readonly commandMap: ReadonlyMap<string, CommandClass>;
 };
+
+const createAddFallbackConfig =
+  (state: AppState) =>
+  (config: AnyConstructorClass): void => {
+    if (state.disposed) throw new Error('Cannot addFallbackConfig() after shutdown()');
+    if (state.built) throw new Error('Cannot addFallbackConfig() after ready()');
+    state.configDefaults.push(config);
+  };
+
+const createOverrideConfig =
+  (state: AppState) =>
+  (config: AnyConstructorClass): void => {
+    if (state.disposed) throw new Error('Cannot overrideConfig() after shutdown()');
+    if (state.built) throw new Error('Cannot overrideConfig() after ready()');
+    state.configOverrides.push(config);
+  };
 
 const createReadyResult = (resolver: Resolver): ReadyResult => ({
   get: <T extends object>(cls: new (...args: never[]) => T): T => resolver.get(cls),
+  getConfig: <T extends object>(configClass: ConfigClass<T>): T => resolver.getConfig(configClass),
 });
 
 const createReady =
@@ -90,10 +260,12 @@ const createReady =
     if (state.readyPromise) return state.readyPromise;
 
     const warmup = readyOptions?.warmup ?? false;
-    state.readyPromise = buildApp({
+    state.readyPromise = buildAppInternal({
       appOptions: options,
+      configDefaults: state.configDefaults,
       configOverrides: state.configOverrides,
       warmup,
+      commandMap: state.commandMap,
     }).then((b) => {
       state.built = b;
       return createReadyResult(b.resolver);
@@ -111,22 +283,42 @@ const createShutdown = (state: AppState) => async (): Promise<void> => {
   }
 };
 
+const createFetch =
+  (state: AppState) =>
+  async (req: Request): Promise<Response> => {
+    if (!state.built?.hono) throw new Error('Cannot fetch() before ready() or without http option');
+    return state.built.hono.fetch(req);
+  };
+
+const createHasCommand =
+  (state: AppState) =>
+  (name: string): boolean =>
+    state.commandMap.has(name);
+
+const createGetCommands = (state: AppState) => (): ReadonlyMap<string, CommandClass> =>
+  state.commandMap;
+
+const createRequest =
+  (fetchFn: (req: Request) => Promise<Response>) =>
+  (input: string | Request, init?: RequestInit): Promise<Response> => {
+    const req =
+      typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
+    return fetchFn(req);
+  };
+
 const createBaseApp = (options: CreateAppOptions, state: AppState) => ({
   shutdown: createShutdown(state),
   ready: createReady(options, state),
-  hasConfig: (token: AnyConfigClass): boolean => configHasToken(options.configs ?? [], token),
-  replaceConfig: createReplaceConfig(options, state),
+  addFallbackConfig: createAddFallbackConfig(state),
+  overrideConfig: createOverrideConfig(state),
 });
 
 const buildAppObject = (options: CreateAppOptions, state: AppState): App<CreateAppOptions> => {
-  const fetch = createFetch(() => state.built?.http);
+  const fetch = createFetch(state);
   const baseApp = createBaseApp(options, state);
   const httpMethods = options.http ? { fetch, request: createRequest(fetch) } : {};
   const commandMethods = options.commands?.length
-    ? {
-        hasCommand: (name: string) => state.built?.command?.hasCommand(name) ?? false,
-        getCommands: () => state.built?.command?.getCommands() ?? new Map<string, CommandClass>(),
-      }
+    ? { hasCommand: createHasCommand(state), getCommands: createGetCommands(state) }
     : {};
 
   return { ...baseApp, ...httpMethods, ...commandMethods };
@@ -138,11 +330,15 @@ export function createApp(options: CreateAppOptions): App<CreateAppOptions> {
     throw new Error('createApp requires at least http or commands option');
   }
 
+  const commandMap = options.commands ? validateCommands(options.commands) : new Map();
+
   const state: AppState = {
     built: undefined,
     disposed: false,
     readyPromise: undefined,
-    configOverrides: new Map<AnyConfigClass, AnyConfigClass>(),
+    configDefaults: [],
+    configOverrides: [],
+    commandMap,
   };
 
   return buildAppObject(options, state);

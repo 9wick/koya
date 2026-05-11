@@ -1,13 +1,6 @@
 import { serve } from '@hono/node-server';
 import type { ServerType } from '@hono/node-server';
-import {
-  CliConfig,
-  EnvConfig,
-  type HttpApp,
-  type CommandApp,
-  type ReadyOptions,
-  type CommandClass,
-} from '@zeltjs/core';
+import type { HttpApp, CommandApp, ReadyOptions, ReadyResult, CommandClass } from '@zeltjs/core';
 
 import { NodeCliConfig } from './cli.config';
 import { ProcessEnvConfig } from './process-env.config';
@@ -30,14 +23,12 @@ export type ExecResult = {
   readonly exitCode: 0 | 1;
 };
 
-export type HttpNodeApp = {
-  readonly get: <T extends object>(cls: new (...args: never[]) => T) => T;
+export type HttpNodeApp = ReadyResult & {
   readonly listen: (portOrOptions?: number | ListenOptions) => Promise<ServerHandle>;
   readonly shutdown: () => Promise<void>;
 };
 
-export type CommandNodeApp = {
-  readonly get: <T extends object>(cls: new (...args: never[]) => T) => T;
+export type CommandNodeApp = ReadyResult & {
   readonly exec: (argv: string[]) => Promise<ExecResult>;
   readonly shutdown: () => Promise<void>;
 };
@@ -139,45 +130,41 @@ type BuildResult = {
 
 const buildHttpNodeApp = (
   caps: AppCapabilities,
-  get: <T extends object>(cls: new (...args: never[]) => T) => T,
+  resolver: ReadyResult,
   shutdown: () => Promise<void>,
 ): HttpNodeApp | undefined => {
   if (typeof caps.fetch !== 'function') return undefined;
-  return {
-    get,
-    listen: createListenForHttp(caps.fetch, shutdown),
-    shutdown,
-  };
+  return { ...resolver, listen: createListenForHttp(caps.fetch, shutdown), shutdown };
 };
 
 const buildCommandNodeApp = (
   caps: AppCapabilities,
-  get: <T extends object>(cls: new (...args: never[]) => T) => T,
+  resolver: ReadyResult,
   shutdown: () => Promise<void>,
   stderr: Stderr,
 ): CommandNodeApp | undefined => {
   if (typeof caps.hasCommand !== 'function' || typeof caps.getCommands !== 'function')
     return undefined;
   return {
-    get,
-    exec: createExecForCommands(caps.hasCommand, caps.getCommands, get, stderr),
+    ...resolver,
+    exec: createExecForCommands(caps.hasCommand, caps.getCommands, resolver.get, stderr),
     shutdown,
   };
 };
 
 const buildNodeApps = (
   caps: AppCapabilities,
-  get: <T extends object>(cls: new (...args: never[]) => T) => T,
+  resolver: ReadyResult,
   shutdown: () => Promise<void>,
   stderr: Stderr,
 ): BuildResult => ({
-  httpResult: buildHttpNodeApp(caps, get, shutdown),
-  commandResult: buildCommandNodeApp(caps, get, shutdown, stderr),
+  httpResult: buildHttpNodeApp(caps, resolver, shutdown),
+  commandResult: buildCommandNodeApp(caps, resolver, shutdown, stderr),
 });
 
 const mergeNodeApps = (
   result: BuildResult,
-  get: <T extends object>(cls: new (...args: never[]) => T) => T,
+  resolver: ReadyResult,
   shutdown: () => Promise<void>,
 ): NodeApp => {
   const { httpResult, commandResult } = result;
@@ -187,7 +174,7 @@ const mergeNodeApps = (
   }
   if (httpResult) return httpResult;
   if (commandResult) return commandResult;
-  return { get, shutdown, listen: () => new Promise(() => {}) };
+  return { ...resolver, shutdown, listen: () => new Promise(() => {}) };
 };
 
 export function onNode(app: HttpApp & CommandApp, options?: NodeAppOptions): Promise<FullNodeApp>;
@@ -197,19 +184,15 @@ export async function onNode(
   app: HttpApp | CommandApp | (HttpApp & CommandApp),
   options: NodeAppOptions = {},
 ): Promise<NodeApp> {
-  if (app.hasConfig(CliConfig)) {
-    app.replaceConfig(CliConfig, NodeCliConfig);
-  }
-  if (app.hasConfig(EnvConfig)) {
-    app.replaceConfig(EnvConfig, ProcessEnvConfig);
-  }
+  app.addFallbackConfig(NodeCliConfig);
+  app.addFallbackConfig(ProcessEnvConfig);
 
   const readyOptions: ReadyOptions = { warmup: options.warmup ?? true };
-  const { get } = await app.ready(readyOptions);
+  const resolver = await app.ready(readyOptions);
 
   const caps = extractCapabilities(app);
   const stderr = getStderr();
-  const result = buildNodeApps(caps, get, app.shutdown, stderr);
+  const result = buildNodeApps(caps, resolver, app.shutdown, stderr);
 
-  return mergeNodeApps(result, get, app.shutdown);
+  return mergeNodeApps(result, resolver, app.shutdown);
 }
