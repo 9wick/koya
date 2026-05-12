@@ -1,7 +1,8 @@
-import { Container, injectable } from '@needle-di/core';
+import { Container, InjectionToken, injectable } from '@needle-di/core';
 import { describe, expect, it } from 'vitest';
 
 import { inject } from './inject';
+import { overrideLeaf, registerAsLeaf } from './leaf';
 
 @injectable()
 class Service {
@@ -18,7 +19,7 @@ class Consumer {
   }
 }
 
-describe('inject (re-export)', () => {
+describe('inject (unified)', () => {
   it('resolves a constructor default through container.get', () => {
     const container = new Container();
     container.bind(Service);
@@ -34,7 +35,6 @@ describe('inject (re-export)', () => {
   });
 
   it('throws when token is not bound', () => {
-    // 非 @injectable() class は needle-di の auto-bind 対象外なので、bind しなければ確実に throw する
     class NotBound {}
 
     @injectable()
@@ -42,7 +42,73 @@ describe('inject (re-export)', () => {
       constructor(public dep = inject(NotBound)) {}
     }
     const container = new Container();
-    container.bind(Orphan); // NotBound は bind しない
+    container.bind(Orphan);
     expect(() => container.get(Orphan)).toThrow();
+  });
+
+  describe('leaf class resolution', () => {
+    it('inject(@leaf class) resolves via leaf mechanism', () => {
+      @injectable()
+      class BaseConfig {
+        get value() {
+          return 'base';
+        }
+      }
+      registerAsLeaf(BaseConfig);
+
+      @injectable()
+      class ChildConfig extends BaseConfig {
+        override get value() {
+          return 'child';
+        }
+      }
+      registerAsLeaf(ChildConfig);
+
+      @injectable()
+      class ServiceUsingConfig {
+        constructor(public config = inject(BaseConfig)) {}
+      }
+
+      const container = new Container();
+      overrideLeaf(container, ChildConfig);
+      container.bind(ServiceUsingConfig);
+
+      expect(container.get(ServiceUsingConfig).config.value).toBe('child');
+    });
+
+    it('inject(regular class) delegates to needle-di', () => {
+      @injectable()
+      class RegularService {
+        get name() {
+          return 'regular';
+        }
+      }
+
+      @injectable()
+      class RegularConsumer {
+        constructor(public svc = inject(RegularService)) {}
+      }
+
+      const container = new Container();
+      container.bind(RegularService);
+      container.bind(RegularConsumer);
+
+      expect(container.get(RegularConsumer).svc.name).toBe('regular');
+    });
+
+    it('inject(InjectionToken) delegates to needle-di', () => {
+      const TOKEN = new InjectionToken<string>('test-token');
+
+      @injectable()
+      class TokenConsumer {
+        constructor(public value = inject(TOKEN)) {}
+      }
+
+      const container = new Container();
+      container.bind({ provide: TOKEN, useValue: 'token-value' });
+      container.bind(TokenConsumer);
+
+      expect(container.get(TokenConsumer).value).toBe('token-value');
+    });
   });
 });
