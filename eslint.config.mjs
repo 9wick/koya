@@ -189,6 +189,17 @@ export default tseslint.config(
     rules: {
       '@9wick/strict-type-rules/no-in-operator': 'off',
       '@9wick/strict-type-rules/no-as-assertion': 'off',
+      '@9wick/strict-type-rules/no-import-rename': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+    },
+  },
+  {
+    // Leaf mechanism: prototype chain traversal and type assertions for DI category resolution.
+    files: ['packages/core/src/di/leaf.ts', 'packages/core/src/di/inject.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
+      '@9wick/strict-type-rules/no-import-rename': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
   {

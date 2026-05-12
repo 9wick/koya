@@ -1,10 +1,10 @@
 import { injectable } from '@needle-di/core';
 
-import { registerConfigClass } from './token';
+import { registerAsLeaf } from '../di/leaf';
 
 type AnyConstructor = new (...args: never[]) => unknown;
 
 export const Config = (target: AnyConstructor): void => {
-  registerConfigClass(target);
+  registerAsLeaf(target);
   injectable()(target);
 };
