@@ -1,10 +1,8 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
 import { createContainer } from '../../di/container';
 import { LifecycleManager } from '../../lifecycle';
-import { validated } from '../../test-helpers/validated';
 import { Controller } from '../decorators/controller';
 import { Get, Post } from '../decorators/http-method';
 
@@ -94,8 +92,6 @@ const createOnError =
   };
 
 describe('route-builder — error path integration', () => {
-  const BodySchema = v.object({ name: v.string() });
-
   @Controller('/err')
   class ErrController {
     @Get('/not-found')
@@ -110,11 +106,6 @@ describe('route-builder — error path integration', () => {
       throw new HTTPException(418, {
         res: Response.json({ shape: 'teapot' }, { status: 418 }),
       });
-    }
-
-    @Post('/v')
-    vHandler(body = validated(BodySchema)) {
-      return { name: body.name };
     }
   }
 
@@ -139,20 +130,5 @@ describe('route-builder — error path integration', () => {
     const res = await hono.fetch(new Request('http://x/err/teapot'));
     expect(res.status).toBe(418);
     expect(await res.json()).toEqual({ shape: 'teapot' });
-  });
-
-  it('serializes validation error from validated() to 400 + VALIDATION_FAILED body', async () => {
-    const res = await hono.fetch(
-      new Request('http://x/err/v', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name: 123 }),
-      }),
-    );
-    expect(res.status).toBe(400);
-    const json = (await res.json()) as { code: string; issues: unknown[] };
-    expect(json.code).toBe('VALIDATION_FAILED');
-    expect(Array.isArray(json.issues)).toBe(true);
-    expect(json.issues.length).toBeGreaterThan(0);
   });
 });

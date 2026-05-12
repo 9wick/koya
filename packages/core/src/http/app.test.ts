@@ -1,6 +1,5 @@
 import { injectable } from '@needle-di/core';
 import type { Context, MiddlewareHandler, Next } from 'hono';
-import * as v from 'valibot';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { App } from '../app';
 import { createApp } from '../app';
@@ -9,7 +8,6 @@ import { Config } from '../config';
 import { inject } from '../di/inject';
 import type { Lifecycle } from '../lifecycle';
 import { LifecycleManager } from '../lifecycle';
-import { validated } from '../test-helpers/validated';
 
 import { Controller } from './decorators/controller';
 import { ErrorHandler } from './decorators/error-handler';
@@ -17,6 +15,7 @@ import { Get, Post } from './decorators/http-method';
 import { Middleware } from './decorators/middleware';
 import { SkipMiddleware } from './decorators/skip-middleware';
 import { UseMiddleware } from './decorators/use-middleware';
+import { body } from './primitives/body';
 import { getContext } from './primitives/get-context';
 import { pathParam } from './primitives/path-param';
 
@@ -46,22 +45,19 @@ class HelloController {
 @Controller('/echo')
 class EchoController {
   @Post('/')
-  create() {
-    return validated(v.object({ msg: v.string() }));
+  async create() {
+    return body('json');
   }
 }
-
-const FileSchema = v.object({
-  description: v.string(),
-  file: v.instance(File),
-});
 
 @Controller('/upload')
 class UploadController {
   @Post('/')
-  upload() {
-    const body = validated(FileSchema, 'form');
-    return { description: body.description, filename: body.file.name, size: body.file.size };
+  async upload() {
+    const formData = await body('form');
+    const description = formData.get('description') as string;
+    const file = formData.get('file') as File;
+    return { description, filename: file.name, size: file.size };
   }
 }
 
@@ -81,7 +77,7 @@ describe('createApp() — fetch', () => {
     expect(await res.json()).toEqual({ message: 'hello, zelt' });
   });
 
-  it('parses JSON body via validated()', async () => {
+  it('parses JSON body', async () => {
     const app = await buildApp();
     const res = await app.fetch(
       new Request('https://example.com/echo/', {
@@ -94,7 +90,7 @@ describe('createApp() — fetch', () => {
     expect(await res.json()).toEqual({ msg: 'ok' });
   });
 
-  it('parses multipart/form-data with File via validated(schema, "form")', async () => {
+  it('parses multipart/form-data with File', async () => {
     const app = await buildApp();
     const formData = new FormData();
     formData.append('description', 'test file');
@@ -171,30 +167,6 @@ describe('createApp() — request', () => {
 });
 
 describe('error paths', () => {
-  it('returns 400 when validated() rejects the body', async () => {
-    const app = await buildApp();
-    const res = await app.fetch(
-      new Request('https://example.com/echo/', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ msg: 42 }),
-      }),
-    );
-    expect(res.status).toBe(400);
-  });
-
-  it('returns 400 for malformed JSON body (validated() sees undefined)', async () => {
-    const app = await buildApp();
-    const res = await app.fetch(
-      new Request('https://example.com/echo/', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: 'not-json',
-      }),
-    );
-    expect(res.status).toBe(400);
-  });
-
   it('returns 500 when pathParam() asks for a missing parameter', async () => {
     @Controller('/x')
     class BrokenController {
