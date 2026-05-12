@@ -30,7 +30,7 @@ export type {
   OptionsDefinition,
 } from './command/types';
 export type { ConfigClass } from './config';
-export { Config, injectConfig, overrideConfig } from './config';
+export { Config, overrideConfig } from './config';
 // DI primitives
 export { inject } from './di/inject';
 // DI

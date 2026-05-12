@@ -191,7 +191,7 @@ describe('onNode with commands', () => {
     const app = createApp({ commands: [TestCommand] });
     nodeApp = await onNode(app);
 
-    const result = await nodeApp.exec(['test-cmd']);
+    const result = await nodeApp.execCommand(['test-cmd']);
 
     expect(result.exitCode).toBe(0);
     expect(runFn).toHaveBeenCalled();
@@ -208,7 +208,7 @@ describe('onNode with commands', () => {
     const app = createApp({ commands: [ExistingCommand] });
     nodeApp = await onNode(app);
 
-    const result = await nodeApp.exec(['nonexistent']);
+    const result = await nodeApp.execCommand(['nonexistent']);
 
     expect(result.exitCode).toBe(1);
   });
@@ -224,7 +224,7 @@ describe('onNode with commands', () => {
     const app = createApp({ commands: [TestCommand] });
     nodeApp = await onNode(app);
 
-    const result = await nodeApp.exec([]);
+    const result = await nodeApp.execCommand([]);
 
     expect(result.exitCode).toBe(1);
   });
@@ -242,7 +242,7 @@ describe('onNode with commands', () => {
     const app = createApp({ commands: [FailingCommand] });
     nodeApp = await onNode(app);
 
-    const result = await nodeApp.exec(['failing']);
+    const result = await nodeApp.execCommand(['failing']);
 
     expect(result.exitCode).toBe(1);
   });
