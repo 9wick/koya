@@ -1,6 +1,13 @@
 import type { ServerType } from '@hono/node-server';
 import { serve } from '@hono/node-server';
-import type { CommandApp, CommandClass, HttpApp, ReadyOptions, ReadyResult } from '@zeltjs/core';
+import type {
+  CommandApp,
+  CommandClass,
+  HttpApp,
+  ReadyOptions,
+  ReadyResult,
+  SchedulerApp,
+} from '@zeltjs/core';
 
 import { NodeCliConfig } from './cli.config';
 import { ProcessEnvConfig } from './process-env.config';
@@ -38,6 +45,13 @@ export type CommandNodeApp = ReadyResult &
     readonly exec: (argv: string[]) => Promise<ExecResult>;
     readonly shutdown: () => Promise<void>;
   };
+
+export type SchedulerNodeAppPart = {
+  readonly startScheduler: () => Promise<void>;
+  readonly stopScheduler: () => Promise<void>;
+};
+
+export type SchedulerNodeApp = ReadyResult & NodeAppBase & SchedulerNodeAppPart;
 
 export type FullNodeApp = HttpNodeApp & CommandNodeApp;
 
@@ -126,14 +140,18 @@ type AppCapabilities = {
   fetch?: (request: Request) => Promise<Response>;
   hasCommand?: (name: string) => boolean;
   getCommands?: () => ReadonlyMap<string, CommandClass>;
+  startScheduler?: () => Promise<void>;
+  stopScheduler?: () => Promise<void>;
 };
 
-const extractCapabilities = (app: HttpApp | CommandApp | (HttpApp & CommandApp)): AppCapabilities =>
-  app;
+type AnyApp = HttpApp | CommandApp | SchedulerApp | (HttpApp & CommandApp & SchedulerApp);
+
+const extractCapabilities = (app: AnyApp): AppCapabilities => app;
 
 type BuildResult = {
   httpResult: HttpNodeApp | undefined;
   commandResult: CommandNodeApp | undefined;
+  schedulerPart: SchedulerNodeAppPart | undefined;
 };
 
 const buildHttpNodeApp = (
@@ -163,6 +181,15 @@ const buildCommandNodeApp = (
   };
 };
 
+const buildSchedulerPart = (caps: AppCapabilities): SchedulerNodeAppPart | undefined => {
+  if (typeof caps.startScheduler !== 'function' || typeof caps.stopScheduler !== 'function')
+    return undefined;
+  return {
+    startScheduler: caps.startScheduler,
+    stopScheduler: caps.stopScheduler,
+  };
+};
+
 const buildNodeApps = (
   caps: AppCapabilities,
   resolver: ReadyResult,
@@ -172,6 +199,7 @@ const buildNodeApps = (
 ): BuildResult => ({
   httpResult: buildHttpNodeApp(caps, resolver, shutdown, args),
   commandResult: buildCommandNodeApp(caps, resolver, shutdown, stderr, args),
+  schedulerPart: buildSchedulerPart(caps),
 });
 
 const mergeNodeApps = (
@@ -180,23 +208,34 @@ const mergeNodeApps = (
   shutdown: () => Promise<void>,
   args: readonly string[],
 ): NodeApp => {
-  const { httpResult, commandResult } = result;
+  const { httpResult, commandResult, schedulerPart } = result;
+  const schedulerMethods = schedulerPart ?? {};
+
   if (httpResult && commandResult) {
-    const fullApp: FullNodeApp = { ...httpResult, exec: commandResult.exec };
+    const fullApp: FullNodeApp = { ...httpResult, exec: commandResult.exec, ...schedulerMethods };
     return fullApp;
   }
-  if (httpResult) return httpResult;
-  if (commandResult) return commandResult;
-  return { ...resolver, args, shutdown, listen: () => new Promise(() => {}) };
+  if (httpResult) return { ...httpResult, ...schedulerMethods };
+  if (commandResult) return { ...commandResult, ...schedulerMethods };
+  return { ...resolver, args, shutdown, listen: () => new Promise(() => {}), ...schedulerMethods };
 };
 
+export function onNode(
+  app: HttpApp & CommandApp & SchedulerApp,
+  options?: NodeAppOptions,
+): Promise<FullNodeApp & SchedulerNodeAppPart>;
+export function onNode(
+  app: HttpApp & SchedulerApp,
+  options?: NodeAppOptions,
+): Promise<HttpNodeApp & SchedulerNodeAppPart>;
+export function onNode(
+  app: CommandApp & SchedulerApp,
+  options?: NodeAppOptions,
+): Promise<CommandNodeApp & SchedulerNodeAppPart>;
 export function onNode(app: HttpApp & CommandApp, options?: NodeAppOptions): Promise<FullNodeApp>;
 export function onNode(app: HttpApp, options?: NodeAppOptions): Promise<HttpNodeApp>;
 export function onNode(app: CommandApp, options?: NodeAppOptions): Promise<CommandNodeApp>;
-export async function onNode(
-  app: HttpApp | CommandApp | (HttpApp & CommandApp),
-  options: NodeAppOptions = {},
-): Promise<NodeApp> {
+export async function onNode(app: AnyApp, options: NodeAppOptions = {}): Promise<NodeApp> {
   app.addFallbackConfig(NodeCliConfig);
   app.addFallbackConfig(ProcessEnvConfig);
 
