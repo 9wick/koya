@@ -47,6 +47,7 @@ export default tseslint.config(
       '**/*.test.{ts,tsx}',
       '**/*.type.{ts,tsx}',
       '**/*.types.{ts,tsx}',
+      '**/*.adaptor.{ts,tsx}',
     ],
     rules: {
       '@9wick/strict-type-rules/nestjs-like-di-for-needle-di': [
@@ -59,7 +60,7 @@ export default tseslint.config(
             'ErrorHandler',
             'Config',
           ],
-          allowClassFieldsInPaths: ['**/*.driver.ts'],
+          allowClassFieldsInPaths: ['**/*.driver.ts', '**/*.adaptor.ts', '**/*.service.ts'],
         },
       ],
     },
@@ -284,7 +285,24 @@ export default tseslint.config(
   },
   {
     // eval() returns unknown; type assertion needed at Lua script boundary.
-    files: ['packages/kv-driver-redis/src/zelt-redis.ts'],
+    files: ['packages/kv/src/adaptor-redis/redis-kv-store.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
+    },
+  },
+  {
+    // EventBus uses generic event schema with keyof - type assertions needed at emit/subscribe boundary.
+    files: [
+      'packages/eventbus/src/adaptor-memory/memory-event-bus.adaptor.ts',
+      'packages/eventbus/src/adaptor-redis/redis-event-bus.adaptor.ts',
+    ],
+    rules: {
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
+    },
+  },
+  {
+    // JSON.parse returns `any`; type assertion unavoidable at this generic boundary.
+    files: ['packages/kv/src/serialize.ts'],
     rules: {
       '@9wick/strict-type-rules/no-as-assertion': 'off',
     },

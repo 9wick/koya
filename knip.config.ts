@@ -70,10 +70,24 @@ const config: KnipConfig = {
       ignoreDependencies: ['@types/node'],
     },
     website: {
-      // @docusaurus/plugin-content-docs types are re-exported by @docusaurus/preset-classic
+      // prism-theme-kanagawa.ts is imported by docusaurus.config.ts but knip --production misses it
+      entry: ['docusaurus.config.ts', 'src/prism-theme-kanagawa.ts'],
       // prism-react-renderer is used internally by Docusaurus for code block syntax highlighting
       // wrangler is used by Cloudflare Workers build system for deployment
-      ignoreDependencies: ['@docusaurus/plugin-content-docs', 'prism-react-renderer', 'wrangler'],
+      // @docusaurus/theme-common is used by swizzled theme components
+      // clsx is used by swizzled theme components
+      // @easyops-cn/docusaurus-search-local is a Docusaurus theme loaded at runtime
+      // @easyops-cn/docusaurus-theme-docusaurus-search-local is an internal dependency of docusaurus-search-local
+      ignoreDependencies: [
+        '@docusaurus/theme-common',
+        '@easyops-cn/docusaurus-search-local',
+        '@easyops-cn/docusaurus-theme-docusaurus-search-local',
+        'clsx',
+        'prism-react-renderer',
+        'wrangler',
+      ],
+      // Swizzled Docusaurus theme components are loaded by Docusaurus at runtime
+      ignore: ['src/theme/**'],
     },
   },
 };
