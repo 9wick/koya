@@ -73,7 +73,17 @@ const config: KnipConfig = {
       // @docusaurus/plugin-content-docs types are re-exported by @docusaurus/preset-classic
       // prism-react-renderer is used internally by Docusaurus for code block syntax highlighting
       // wrangler is used by Cloudflare Workers build system for deployment
-      ignoreDependencies: ['@docusaurus/plugin-content-docs', 'prism-react-renderer', 'wrangler'],
+      // @docusaurus/theme-common is used by swizzled theme components
+      // clsx is used by swizzled theme components
+      ignoreDependencies: [
+        '@docusaurus/plugin-content-docs',
+        '@docusaurus/theme-common',
+        'clsx',
+        'prism-react-renderer',
+        'wrangler',
+      ],
+      // Swizzled Docusaurus theme components are loaded by Docusaurus at runtime
+      ignore: ['src/theme/**'],
     },
   },
 };
