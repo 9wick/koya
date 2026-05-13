@@ -120,6 +120,15 @@ export default tseslint.config(
     },
   },
   {
+    // contract package uses neverthrow (ROP) — enforce no throw/try-catch
+    files: ['packages/contract/src/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.{ts,tsx}'],
+    rules: {
+      '@9wick/strict-type-rules/no-throw': 'error',
+      '@9wick/strict-type-rules/no-try-catch': 'error',
+    },
+  },
+  {
     files: [...TEST_FILES, ...EXAMPLE_FILES, ...FIXTURE_FILES],
     rules: {
       'no-console': 'off',
