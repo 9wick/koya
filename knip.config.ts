@@ -83,7 +83,8 @@ const config: KnipConfig = {
         'wrangler',
       ],
       // Swizzled Docusaurus theme components are loaded by Docusaurus at runtime
-      ignore: ['src/theme/**'],
+      // prism-theme-kanagawa.ts is imported by docusaurus.config.ts but knip --production misses it
+      ignore: ['src/theme/**', 'src/prism-theme-kanagawa.ts'],
     },
   },
 };
