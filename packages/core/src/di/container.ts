@@ -94,7 +94,7 @@ export const createTestTargetBase = async <T extends object>(
     throw error;
   }
 
-  const target = container.get<T>(targetClass);
+  const target = resolve(container, targetClass);
 
   let disposed = false;
   const shutdown = async (): Promise<void> => {
@@ -108,7 +108,7 @@ export const createTestTargetBase = async <T extends object>(
       const name = cls.name || 'unknown';
       throw new Error(`Cannot resolve ${name}: TestTarget has been shut down`);
     }
-    return container.get<U>(cls);
+    return resolve(container, cls);
   };
 
   return { target, get, shutdown };
