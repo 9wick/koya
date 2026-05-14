@@ -1,6 +1,7 @@
 import { Container } from '@needle-di/core';
 import type { ConfigClass } from '../config';
 import { getConfig, overrideConfig, resolveConfig } from '../config';
+import { ZeltLifecycleStateError } from '../errors';
 import { LifecycleManager } from '../lifecycle';
 
 type Class<T> = new (...args: never[]) => T;
@@ -104,8 +105,7 @@ export const createTestTargetBase = async <T extends object>(
 
   const get = <U extends object>(cls: Class<U>): U => {
     if (disposed) {
-      const name = cls.name || 'unknown';
-      throw new Error(`Cannot resolve ${name}: TestTarget has been shut down`);
+      throw new ZeltLifecycleStateError({ operation: 'get', currentState: 'disposed' });
     }
     return container.get<U>(cls);
   };

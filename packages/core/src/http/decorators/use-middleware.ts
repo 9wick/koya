@@ -1,5 +1,6 @@
 import { match, P } from 'ts-pattern';
 
+import { ZeltDecoratorUsageError } from '../../errors';
 import { resolveClassArgs, resolveMethodArgs } from '../../internal/decorator-context';
 import {
   appendPendingMethodMiddlewareMetadata,
@@ -28,7 +29,10 @@ export const UseMiddleware =
     // Method decorator
     const { pendingKey, methodName, isStatic } = resolveMethodArgs(args);
     if (isStatic) {
-      throw new Error('zelt: @UseMiddleware cannot be applied to static methods');
+      throw new ZeltDecoratorUsageError({
+        decoratorName: 'UseMiddleware',
+        reason: 'static_method',
+      });
     }
     appendPendingMethodMiddlewareMetadata(pendingKey, methodName, middlewares);
   };

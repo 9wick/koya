@@ -347,6 +347,14 @@ export default tseslint.config(
     },
   },
   {
+    // Error factory uses generic K to index coreErrorDefinitions; TypeScript cannot narrow
+    // the union type at the generic boundary, requiring type assertion.
+    files: ['packages/core/src/errors/factory.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
+    },
+  },
+  {
     // RateLimit decorator defines a dynamic middleware class inline.
     // The class name cannot match the file name pattern.
     files: ['packages/rate-limit/src/rate-limit.decorator.ts'],

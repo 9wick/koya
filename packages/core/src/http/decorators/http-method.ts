@@ -1,3 +1,4 @@
+import { ZeltDecoratorUsageError } from '../../errors';
 import { resolveMethodArgs } from '../../internal/decorator-context';
 import type { HttpMethod } from '../internal/metadata';
 import { appendPendingRouteMetadata } from '../internal/metadata';
@@ -8,7 +9,7 @@ const makeDecorator =
   (...args: unknown[]): void => {
     const { pendingKey, methodName, isStatic } = resolveMethodArgs(args);
     if (isStatic) {
-      throw new Error(`zelt: @${method} cannot be applied to static methods`);
+      throw new ZeltDecoratorUsageError({ decoratorName: method, reason: 'static_method' });
     }
     appendPendingRouteMetadata(pendingKey, { method, path, methodName });
   };

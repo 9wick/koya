@@ -35,6 +35,17 @@ export { Config, overrideConfig } from './config';
 export { inject } from './di/inject';
 // DI
 export { Injectable } from './di/injectable';
+export type { CoreErrorContextMap } from './errors';
+// Errors
+export {
+  ZeltAppConfigurationError,
+  ZeltContextNotAvailableError,
+  ZeltDecoratorUsageError,
+  ZeltLifecycleStateError,
+  ZeltMiddlewareExecutionError,
+  ZeltNotImplementedError,
+  ZeltRouteConfigurationError,
+} from './errors';
 // HTTP decorators
 export { Authorized } from './http/decorators/authorized';
 export { Controller } from './http/decorators/controller';

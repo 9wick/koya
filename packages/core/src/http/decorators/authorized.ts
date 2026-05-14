@@ -1,3 +1,4 @@
+import { ZeltDecoratorUsageError } from '../../errors';
 import { resolveMethodArgs } from '../../internal/decorator-context';
 import { appendPendingAuthorizedMetadata } from '../internal/metadata';
 import type { RequestContextSchema } from '../primitives/get-context';
@@ -9,7 +10,7 @@ export const Authorized =
   (...args: unknown[]): void => {
     const { pendingKey, methodName, isStatic } = resolveMethodArgs(args);
     if (isStatic) {
-      throw new Error('zelt: @Authorized cannot be applied to static methods');
+      throw new ZeltDecoratorUsageError({ decoratorName: 'Authorized', reason: 'static_method' });
     }
     appendPendingAuthorizedMetadata(pendingKey, methodName, roles);
   };

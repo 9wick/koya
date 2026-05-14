@@ -140,8 +140,6 @@ describe('createTestTargetBase', () => {
 
     await shutdown();
 
-    expect(() => get(SomeService)).toThrow(
-      'Cannot resolve SomeService: TestTarget has been shut down',
-    );
+    expect(() => get(SomeService)).toThrow(/Cannot get\(\) after shutdown\(\)/);
   });
 });

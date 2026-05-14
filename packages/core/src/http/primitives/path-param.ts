@@ -1,9 +1,10 @@
+import { ZeltRouteConfigurationError } from '../../errors';
 import { getEntryContext } from '../internal/entry-context';
 
 export const pathParam = (name: string): string => {
   const value = getEntryContext().input.pathParams[name];
   if (value === undefined) {
-    throw new Error(`zelt: path parameter "${name}" is not defined`);
+    throw new ZeltRouteConfigurationError({ reason: 'missing_path_param', paramName: name });
   }
   return value;
 };

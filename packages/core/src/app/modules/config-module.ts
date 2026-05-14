@@ -1,4 +1,5 @@
 import type { ConfigClass } from '../../config';
+import { ZeltLifecycleStateError } from '../../errors';
 import type { Module, ReadyContext } from '../module';
 
 type AnyConstructorClass = new (...args: never[]) => object;
@@ -26,13 +27,13 @@ const createState = (): ConfigModuleState => ({
 
 const assertNotDisposed = (state: ConfigModuleState, operation: string): void => {
   if (state.isDisposed) {
-    throw new Error(`Cannot ${operation}() after shutdown()`);
+    throw new ZeltLifecycleStateError({ operation, currentState: 'disposed' });
   }
 };
 
 const assertNotReady = (state: ConfigModuleState, operation: string): void => {
   if (state.isReady) {
-    throw new Error(`Cannot ${operation}() after ready()`);
+    throw new ZeltLifecycleStateError({ operation, currentState: 'ready' });
   }
 };
 

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { match, P } from 'ts-pattern';
 import type { ResolverHandle } from '../../di/container';
+import { ZeltLifecycleStateError } from '../../errors';
 import { DefaultErrorHandler } from '../../http/default.error-handler';
 import { buildRoutes, warmupControllers } from '../../http/internal/route-builder';
 import type {
@@ -175,7 +176,7 @@ export const createHttpModule = (options: HttpOptions): HttpModule => {
 
   const fetch = async (req: Request): Promise<Response> => {
     if (!state.hono) {
-      throw new Error('Cannot fetch() before ready()');
+      throw new ZeltLifecycleStateError({ operation: 'fetch', currentState: 'not_ready' });
     }
     return state.hono.fetch(req);
   };

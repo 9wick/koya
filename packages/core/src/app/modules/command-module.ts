@@ -1,5 +1,6 @@
 import { getCommandMetadata } from '../../command/metadata';
 import type { CommandClass } from '../../command/types';
+import { ZeltAppConfigurationError, ZeltDecoratorUsageError } from '../../errors';
 import type { Module, ReadyContext } from '../module';
 
 export type CommandModule = Module & {
@@ -17,10 +18,14 @@ const validateCommands = (commands: readonly CommandClass[]): Map<string, Comman
   for (const cls of commands) {
     const meta = getCommandMetadata(cls);
     if (!meta) {
-      throw new Error(`Command class ${cls.name} is missing @Command decorator`);
+      throw new ZeltDecoratorUsageError({
+        decoratorName: 'Command',
+        reason: 'missing_decorator',
+        targetName: cls.name,
+      });
     }
     if (commandMap.has(meta.name)) {
-      throw new Error(`Duplicate command name: ${meta.name}`);
+      throw new ZeltAppConfigurationError({ reason: 'duplicate_command', details: meta.name });
     }
     commandMap.set(meta.name, cls);
   }
