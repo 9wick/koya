@@ -83,12 +83,12 @@ const sidebars: SidebarsConfig = {
         {
           type: 'link',
           label: 'llms.txt',
-          href: '/llms.txt',
+          href: 'pathname:///llms.txt',
         },
         {
           type: 'link',
           label: 'llms-full.txt',
-          href: '/llms-full.txt',
+          href: 'pathname:///llms-full.txt',
         },
       ],
     },
