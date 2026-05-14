@@ -7,3 +7,4 @@ export const ZeltAppConfigurationError = createErrorClass('ZeltAppConfigurationE
 export const ZeltRouteConfigurationError = createErrorClass('ZeltRouteConfigurationError');
 export const ZeltMiddlewareExecutionError = createErrorClass('ZeltMiddlewareExecutionError');
 export const ZeltNotImplementedError = createErrorClass('ZeltNotImplementedError');
+export const ZeltSchemaValidationError = createErrorClass('ZeltSchemaValidationError');

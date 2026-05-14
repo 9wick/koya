@@ -43,6 +43,9 @@ export const coreErrorDefinitions = {
 
   ZeltNotImplementedError: (ctx: { className: string; methodName: string }) =>
     `${ctx.className}.${ctx.methodName}() not implemented`,
+
+  ZeltSchemaValidationError: (ctx: { schemaType: string; reason: string }) =>
+    `Invalid ${ctx.schemaType} schema: ${ctx.reason}`,
 } as const;
 
 export type CoreErrorContextMap = {

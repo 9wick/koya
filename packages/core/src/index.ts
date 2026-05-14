@@ -45,6 +45,7 @@ export {
   ZeltMiddlewareExecutionError,
   ZeltNotImplementedError,
   ZeltRouteConfigurationError,
+  ZeltSchemaValidationError,
 } from './errors';
 // HTTP decorators
 export { Authorized } from './http/decorators/authorized';

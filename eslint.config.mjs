@@ -121,6 +121,26 @@ export default tseslint.config(
     },
   },
   {
+    // Forbid raw Error — use structured Zelt*Error classes instead
+    files: ['packages/core/src/**/*.{ts,tsx}'],
+    ignores: [
+      ...TEST_FILES,
+      ...FIXTURE_FILES,
+      '**/errors/**',
+      // Stack trace utility uses Error().stack, not for throwing
+      'packages/core/src/http/internal/source-file.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ThrowStatement > NewExpression[callee.name="Error"]',
+          message: 'Use structured Zelt*Error classes instead of raw Error',
+        },
+      ],
+    },
+  },
+  {
     // contract package uses neverthrow (ROP) — enforce no throw/try-catch
     files: ['packages/contract/src/**/*.{ts,tsx}'],
     ignores: [...TEST_FILES, ...FIXTURE_FILES],
