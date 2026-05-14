@@ -1,6 +1,7 @@
 import type { CommandClass } from '../command/types';
 import type { ConfigClass } from '../config';
 import { createContainer } from '../di/container';
+import { ZeltAppConfigurationError, ZeltLifecycleStateError } from '../errors';
 import { LifecycleManager } from '../lifecycle';
 
 import type { Module, ReadyContext } from './module';
@@ -136,7 +137,8 @@ const createReady =
   (deps: ReadyDeps) =>
   async (readyOptions?: ReadyOptions): Promise<ReadyResult> => {
     const { state, modules, configModule, configs } = deps;
-    if (state.disposed) throw new Error('Cannot ready() after shutdown()');
+    if (state.disposed)
+      throw new ZeltLifecycleStateError({ operation: 'ready', currentState: 'disposed' });
     if (state.readyPromise) return state.readyPromise;
 
     const warmup = readyOptions?.warmup ?? false;
@@ -230,7 +232,7 @@ const buildAppObject = (
 export function createApp<TOptions extends CreateAppOptions>(options: TOptions): App<TOptions>;
 export function createApp(options: CreateAppOptions): App<CreateAppOptions> {
   if (!options.http && !options.commands?.length) {
-    throw new Error('createApp requires at least http or commands option');
+    throw new ZeltAppConfigurationError({ reason: 'no_http_or_commands' });
   }
 
   const appModules = createAppModules(options);

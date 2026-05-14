@@ -1,5 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
+import { ZeltContextNotAvailableError } from '../errors';
+
 export type CommandContextStore = {
   readonly parsedArgs: Record<string, unknown>;
 };
@@ -12,7 +14,7 @@ export const runInCommandContext = <T>(ctx: CommandContextStore, fn: () => T): T
 export const getCommandContext = (): CommandContextStore => {
   const ctx = storage.getStore();
   if (!ctx) {
-    throw new Error('zelt/command: args() called outside command execution');
+    throw new ZeltContextNotAvailableError({ primitive: 'args', requiredContext: 'command' });
   }
   return ctx;
 };

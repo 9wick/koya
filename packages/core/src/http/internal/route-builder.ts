@@ -1,6 +1,11 @@
 import type { Context, Env, Hono, Input } from 'hono';
 
 import type { ResolverHandle } from '../../di/container';
+import {
+  ZeltDecoratorUsageError,
+  ZeltMiddlewareExecutionError,
+  ZeltRouteConfigurationError,
+} from '../../errors';
 import type { LifecycleManager } from '../../lifecycle';
 import type {
   FunctionMiddleware,
@@ -48,7 +53,11 @@ export const collectRoutes = (controllers: readonly ControllerClass[]): readonly
   for (const cls of controllers) {
     const meta = getControllerMetadata(cls);
     if (!meta) {
-      throw new Error('zelt: controller is missing @Controller decorator');
+      throw new ZeltDecoratorUsageError({
+        decoratorName: 'Controller',
+        reason: 'missing_decorator',
+        targetName: cls.name,
+      });
     }
     for (const r of getRouteMetadata(cls)) {
       routes.push({
@@ -67,9 +76,7 @@ const resolveHandler = (instance: object, methodName: string | symbol): (() => u
   // forces narrowing before any call, keeping the handler invocation typesafe.
   const value: unknown = Reflect.get(instance, methodName);
   if (typeof value !== 'function') {
-    throw new Error(
-      `zelt: route handler ${String(methodName)} is not a function on the controller`,
-    );
+    throw new ZeltRouteConfigurationError({ reason: 'invalid_route' });
   }
   return () => {
     const result: unknown = value.call(instance);
@@ -223,7 +230,8 @@ const composeHandler = (
     let response: Response | undefined;
 
     const dispatch = async (i: number): Promise<void> => {
-      if (i <= index) throw new Error('next() called multiple times');
+      if (i <= index)
+        throw new ZeltMiddlewareExecutionError({ reason: 'next_called_multiple_times' });
       index = i;
       if (i < middlewares.length) {
         const mw = middlewares[i];

@@ -1,0 +1,50 @@
+export const coreErrorDefinitions = {
+  ZeltDecoratorUsageError: (ctx: {
+    decoratorName: string;
+    reason: 'static_method' | 'missing_decorator';
+    targetName?: string;
+  }) =>
+    ctx.reason === 'static_method'
+      ? `@${ctx.decoratorName} cannot be applied to static methods`
+      : `${ctx.targetName ?? 'class'} is missing @${ctx.decoratorName} decorator`,
+
+  ZeltLifecycleStateError: (ctx: {
+    operation: string;
+    currentState: 'disposed' | 'ready' | 'not_ready';
+  }) => {
+    if (ctx.currentState === 'disposed') return `Cannot ${ctx.operation}() after shutdown()`;
+    if (ctx.currentState === 'not_ready') return `Cannot ${ctx.operation}() before ready()`;
+    return `Cannot ${ctx.operation}() after ready()`;
+  },
+
+  ZeltContextNotAvailableError: (ctx: {
+    primitive: string;
+    requiredContext: 'entry' | 'command';
+  }) => `${ctx.primitive}() called outside ${ctx.requiredContext} execution`,
+
+  ZeltAppConfigurationError: (ctx: {
+    reason: 'no_http_or_commands' | 'duplicate_command';
+    details?: string;
+  }) =>
+    ctx.reason === 'no_http_or_commands'
+      ? 'createApp requires at least http or commands option'
+      : `Duplicate command name: ${ctx.details}`,
+
+  ZeltRouteConfigurationError: (ctx: {
+    reason: 'missing_path_param' | 'invalid_route';
+    paramName?: string;
+  }) =>
+    ctx.reason === 'missing_path_param'
+      ? `path parameter "${ctx.paramName}" is not defined`
+      : 'Invalid route configuration',
+
+  ZeltMiddlewareExecutionError: (_ctx: { reason: 'next_called_multiple_times' }) =>
+    'next() called multiple times',
+
+  ZeltNotImplementedError: (ctx: { className: string; methodName: string }) =>
+    `${ctx.className}.${ctx.methodName}() not implemented`,
+} as const;
+
+export type CoreErrorContextMap = {
+  [K in keyof typeof coreErrorDefinitions]: Parameters<(typeof coreErrorDefinitions)[K]>[0];
+};

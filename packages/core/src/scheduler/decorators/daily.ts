@@ -1,3 +1,4 @@
+import { ZeltDecoratorUsageError } from '../../errors';
 import { resolveMethodArgs } from '../../internal/decorator-context';
 import { appendPendingScheduleMetadata } from '../internal/scheduler-metadata';
 
@@ -12,7 +13,7 @@ export const Daily =
   (...args: unknown[]): void => {
     const { pendingKey, methodName, isStatic } = resolveMethodArgs(args);
     if (isStatic) {
-      throw new Error('@Daily cannot be applied to static methods');
+      throw new ZeltDecoratorUsageError({ decoratorName: 'Daily', reason: 'static_method' });
     }
     const minute = options.minute ?? 0;
     const cronExpression = `${minute} ${options.hour} * * *`;

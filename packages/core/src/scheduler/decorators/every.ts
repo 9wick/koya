@@ -1,3 +1,4 @@
+import { ZeltDecoratorUsageError } from '../../errors';
 import { resolveMethodArgs } from '../../internal/decorator-context';
 import { appendPendingScheduleMetadata } from '../internal/scheduler-metadata';
 
@@ -10,7 +11,7 @@ export const Every =
   (...args: unknown[]): void => {
     const { pendingKey, methodName, isStatic } = resolveMethodArgs(args);
     if (isStatic) {
-      throw new Error('@Every cannot be applied to static methods');
+      throw new ZeltDecoratorUsageError({ decoratorName: 'Every', reason: 'static_method' });
     }
 
     const cronExpression =
