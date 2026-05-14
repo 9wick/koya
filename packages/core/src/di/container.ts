@@ -2,6 +2,7 @@ import { Container } from '@needle-di/core';
 import type { ConfigClass } from '../config';
 import { getConfig, overrideConfig, resolveConfig } from '../config';
 import { LifecycleManager } from '../lifecycle';
+import { resolve } from './resolve';
 
 type Class<T> = new (...args: never[]) => T;
 
@@ -42,7 +43,7 @@ export const createContainer = (options: CreateContainerOptions = {}): ResolverH
   resolveConfigs(container, configs);
   resolveConfigs(container, overrides);
   return {
-    get: <T extends object>(cls: Class<T>): T => container.get<T>(cls),
+    get: <T extends object>(cls: Class<T>): T => resolve(container, cls),
     getConfig: <T extends object>(configClass: ConfigClass<T>): T =>
       getConfig(container, configClass),
   };
@@ -93,7 +94,7 @@ export const createTestTargetBase = async <T extends object>(
     throw error;
   }
 
-  const target = container.get<T>(targetClass);
+  const target = resolve(container, targetClass);
 
   let disposed = false;
   const shutdown = async (): Promise<void> => {
@@ -107,7 +108,7 @@ export const createTestTargetBase = async <T extends object>(
       const name = cls.name || 'unknown';
       throw new Error(`Cannot resolve ${name}: TestTarget has been shut down`);
     }
-    return container.get<U>(cls);
+    return resolve(container, cls);
   };
 
   return { target, get, shutdown };
