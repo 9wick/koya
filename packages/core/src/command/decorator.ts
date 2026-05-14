@@ -1,5 +1,6 @@
 import { injectable } from '@needle-di/core';
 
+import { registerAsTransient } from '../di/transient';
 import { resolveClassArgs } from '../internal/decorator-context';
 
 import type { CommandMetadata } from './metadata';
@@ -18,5 +19,6 @@ export const Command =
       ? { name: options.name, description: options.description }
       : { name: options.name };
     setCommandMetadata(cls, meta);
+    registerAsTransient(injectableClass);
     injectable()(injectableClass);
   };
