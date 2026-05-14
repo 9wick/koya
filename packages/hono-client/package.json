@@ -30,6 +30,7 @@
     "hono": "4.12.16"
   },
   "devDependencies": {
+    "@types/node": "22.19.17",
     "@zeltjs/core": "workspace:*",
     "hono": "4.12.16"
   }
