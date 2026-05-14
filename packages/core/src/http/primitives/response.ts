@@ -1,6 +1,13 @@
 import type { Context, TypedResponse } from 'hono';
 import { deleteCookie, setCookie } from 'hono/cookie';
+import { stream, streamSSE, streamText } from 'hono/streaming';
+
+export type { SSEMessage, SSEStreamingApi } from 'hono/streaming';
+export type { StreamingApi } from 'hono/utils/stream';
+
+import type { SSEStreamingApi } from 'hono/streaming';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import type { StreamingApi } from 'hono/utils/stream';
 
 import { getEntryContext } from '../internal/entry-context';
 
@@ -45,6 +52,21 @@ export type ResponseBuilder = {
   setCookie(name: string, value: string, options?: CookieOptions): ResponseBuilder;
 
   deleteCookie(name: string, options?: CookieOptions): ResponseBuilder;
+
+  stream(
+    cb: (stream: StreamingApi) => Promise<void>,
+    onError?: (e: Error, stream: StreamingApi) => Promise<void>,
+  ): Response;
+
+  streamText(
+    cb: (stream: StreamingApi) => Promise<void>,
+    onError?: (e: Error, stream: StreamingApi) => Promise<void>,
+  ): Response;
+
+  sse(
+    cb: (stream: SSEStreamingApi) => Promise<void>,
+    onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>,
+  ): Response;
 };
 
 // Minimal structural view of hono Context for building responses.
@@ -116,6 +138,9 @@ const buildResponseBuilder = (c: Context): ResponseBuilder => {
       deleteCookie(c, name, options);
       return builder;
     },
+    stream: (cb, onError) => stream(c, cb, onError),
+    streamText: (cb, onError) => streamText(c, cb, onError),
+    sse: (cb, onError) => streamSSE(c, cb, onError),
   };
   return builder;
 };
