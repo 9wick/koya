@@ -89,9 +89,9 @@ export { requestContext } from './http/primitives/request-context';
 export type {
   CookieOptions,
   ResponseBuilder,
-  SSEMessage,
-  SSEStreamingApi,
-  StreamingApi,
+  ZeltSSEMessage,
+  ZeltSSEWriter,
+  ZeltStreamWriter,
 } from './http/primitives/response';
 export { response } from './http/primitives/response';
 export { method, path, url } from './http/primitives/url';

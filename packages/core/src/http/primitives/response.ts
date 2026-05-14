@@ -1,13 +1,30 @@
 import type { Context, TypedResponse } from 'hono';
 import { deleteCookie, setCookie } from 'hono/cookie';
 import { stream, streamSSE, streamText } from 'hono/streaming';
-
-export type { SSEMessage, SSEStreamingApi } from 'hono/streaming';
-export type { StreamingApi } from 'hono/utils/stream';
-
-import type { SSEStreamingApi } from 'hono/streaming';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import type { StreamingApi } from 'hono/utils/stream';
+
+export type ZeltStreamWriter = {
+  readonly aborted: boolean;
+  readonly closed: boolean;
+  write(input: Uint8Array | string): Promise<ZeltStreamWriter>;
+  writeln(input: string): Promise<ZeltStreamWriter>;
+  sleep(ms: number): Promise<unknown>;
+  close(): Promise<void>;
+  pipe(body: ReadableStream): Promise<void>;
+  onAbort(listener: () => void | Promise<void>): void;
+  abort(): void;
+};
+
+export type ZeltSSEMessage = {
+  data: string | Promise<string>;
+  event?: string;
+  id?: string;
+  retry?: number;
+};
+
+export type ZeltSSEWriter = ZeltStreamWriter & {
+  writeSSE(message: ZeltSSEMessage): Promise<void>;
+};
 
 import { getEntryContext } from '../internal/entry-context';
 
@@ -54,18 +71,18 @@ export type ResponseBuilder = {
   deleteCookie(name: string, options?: CookieOptions): ResponseBuilder;
 
   stream(
-    cb: (stream: StreamingApi) => Promise<void>,
-    onError?: (e: Error, stream: StreamingApi) => Promise<void>,
+    cb: (stream: ZeltStreamWriter) => Promise<void>,
+    onError?: (e: Error, stream: ZeltStreamWriter) => Promise<void>,
   ): Response;
 
   streamText(
-    cb: (stream: StreamingApi) => Promise<void>,
-    onError?: (e: Error, stream: StreamingApi) => Promise<void>,
+    cb: (stream: ZeltStreamWriter) => Promise<void>,
+    onError?: (e: Error, stream: ZeltStreamWriter) => Promise<void>,
   ): Response;
 
   sse(
-    cb: (stream: SSEStreamingApi) => Promise<void>,
-    onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>,
+    cb: (stream: ZeltSSEWriter) => Promise<void>,
+    onError?: (e: Error, stream: ZeltSSEWriter) => Promise<void>,
   ): Response;
 };
 
