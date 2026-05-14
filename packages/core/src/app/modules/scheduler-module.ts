@@ -8,32 +8,23 @@ export type SchedulerModule = Module & {
   readonly getRunner: () => SchedulerRunner | undefined;
 };
 
-type SchedulerModuleState = {
-  runner: SchedulerRunner | undefined;
-  isDisposed: boolean;
-};
-
 export const createSchedulerModule = (schedulers: readonly SchedulerClass[]): SchedulerModule => {
-  const state: SchedulerModuleState = {
-    runner: undefined,
-    isDisposed: false,
-  };
+  let runner: SchedulerRunner | undefined;
 
   const setup = (): void => {};
 
   const ready = async (context: ReadyContext): Promise<void> => {
     if (schedulers.length === 0) return;
-    state.runner = createSchedulerRunner(schedulers, context.resolver);
+    runner = createSchedulerRunner(schedulers, context.resolver);
   };
 
   const shutdown = async (): Promise<void> => {
-    if (state.runner?.isRunning()) {
-      await state.runner.shutdown();
+    if (runner?.isRunning()) {
+      await runner.shutdown();
     }
-    state.isDisposed = true;
   };
 
-  const getRunner = (): SchedulerRunner | undefined => state.runner;
+  const getRunner = (): SchedulerRunner | undefined => runner;
 
   return {
     setup,

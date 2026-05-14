@@ -205,6 +205,16 @@ const createSchedulerMethods = (schedulerModule: SchedulerModule): SchedulerCapa
 };
 
 /** @throws {ZeltLifecycleStateError} */
+const assertCanModifyConfig = (state: AppState, operation: string): void => {
+  if (state.disposed) {
+    throw new ZeltLifecycleStateError({ operation, currentState: 'disposed' });
+  }
+  if (state.readyContext) {
+    throw new ZeltLifecycleStateError({ operation, currentState: 'ready' });
+  }
+};
+
+/** @throws {ZeltLifecycleStateError} */
 const buildAppObject = (
   appModules: AppModules,
   state: AppState,
@@ -212,11 +222,23 @@ const buildAppObject = (
 ): App<CreateAppOptions> => {
   const { configModule, httpModule, commandModule, schedulerModule, all: modules } = appModules;
 
+  /** @throws {ZeltLifecycleStateError} */
+  const addFallbackConfig = (config: ConfigClass<object>): void => {
+    assertCanModifyConfig(state, 'addFallbackConfig');
+    configModule.addFallbackConfig(config);
+  };
+
+  /** @throws {ZeltLifecycleStateError} */
+  const overrideConfig = (config: ConfigClass<object>): void => {
+    assertCanModifyConfig(state, 'overrideConfig');
+    configModule.overrideConfig(config);
+  };
+
   const baseApp = {
     ready: createReady({ state, modules, configModule, configs }),
     shutdown: createShutdown({ state, modules }),
-    addFallbackConfig: configModule.addFallbackConfig,
-    overrideConfig: configModule.overrideConfig,
+    addFallbackConfig,
+    overrideConfig,
   };
 
   const httpMethods = httpModule

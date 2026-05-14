@@ -40,8 +40,6 @@ export type HttpModule = Module & {
 
 type HttpModuleState = {
   hono: Hono | undefined;
-  isReady: boolean;
-  isDisposed: boolean;
 };
 
 const createErrorHandler =
@@ -193,23 +191,16 @@ const createRequest =
 export const createHttpModule = (options: HttpOptions): HttpModule => {
   const state: HttpModuleState = {
     hono: undefined,
-    isReady: false,
-    isDisposed: false,
   };
 
-  const setup = (): void => {
-    // http module has no sync setup logic
-  };
+  const setup = (): void => {};
 
   /** @throws {HttpModuleError} */
   const ready = async (context: ReadyContext): Promise<void> => {
     state.hono = await initializeHttp(options, context.resolver, context.lifecycle, context.warmup);
-    state.isReady = true;
   };
 
-  const shutdown = async (): Promise<void> => {
-    state.isDisposed = true;
-  };
+  const shutdown = async (): Promise<void> => {};
 
   /** @throws {ZeltLifecycleStateError} */
   const fetch = async (req: Request): Promise<Response> => {
