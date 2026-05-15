@@ -185,23 +185,14 @@ const createShutdown = (deps: ShutdownDeps) => async (): Promise<void> => {
   }
 };
 
-const createSchedulerMethods = (schedulerModule: SchedulerModule): SchedulerCapabilities => {
-  /** @throws {ZeltLifecycleStateError} */
-  const startScheduler = async (): Promise<void> => {
-    const runner = schedulerModule.getRunner();
-    if (runner && !runner.isRunning()) {
-      await runner.startup();
-    }
-  };
-
-  const stopScheduler = async (): Promise<void> => {
-    const runner = schedulerModule.getRunner();
-    if (runner?.isRunning()) {
-      await runner.shutdown();
-    }
-  };
-
-  return { startScheduler, stopScheduler };
+/** @throws {ZeltLifecycleStateError} */
+const assertCanModifyConfig = (state: AppState, operation: string): void => {
+  if (state.disposed) {
+    throw new ZeltLifecycleStateError({ operation, currentState: 'disposed' });
+  }
+  if (state.readyContext) {
+    throw new ZeltLifecycleStateError({ operation, currentState: 'ready' });
+  }
 };
 
 /** @throws {ZeltLifecycleStateError} */
@@ -212,11 +203,23 @@ const buildAppObject = (
 ): App<CreateAppOptions> => {
   const { configModule, httpModule, commandModule, schedulerModule, all: modules } = appModules;
 
+  /** @throws {ZeltLifecycleStateError} */
+  const addFallbackConfig = (config: ConfigClass<object>): void => {
+    assertCanModifyConfig(state, 'addFallbackConfig');
+    configModule.addFallbackConfig(config);
+  };
+
+  /** @throws {ZeltLifecycleStateError} */
+  const overrideConfig = (config: ConfigClass<object>): void => {
+    assertCanModifyConfig(state, 'overrideConfig');
+    configModule.overrideConfig(config);
+  };
+
   const baseApp = {
     ready: createReady({ state, modules, configModule, configs }),
     shutdown: createShutdown({ state, modules }),
-    addFallbackConfig: configModule.addFallbackConfig,
-    overrideConfig: configModule.overrideConfig,
+    addFallbackConfig,
+    overrideConfig,
   };
 
   const httpMethods = httpModule
@@ -230,7 +233,12 @@ const buildAppObject = (
   const commandMethods = commandModule
     ? { hasCommand: commandModule.hasCommand, getCommands: commandModule.getCommands }
     : {};
-  const schedulerMethods = schedulerModule ? createSchedulerMethods(schedulerModule) : {};
+  const schedulerMethods = schedulerModule
+    ? {
+        startScheduler: schedulerModule.startScheduler,
+        stopScheduler: schedulerModule.stopScheduler,
+      }
+    : {};
 
   return { ...baseApp, ...httpMethods, ...commandMethods, ...schedulerMethods };
 };

@@ -5,40 +5,41 @@ import type { Module, ReadyContext } from '../module';
 export type SchedulerClass = new (...args: never[]) => object;
 
 export type SchedulerModule = Module & {
-  readonly getRunner: () => SchedulerRunner | undefined;
-};
-
-type SchedulerModuleState = {
-  runner: SchedulerRunner | undefined;
-  isDisposed: boolean;
+  readonly startScheduler: () => Promise<void>;
+  readonly stopScheduler: () => Promise<void>;
 };
 
 export const createSchedulerModule = (schedulers: readonly SchedulerClass[]): SchedulerModule => {
-  const state: SchedulerModuleState = {
-    runner: undefined,
-    isDisposed: false,
-  };
+  let runner: SchedulerRunner | undefined;
 
   const setup = (): void => {};
 
   const ready = async (context: ReadyContext): Promise<void> => {
     if (schedulers.length === 0) return;
-    state.runner = createSchedulerRunner(schedulers, context.resolver);
+    runner = createSchedulerRunner(schedulers, context.resolver);
+  };
+
+  const startScheduler = async (): Promise<void> => {
+    if (runner && !runner.isRunning()) {
+      await runner.startup();
+    }
+  };
+
+  const stopScheduler = async (): Promise<void> => {
+    if (runner?.isRunning()) {
+      await runner.shutdown();
+    }
   };
 
   const shutdown = async (): Promise<void> => {
-    if (state.runner?.isRunning()) {
-      await state.runner.shutdown();
-    }
-    state.isDisposed = true;
+    await stopScheduler();
   };
-
-  const getRunner = (): SchedulerRunner | undefined => state.runner;
 
   return {
     setup,
     ready,
     shutdown,
-    getRunner,
+    startScheduler,
+    stopScheduler,
   };
 };
