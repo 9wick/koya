@@ -185,25 +185,6 @@ const createShutdown = (deps: ShutdownDeps) => async (): Promise<void> => {
   }
 };
 
-const createSchedulerMethods = (schedulerModule: SchedulerModule): SchedulerCapabilities => {
-  /** @throws {ZeltLifecycleStateError} */
-  const startScheduler = async (): Promise<void> => {
-    const runner = schedulerModule.getRunner();
-    if (runner && !runner.isRunning()) {
-      await runner.startup();
-    }
-  };
-
-  const stopScheduler = async (): Promise<void> => {
-    const runner = schedulerModule.getRunner();
-    if (runner?.isRunning()) {
-      await runner.shutdown();
-    }
-  };
-
-  return { startScheduler, stopScheduler };
-};
-
 /** @throws {ZeltLifecycleStateError} */
 const assertCanModifyConfig = (state: AppState, operation: string): void => {
   if (state.disposed) {
@@ -252,7 +233,12 @@ const buildAppObject = (
   const commandMethods = commandModule
     ? { hasCommand: commandModule.hasCommand, getCommands: commandModule.getCommands }
     : {};
-  const schedulerMethods = schedulerModule ? createSchedulerMethods(schedulerModule) : {};
+  const schedulerMethods = schedulerModule
+    ? {
+        startScheduler: schedulerModule.startScheduler,
+        stopScheduler: schedulerModule.stopScheduler,
+      }
+    : {};
 
   return { ...baseApp, ...httpMethods, ...commandMethods, ...schedulerMethods };
 };

@@ -5,7 +5,8 @@ import type { Module, ReadyContext } from '../module';
 export type SchedulerClass = new (...args: never[]) => object;
 
 export type SchedulerModule = Module & {
-  readonly getRunner: () => SchedulerRunner | undefined;
+  readonly startScheduler: () => Promise<void>;
+  readonly stopScheduler: () => Promise<void>;
 };
 
 export const createSchedulerModule = (schedulers: readonly SchedulerClass[]): SchedulerModule => {
@@ -18,18 +19,27 @@ export const createSchedulerModule = (schedulers: readonly SchedulerClass[]): Sc
     runner = createSchedulerRunner(schedulers, context.resolver);
   };
 
-  const shutdown = async (): Promise<void> => {
+  const startScheduler = async (): Promise<void> => {
+    if (runner && !runner.isRunning()) {
+      await runner.startup();
+    }
+  };
+
+  const stopScheduler = async (): Promise<void> => {
     if (runner?.isRunning()) {
       await runner.shutdown();
     }
   };
 
-  const getRunner = (): SchedulerRunner | undefined => runner;
+  const shutdown = async (): Promise<void> => {
+    await stopScheduler();
+  };
 
   return {
     setup,
     ready,
     shutdown,
-    getRunner,
+    startScheduler,
+    stopScheduler,
   };
 };
