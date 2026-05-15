@@ -100,7 +100,7 @@ jobs:
         run: pnpm knip
 
       - name: Knip (production)
-        run: pnpm knip --production --tags=-internal
+        run: pnpm knip --production
 
       - name: Check for uncommitted changes
         run: |
