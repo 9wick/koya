@@ -54,6 +54,10 @@ const config: KnipConfig = {
       entry: ['src/worker.ts', 'src/app.ts', 'src/controllers.ts', 'src/url/*.ts', 'src/env.ts'],
       ignoreDependencies: ['@zeltjs/core', '@zeltjs/validate-valibot', 'valibot', 'wrangler'],
     },
+    'packages/decorator-metadata': {
+      // Test fixtures are imported dynamically in tests, not statically analyzable
+      ignore: ['src/test/fixtures/**'],
+    },
     'packages/core': {
       // neverthrow は今後 Result wrapper に使う想定で keep。
       ignoreDependencies: ['neverthrow'],
