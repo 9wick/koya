@@ -23,7 +23,7 @@ const config: KnipConfig = {
         '@zeltjs/adapter-node',
         '@zeltjs/core',
         '@zeltjs/cli',
-        '@zeltjs/validate-valibot',
+        '@zeltjs/validator-valibot',
         'tsdown',
         'valibot',
       ],
@@ -40,14 +40,14 @@ const config: KnipConfig = {
       ignoreDependencies: [
         '@zeltjs/adapter-node',
         '@zeltjs/core',
-        '@zeltjs/validate-valibot',
+        '@zeltjs/validator-valibot',
         '@zeltjs/openapi',
         'valibot',
       ],
     },
     'examples/workers-url-shortener': {
       entry: ['src/worker.ts', 'src/app.ts', 'src/controllers.ts', 'src/url/*.ts', 'src/env.ts'],
-      ignoreDependencies: ['@zeltjs/core', '@zeltjs/validate-valibot', 'valibot', 'wrangler'],
+      ignoreDependencies: ['@zeltjs/core', '@zeltjs/validator-valibot', 'valibot', 'wrangler'],
     },
     'packages/decorator-metadata': {
       // Test fixtures are imported dynamically in tests, not statically analyzable
