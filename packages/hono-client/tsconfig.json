@@ -12,5 +12,10 @@
     "types": ["node"]
   },
   "include": ["src/**/*"],
-  "references": [{ "path": "../core" }, { "path": "../adapter-node" }, { "path": "../testing" }]
+  "references": [
+    { "path": "../cli" },
+    { "path": "../core" },
+    { "path": "../adapter-node" },
+    { "path": "../testing" }
+  ]
 }

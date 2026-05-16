@@ -17,3 +17,5 @@ export type {
 } from './generator';
 export { GeneratorService } from './generator';
 export { generateHonoAppType, generateHonoAppTypeFromApp } from './legacy';
+export type { HonoClientPluginOptions } from './plugin';
+export { honoClientPlugin } from './plugin';

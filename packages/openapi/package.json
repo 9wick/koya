@@ -26,12 +26,14 @@
     "typecheck": "tsc -b"
   },
   "peerDependencies": {
+    "@zeltjs/cli": "workspace:*",
     "@zeltjs/core": "workspace:*"
   },
   "dependencies": {
     "ts-json-schema-generator": "2.9.0"
   },
   "devDependencies": {
-    "@types/node": "22.19.17"
+    "@types/node": "22.19.17",
+    "@zeltjs/cli": "workspace:*"
   }
 }

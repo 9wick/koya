@@ -374,6 +374,9 @@ importers:
       '@zeltjs/adapter-node':
         specifier: workspace:*
         version: link:../adapter-node
+      '@zeltjs/cli':
+        specifier: workspace:*
+        version: link:../cli
       '@zeltjs/core':
         specifier: workspace:*
         version: link:../core
@@ -415,6 +418,9 @@ importers:
       '@types/node':
         specifier: 22.19.17
         version: 22.19.17
+      '@zeltjs/cli':
+        specifier: workspace:*
+        version: link:../cli
 
   packages/rate-limit:
     devDependencies:

@@ -30,12 +30,14 @@
   },
   "peerDependencies": {
     "@zeltjs/adapter-node": "workspace:*",
+    "@zeltjs/cli": "workspace:*",
     "@zeltjs/core": "workspace:*",
     "hono": "4.12.16"
   },
   "devDependencies": {
     "@types/node": "22.19.17",
     "@zeltjs/adapter-node": "workspace:*",
+    "@zeltjs/cli": "workspace:*",
     "@zeltjs/core": "workspace:*",
     "@zeltjs/testing": "workspace:*",
     "hono": "4.12.16"

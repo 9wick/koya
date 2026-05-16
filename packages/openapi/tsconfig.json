@@ -12,5 +12,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*"],
-  "references": [{ "path": "../core" }]
+  "references": [{ "path": "../cli" }, { "path": "../core" }]
 }
