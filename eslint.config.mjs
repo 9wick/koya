@@ -385,6 +385,22 @@ export default tseslint.config(
     },
   },
   {
+    // hono-client plugin uses dynamic import for user app files.
+    // The imported module type is unknown at compile time.
+    files: ['packages/hono-client/src/plugin.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+    },
+  },
+  {
+    // openapi plugin uses dynamic import for user app files.
+    // The imported module type is unknown at compile time.
+    files: ['packages/openapi/src/plugin.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+    },
+  },
+  {
     // RedisService needs a private field to hold the Redis client instance.
     // This is necessary for stateful connection management.
     files: ['packages/redis/src/redis.service.ts'],
