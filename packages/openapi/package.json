@@ -1,0 +1,37 @@
+{
+  "name": "@zeltjs/openapi",
+  "version": "0.2.0",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeltjs/zelt.git",
+    "directory": "packages/openapi"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "typecheck": "tsc -b"
+  },
+  "peerDependencies": {
+    "@zeltjs/core": "workspace:*"
+  },
+  "dependencies": {
+    "ts-json-schema-generator": "2.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17"
+  }
+}
