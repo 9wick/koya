@@ -117,8 +117,11 @@ const createRestartHandler = (
       await killProcess(state.childProcess);
     }
 
-    // Run preBuild hooks before restarting
-    await runPreBuildHooks({ cwd, config });
+    try {
+      await runPreBuildHooks({ cwd, config });
+    } catch (error) {
+      consola.error('Plugin preBuild hook failed:', error);
+    }
 
     state.childProcess = startProcess(cwd, entry);
   };
@@ -166,8 +169,11 @@ export const startDevServer = async (options: DevServerOptions): Promise<void> =
     },
   });
 
-  // Run preBuild hooks on initial start
-  await runPreBuildHooks({ cwd, config });
+  try {
+    await runPreBuildHooks({ cwd, config });
+  } catch (error) {
+    consola.error('Plugin preBuild hook failed:', error);
+  }
 
   state.childProcess = startProcess(cwd, devConfig.entry);
 
