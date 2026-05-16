@@ -1,0 +1,78 @@
+import type { Position } from '../runtime/position';
+
+export type { Position };
+
+export type PrimitiveType = 'string' | 'number' | 'boolean' | 'null' | 'undefined';
+
+export type TypeInfo =
+  | { kind: 'primitive'; readonly type: PrimitiveType }
+  | { kind: 'literal'; readonly value: string | number | boolean }
+  | {
+      kind: 'named';
+      readonly name: string;
+      readonly module: string;
+      readonly isExported: boolean;
+    }
+  | { kind: 'array'; readonly items: TypeInfo }
+  | { kind: 'object'; readonly properties: readonly TypedPropertyInfo[] }
+  | { kind: 'union'; readonly types: readonly TypeInfo[] }
+  | { kind: 'promise'; readonly inner: TypeInfo }
+  | { kind: 'unknown' }
+  | { kind: 'ref'; readonly name: string };
+
+export type TypedPropertyInfo = {
+  readonly name: string;
+  readonly type: TypeInfo;
+  readonly optional: boolean;
+};
+
+export type ParamInfo = {
+  readonly name: string;
+  readonly type: TypeInfo;
+};
+
+export type MethodInfo<TProps = unknown> = {
+  readonly name: string;
+  readonly pos: Position;
+  readonly props: TProps;
+  readonly params: readonly ParamInfo[];
+  readonly returnType: TypeInfo;
+};
+
+export type PropertyInfo<TProps = unknown> = {
+  readonly name: string;
+  readonly pos: Position;
+  readonly props: TProps;
+  readonly type: TypeInfo;
+  readonly optional: boolean;
+};
+
+export type ClassMetadata<
+  TClassProps = unknown,
+  TMethodProps = unknown,
+  TPropertyProps = unknown,
+> = {
+  readonly name: string;
+  readonly pos: Position;
+  readonly props: TClassProps;
+  readonly methods: readonly MethodInfo<TMethodProps>[];
+  readonly properties: readonly PropertyInfo<TPropertyProps>[];
+};
+
+export type InspectErrorCode =
+  | 'NO_METADATA'
+  | 'SOURCE_NOT_FOUND'
+  | 'POSITION_INVALID'
+  | 'TSCONFIG_ERROR';
+
+export type InspectError = {
+  readonly code: InspectErrorCode;
+  readonly message: string;
+};
+
+export type ExpandStrategy = 'exported-only' | 'all-named' | 'always';
+
+export type InspectOptions = {
+  readonly tsconfig?: string;
+  readonly expandStrategy?: ExpandStrategy;
+};
