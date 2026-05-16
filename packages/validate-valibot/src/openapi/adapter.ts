@@ -6,7 +6,6 @@ import type { GenericSchema } from 'valibot';
 // Returns true only for genuine valibot schemas implementing Standard Schema.
 function hasValibotVendor(value: unknown): boolean {
   if (typeof value !== 'object' || value === null) return false;
-  // Access ~standard property dynamically to avoid type assertions
   const record: Record<string, unknown> = { ...value };
   const marker = record['~standard'];
   if (typeof marker !== 'object' || marker === null) return false;

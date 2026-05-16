@@ -13,5 +13,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*"],
-  "references": [{ "path": "../core" }, { "path": "../contract" }]
+  "references": [{ "path": "../core" }, { "path": "../openapi" }]
 }
