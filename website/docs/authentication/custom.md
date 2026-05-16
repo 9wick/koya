@@ -300,22 +300,16 @@ class OAuthController {
 
 ## Multi-Provider Authentication
 
-Support multiple auth methods in one middleware:
+Support multiple auth methods in one middleware. Use the framework-provided `JwtService` from `@zeltjs/auth-jwt`:
 
 ```typescript
 import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
+import { JwtService } from '@zeltjs/auth-jwt';
 
 @Injectable()
 class ApiKeyRepository {
   async findByKey(key: string): Promise<{ id: string; scopes: string[] } | null> {
     return null;
-  }
-}
-
-@Injectable()
-class JwtService {
-  async verify(token: string): Promise<{ sub: string; roles: string[] }> {
-    return { sub: '', roles: [] };
   }
 }
 
@@ -340,12 +334,12 @@ export class MultiAuthMiddleware {
       }
     }
 
-    // Then try Bearer token
+    // Then try Bearer token (JWT)
     if (auth?.startsWith('Bearer ')) {
       const token = auth.slice(7);
       try {
         const payload = await this.jwtService.verify(token);
-        setUser({ id: payload.sub, type: 'user' }, payload.roles);
+        setUser({ id: payload.sub, type: 'user' }, payload.roles as string[]);
       } catch {
         // Invalid token
       }
