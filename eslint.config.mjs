@@ -157,6 +157,15 @@ export default tseslint.config(
     },
   },
   {
+    // decorator-metadata/inspect uses TypeScript Compiler API which requires
+    // type assertions for internal type narrowing (e.g., StringLiteralType, TypeReference)
+    files: ['packages/decorator-metadata/src/inspect/**/*.ts'],
+    rules: {
+      '@9wick/strict-type-rules/no-as-assertion': 'off',
+      complexity: ['error', { max: 10 }],
+    },
+  },
+  {
     files: [...TEST_FILES, ...EXAMPLE_FILES, ...FIXTURE_FILES],
     rules: {
       'no-console': 'off',

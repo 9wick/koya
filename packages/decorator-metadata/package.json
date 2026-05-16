@@ -1,0 +1,52 @@
+{
+  "name": "@zeltjs/decorator-metadata",
+  "version": "0.0.1",
+  "description": "Runtime decorator metadata capture and TypeScript type extraction",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeltjs/zelt.git",
+    "directory": "packages/decorator-metadata"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./inspect": {
+      "types": "./dist/inspect/index.d.ts",
+      "import": "./dist/inspect/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "neverthrow": "8.2.0",
+    "ts-pattern": "5.6.2"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "optionalDependencies": {
+    "typescript-6": "npm:typescript@~6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "typescript": "6.0.2"
+  }
+}

@@ -326,6 +326,26 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/decorator-metadata:
+    dependencies:
+      neverthrow:
+        specifier: 8.2.0
+        version: 8.2.0
+      ts-pattern:
+        specifier: 5.6.2
+        version: 5.6.2
+    devDependencies:
+      '@types/node':
+        specifier: 22.19.17
+        version: 22.19.17
+      typescript:
+        specifier: 6.0.2
+        version: 6.0.2
+    optionalDependencies:
+      typescript-6:
+        specifier: npm:typescript@~6.0.0
+        version: typescript@6.0.2
+
   packages/eslint-plugin:
     dependencies:
       eslint:
