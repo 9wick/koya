@@ -132,7 +132,7 @@ Enqueue jobs from your HTTP controllers:
 
 ```typescript
 import { Controller, Post, inject } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import * as v from 'valibot';
 
 @Controller('/users')

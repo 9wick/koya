@@ -1,5 +1,5 @@
 import { Controller, createApp, ip, Post } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import { object, string } from 'valibot';
 import { describe, expect, it } from 'vitest';
 
