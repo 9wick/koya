@@ -37,6 +37,9 @@ jobs:
       - name: Build eslint-plugin
         run: pnpm --filter @zeltjs/eslint-plugin build
 
+      - name: Build hono-client (for type resolution)
+        run: pnpm --filter @zeltjs/hono-client build
+
       - name: Typecheck
         run: pnpm typecheck
 
