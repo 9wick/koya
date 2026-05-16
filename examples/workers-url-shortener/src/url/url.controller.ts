@@ -8,7 +8,7 @@ import {
   requestContext,
   response,
 } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import type { Context } from 'hono';
 import * as v from 'valibot';
 

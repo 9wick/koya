@@ -39,7 +39,7 @@ Use `inject()` to inject services into controllers:
 
 ```typescript
 import { Controller, Get, Post, inject, pathParam, Injectable } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import * as v from 'valibot';
 
 @Injectable() class UserService {

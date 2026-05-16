@@ -24,6 +24,7 @@ const twoslasher = createTwoslasher({
     skipLibCheck: true,
     baseUrl: rootDir,
     paths: {
+      '@zeltjs/validator-valibot': ['./packages/validator-valibot/dist/index.d.ts'],
       '@zeltjs/*': ['./packages/*/dist/index.d.ts'],
       valibot: [
         './node_modules/.pnpm/valibot@1.0.0_typescript@6.0.2/node_modules/valibot/dist/index.d.ts',
@@ -69,7 +70,7 @@ const shikiOnly = {
 
 const config: Config = {
   title: 'ZeltJS',
-  tagline: 'Portable application framework with DI — runs anywhere',
+  tagline: 'Portable application framework with DI — swap adapters for different runtimes',
   favicon: 'img/favicon.png',
 
   future: {

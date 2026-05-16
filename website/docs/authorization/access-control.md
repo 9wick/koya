@@ -152,7 +152,7 @@ class PostController {
 
 ```typescript
 import { Controller, Authorized, Post, UseMiddleware, FunctionMiddleware } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import * as v from 'valibot';
 const CreatePostSchema = v.object({ title: v.string(), content: v.string() });
 declare const rateLimitMiddleware: FunctionMiddleware;
@@ -243,7 +243,7 @@ Combine `@Authorized` with ownership checks:
 
 ```typescript
 import { Controller, Authorized, Put, pathParam, currentUser, currentRoles } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import { HTTPException } from 'hono/http-exception';
 import * as v from 'valibot';
 const UpdateSchema = v.object({ title: v.string(), content: v.string() });

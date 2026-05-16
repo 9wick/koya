@@ -1,12 +1,12 @@
 {
-  "name": "@zeltjs/validate-valibot",
+  "name": "@zeltjs/validator-valibot",
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zeltjs/zelt.git",
-    "directory": "packages/validate-valibot"
+    "directory": "packages/validator-valibot"
   },
   "publishConfig": {
     "access": "public"

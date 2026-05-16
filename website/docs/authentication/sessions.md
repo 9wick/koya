@@ -68,7 +68,7 @@ Use session functions in your handlers:
 
 ```typescript
 import { Controller, Post, Get } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import { getSession, setSession, destroySession } from '@zeltjs/auth-session';
 import { HTTPException } from 'hono/http-exception';
 import * as v from 'valibot';
@@ -360,7 +360,7 @@ Always regenerate the session ID after login:
 
 ```typescript
 import { Controller, Post } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import { destroySession, setSession } from '@zeltjs/auth-session';
 import * as v from 'valibot';
 const LoginSchema = v.object({ email: v.string(), password: v.string() });

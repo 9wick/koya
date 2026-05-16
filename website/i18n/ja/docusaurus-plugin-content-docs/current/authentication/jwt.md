@@ -46,7 +46,7 @@ Use `JwtService` to sign tokens at login:
 
 ```typescript
 import { Controller, Post, inject } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import { JwtService } from '@zeltjs/auth-jwt';
 import { HTTPException } from 'hono/http-exception';
 import * as v from 'valibot';
@@ -248,7 +248,7 @@ For long-lived sessions, implement a refresh token flow:
 
 ```typescript
 import { Controller, Post, inject } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import { JwtService } from '@zeltjs/auth-jwt';
 import * as v from 'valibot';
 const RefreshSchema = v.object({ refreshToken: v.string() });

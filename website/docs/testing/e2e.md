@@ -63,7 +63,7 @@ For complete E2E tests with real dependencies, combine with [Integration Testing
 
 ```typescript
 import { createApp, Controller, Get, Post, pathParam, response, HttpApp, ConfigClass } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import * as v from 'valibot';
 declare function hc<T>(baseUrl: string, options?: { fetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> }): T;
 declare function describe(name: string, fn: () => void): void;

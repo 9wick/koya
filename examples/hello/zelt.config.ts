@@ -1,5 +1,5 @@
 import { defineConfig } from '@zeltjs/openapi';
-import { valibotAdapter } from '@zeltjs/validate-valibot/openapi';
+import { valibotAdapter } from '@zeltjs/validator-valibot/openapi';
 
 export default defineConfig({
   controllers: ['./src/**/*.controller.ts'],

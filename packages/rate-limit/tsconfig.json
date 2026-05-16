@@ -11,6 +11,6 @@
     "erasableSyntaxOnly": false,
     "types": ["node"]
   },
-  "references": [{ "path": "../core" }, { "path": "../kv" }, { "path": "../validate-valibot" }],
+  "references": [{ "path": "../core" }, { "path": "../kv" }, { "path": "../validator-valibot" }],
   "include": ["src/**/*"]
 }

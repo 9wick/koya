@@ -11,7 +11,7 @@ A controller is a class decorated with `@Controller()`. The decorator accepts a 
 
 ```typescript
 import { Controller, Get, Post, pathParam, response } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import * as v from 'valibot';
 
 const CreateUserBody = v.object({
@@ -52,7 +52,7 @@ Zelt provides decorators for all standard HTTP methods:
 
 ```typescript
 import { Controller, Get, Post, Put, Patch, Delete, pathParam } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import * as v from 'valibot';
 const schema = v.object({ name: v.string() });
 // ---cut---
@@ -103,7 +103,7 @@ Use `validated()` with a Valibot schema to validate and type the request body:
 
 ```typescript
 import { Controller, Post } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import * as v from 'valibot';
 // ---cut---
 const CreatePostBody = v.object({
@@ -130,7 +130,7 @@ Use `response()` to control the HTTP status code:
 
 ```typescript
 import { Controller, Post, Delete, pathParam, response } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import * as v from 'valibot';
 const schema = v.object({ name: v.string() });
 // ---cut---
@@ -156,7 +156,7 @@ Controllers must be registered in `createApp()`:
 
 ```typescript
 import { createApp, Controller, Get, Post, pathParam, response } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import * as v from 'valibot';
 
 const CreateUserBody = v.object({ name: v.string(), email: v.pipe(v.string(), v.email()) });

@@ -218,7 +218,7 @@ Roles are set once and rarely change:
 
 ```typescript
 import { Controller, Authorized, Post, pathParam } from '@zeltjs/core';
-import { validated } from '@zeltjs/validate-valibot';
+import { validated } from '@zeltjs/validator-valibot';
 import * as v from 'valibot';
 const RolesSchema = v.object({ roles: v.array(v.string()) });
 declare const db: { users: { update(id: string, data: { roles: string[] }): Promise<void> } };
