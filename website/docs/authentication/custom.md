@@ -27,123 +27,145 @@ These are available from `@zeltjs/core` — no additional packages needed.
 
 ## API Key Authentication
 
-### Simple Header-Based
+Use class middleware when authentication requires database access or other injected services.
+
+### Basic API Key Middleware
 
 ```typescript
-import type { FunctionMiddleware } from '@zeltjs/core';
-import { setUser } from '@zeltjs/core';
-declare const db: {
-  apiKeys: {
-    findByKey(key: string): Promise<{ id: string; name: string; scopes: string[] } | null>;
-  };
-};
-// ---cut---
-export const apiKeyAuth: FunctionMiddleware = async (c, next) => {
-  const apiKey = c.req.header('X-API-Key');
-  
-  if (apiKey) {
-    const client = await db.apiKeys.findByKey(apiKey);
-    if (client) {
-      setUser(
-        { id: client.id, name: client.name, type: 'api' },
-        client.scopes  // e.g., ['read:users', 'write:posts']
-      );
-    }
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
+
+@Injectable()
+class ApiKeyRepository {
+  async findByKey(key: string): Promise<{ id: string; name: string; scopes: string[] } | null> {
+    // Database lookup here
+    return null;
   }
-  
-  await next();
-};
+}
+
+@Middleware
+export class ApiKeyAuthMiddleware {
+  constructor(private apiKeyRepo = inject(ApiKeyRepository)) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const apiKey = c.req.header('X-API-Key');
+
+    if (apiKey) {
+      const client = await this.apiKeyRepo.findByKey(apiKey);
+      if (client) {
+        setUser(
+          { id: client.id, name: client.name, type: 'api' },
+          client.scopes  // e.g., ['read:users', 'write:posts']
+        );
+      }
+    }
+
+    await next();
+    return undefined;
+  }
+}
 ```
 
-### With Rate Limiting per Key
+### With Revocation Check and Usage Tracking
 
 ```typescript
-import type { FunctionMiddleware } from '@zeltjs/core';
-import { setUser } from '@zeltjs/core';
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
 import { HTTPException } from 'hono/http-exception';
-declare const db: {
-  apiKeys: {
-    findByKey(key: string): Promise<{ id: string; name: string; tier: string; scopes: string[]; revokedAt?: Date } | null>;
-    updateLastUsed(key: string): Promise<void>;
-  };
-};
-// ---cut---
-export const apiKeyAuth: FunctionMiddleware = async (c, next) => {
-  const apiKey = c.req.header('X-API-Key');
-  
-  if (!apiKey) {
+
+type ApiKey = { id: string; name: string; tier: string; scopes: string[]; revokedAt?: Date };
+
+@Injectable()
+class ApiKeyService {
+  async findByKey(key: string): Promise<ApiKey | null> {
+    return null;
+  }
+
+  async updateLastUsed(key: string): Promise<void> {
+    // Update timestamp in database
+  }
+}
+
+@Middleware
+export class ApiKeyAuthMiddleware {
+  constructor(private apiKeyService = inject(ApiKeyService)) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const apiKey = c.req.header('X-API-Key');
+
+    if (!apiKey) {
+      await next();
+      return undefined;
+    }
+
+    const client = await this.apiKeyService.findByKey(apiKey);
+    if (!client) {
+      throw new HTTPException(401, { message: 'Invalid API key' });
+    }
+
+    if (client.revokedAt) {
+      throw new HTTPException(401, { message: 'API key revoked' });
+    }
+
+    await this.apiKeyService.updateLastUsed(apiKey);
+
+    setUser(
+      { id: client.id, name: client.name, type: 'api', tier: client.tier },
+      client.scopes
+    );
+
     await next();
-    return;
+    return undefined;
   }
-  
-  const client = await db.apiKeys.findByKey(apiKey);
-  if (!client) {
-    throw new HTTPException(401, { message: 'Invalid API key' });
-  }
-  
-  if (client.revokedAt) {
-    throw new HTTPException(401, { message: 'API key revoked' });
-  }
-  
-  await db.apiKeys.updateLastUsed(apiKey);
-  
-  setUser(
-    { id: client.id, name: client.name, type: 'api', tier: client.tier },
-    client.scopes
-  );
-  
-  await next();
-};
+}
 ```
 
 ## Basic Authentication
 
 ```typescript
-import type { FunctionMiddleware } from '@zeltjs/core';
-import { setUser } from '@zeltjs/core';
-declare function validateCredentials(username: string, password: string): Promise<{ id: string; name: string; roles: string[] } | null>;
-// ---cut---
-export const basicAuth: FunctionMiddleware = async (c, next) => {
-  const auth = c.req.header('Authorization');
-  
-  if (auth?.startsWith('Basic ')) {
-    const base64 = auth.slice(6);
-    const decoded = atob(base64);
-    const [username, password] = decoded.split(':');
-    
-    const user = await validateCredentials(username, password);
-    if (user) {
-      setUser(
-        { id: user.id, name: user.name },
-        user.roles
-      );
-    }
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
+
+@Injectable()
+class UserService {
+  async validateCredentials(
+    username: string,
+    password: string
+  ): Promise<{ id: string; name: string; roles: string[] } | null> {
+    // Validate against database
+    return null;
   }
-  
-  await next();
-};
+}
+
+@Middleware
+export class BasicAuthMiddleware {
+  constructor(private userService = inject(UserService)) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const auth = c.req.header('Authorization');
+
+    if (auth?.startsWith('Basic ')) {
+      const base64 = auth.slice(6);
+      const decoded = atob(base64);
+      const [username, password] = decoded.split(':');
+
+      const user = await this.userService.validateCredentials(username, password);
+      if (user) {
+        setUser({ id: user.id, name: user.name }, user.roles);
+      }
+    }
+
+    await next();
+    return undefined;
+  }
+}
 ```
 
 ## OAuth Integration
 
 ### With an OAuth Library
 
-For OAuth integration, use a `@Config` class to manage credentials:
+For OAuth integration, use `@Config` for credentials and `@Injectable` for services:
 
 ```typescript
-declare class OAuth2Client {
-  constructor(config: { clientId: string | undefined; clientSecret: string | undefined });
-  verifyAccessToken(token: string): Promise<{ sub: string }>;
-}
-declare const db: {
-  users: {
-    findByOAuthId(sub: string): Promise<{ id: string; name: string; email: string; roles: string[] } | null>;
-  };
-};
-// ---cut---
-import { Config, EnvConfig, inject, Middleware } from '@zeltjs/core';
-import { setUser } from '@zeltjs/core';
-import type { RequestContext, Next } from '@zeltjs/core';
+import { Config, EnvConfig, Injectable, Middleware, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
 
 @Config
 class OAuthConfig {
@@ -160,25 +182,40 @@ class OAuthConfig {
   }
 }
 
+type User = { id: string; name: string; email: string; roles: string[] };
+
+@Injectable()
+class UserRepository {
+  async findByOAuthId(sub: string): Promise<User | null> {
+    return null;
+  }
+}
+
+@Injectable()
+class OAuth2Service {
+  constructor(private config = inject(OAuthConfig)) {}
+
+  async verifyAccessToken(token: string): Promise<{ sub: string }> {
+    // Verify token with OAuth provider
+    return { sub: '' };
+  }
+}
+
 @Middleware
 export class OAuthMiddleware {
-  private oauth: OAuth2Client;
+  constructor(
+    private oauth = inject(OAuth2Service),
+    private userRepo = inject(UserRepository)
+  ) {}
 
-  constructor(config = inject(OAuthConfig)) {
-    this.oauth = new OAuth2Client({
-      clientId: config.clientId,
-      clientSecret: config.clientSecret,
-    });
-  }
-
-  async use(c: RequestContext, next: Next) {
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
     const token = c.req.header('Authorization')?.replace('Bearer ', '');
-    
+
     if (token) {
       try {
         const tokenInfo = await this.oauth.verifyAccessToken(token);
-        const user = await db.users.findByOAuthId(tokenInfo.sub);
-        
+        const user = await this.userRepo.findByOAuthId(tokenInfo.sub);
+
         if (user) {
           setUser(
             { id: user.id, name: user.name, email: user.email },
@@ -189,7 +226,7 @@ export class OAuthMiddleware {
         // Invalid token — continue without user
       }
     }
-  
+
     await next();
     return undefined;
   }
@@ -199,38 +236,63 @@ export class OAuthMiddleware {
 ### OAuth Callback Handler
 
 ```typescript
-import { Controller, Get, queryParam } from '@zeltjs/core';
-declare const oauth: {
-  exchangeCode(code: string | undefined): Promise<{ access_token: string }>;
-  getUserInfo(token: string): Promise<{ sub: string; name: string; email: string }>;
-};
-declare const db: {
-  users: {
-    findByOAuthId(sub: string): Promise<{ id: string } | null>;
-    create(data: { oauthId: string; name: string; email: string }): Promise<{ id: string }>;
-  };
-};
-declare function createSession(user: { id: string }): Promise<string>;
-// ---cut---
+import { Controller, Get, Injectable, inject, queryParam } from '@zeltjs/core';
+
+type User = { id: string; oauthId?: string; name?: string; email?: string };
+
+@Injectable()
+class OAuth2Service {
+  async exchangeCode(code: string | undefined): Promise<{ access_token: string }> {
+    return { access_token: '' };
+  }
+
+  async getUserInfo(token: string): Promise<{ sub: string; name: string; email: string }> {
+    return { sub: '', name: '', email: '' };
+  }
+}
+
+@Injectable()
+class UserRepository {
+  async findByOAuthId(sub: string): Promise<User | null> {
+    return null;
+  }
+
+  async create(data: { oauthId: string; name: string; email: string }): Promise<User> {
+    return { id: '', ...data };
+  }
+}
+
+@Injectable()
+class SessionService {
+  async createSession(user: User): Promise<string> {
+    return '';
+  }
+}
+
 @Controller('/auth')
 class OAuthController {
+  constructor(
+    private oauth = inject(OAuth2Service),
+    private userRepo = inject(UserRepository),
+    private sessionService = inject(SessionService)
+  ) {}
+
   @Get('/callback')
-  async callback(code = queryParam('code'), state = queryParam('state')) {
-    const tokens = await oauth.exchangeCode(code);
-    const userInfo = await oauth.getUserInfo(tokens.access_token);
-    
-    let user = await db.users.findByOAuthId(userInfo.sub);
+  async callback(code = queryParam('code'), _state = queryParam('state')) {
+    const tokens = await this.oauth.exchangeCode(code);
+    const userInfo = await this.oauth.getUserInfo(tokens.access_token);
+
+    let user = await this.userRepo.findByOAuthId(userInfo.sub);
     if (!user) {
-      user = await db.users.create({
+      user = await this.userRepo.create({
         oauthId: userInfo.sub,
         name: userInfo.name,
         email: userInfo.email,
       });
     }
-    
-    // Create your own session/JWT here
-    const token = await createSession(user);
-    
+
+    const token = await this.sessionService.createSession(user);
+
     return { token };
   }
 }
@@ -241,42 +303,58 @@ class OAuthController {
 Support multiple auth methods in one middleware:
 
 ```typescript
-import type { FunctionMiddleware } from '@zeltjs/core';
-import { setUser } from '@zeltjs/core';
-declare const db: {
-  apiKeys: {
-    findByKey(key: string): Promise<{ id: string; scopes: string[] } | null>;
-  };
-};
-declare function verifyJwt(token: string): Promise<{ sub: string; roles: string[] }>;
-// ---cut---
-export const multiAuth: FunctionMiddleware = async (c, next) => {
-  const auth = c.req.header('Authorization');
-  const apiKey = c.req.header('X-API-Key');
-  
-  // Try API key first
-  if (apiKey) {
-    const client = await db.apiKeys.findByKey(apiKey);
-    if (client) {
-      setUser({ id: client.id, type: 'api' }, client.scopes);
-      await next();
-      return;
-    }
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
+
+@Injectable()
+class ApiKeyRepository {
+  async findByKey(key: string): Promise<{ id: string; scopes: string[] } | null> {
+    return null;
   }
-  
-  // Then try Bearer token
-  if (auth?.startsWith('Bearer ')) {
-    const token = auth.slice(7);
-    try {
-      const payload = await verifyJwt(token);
-      setUser({ id: payload.sub, type: 'user' }, payload.roles);
-    } catch {
-      // Invalid token
-    }
+}
+
+@Injectable()
+class JwtService {
+  async verify(token: string): Promise<{ sub: string; roles: string[] }> {
+    return { sub: '', roles: [] };
   }
-  
-  await next();
-};
+}
+
+@Middleware
+export class MultiAuthMiddleware {
+  constructor(
+    private apiKeyRepo = inject(ApiKeyRepository),
+    private jwtService = inject(JwtService)
+  ) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const auth = c.req.header('Authorization');
+    const apiKey = c.req.header('X-API-Key');
+
+    // Try API key first
+    if (apiKey) {
+      const client = await this.apiKeyRepo.findByKey(apiKey);
+      if (client) {
+        setUser({ id: client.id, type: 'api' }, client.scopes);
+        await next();
+        return undefined;
+      }
+    }
+
+    // Then try Bearer token
+    if (auth?.startsWith('Bearer ')) {
+      const token = auth.slice(7);
+      try {
+        const payload = await this.jwtService.verify(token);
+        setUser({ id: payload.sub, type: 'user' }, payload.roles);
+      } catch {
+        // Invalid token
+      }
+    }
+
+    await next();
+    return undefined;
+  }
+}
 ```
 
 ## Request Signing (HMAC)
@@ -284,55 +362,89 @@ export const multiAuth: FunctionMiddleware = async (c, next) => {
 For secure machine-to-machine communication:
 
 ```typescript
-import type { FunctionMiddleware } from '@zeltjs/core';
-import { setUser } from '@zeltjs/core';
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
 import { HTTPException } from 'hono/http-exception';
-declare const db: {
-  clients: {
-    findById(id: string): Promise<{ id: string; name: string; secret: string; permissions: string[] } | null>;
-  };
-};
-declare function createHmac(algorithm: string, key: string): { update(data: string): { digest(encoding: string): string }; };
-declare function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean;
-declare const Buffer: { from(str: string): Uint8Array };
-// ---cut---
-export const hmacAuth: FunctionMiddleware = async (c, next) => {
-  const signature = c.req.header('X-Signature');
-  const timestamp = c.req.header('X-Timestamp');
-  const clientId = c.req.header('X-Client-ID');
-  
-  if (!signature || !timestamp || !clientId) {
+
+type Client = { id: string; name: string; secret: string; permissions: string[] };
+
+@Injectable()
+class ClientRepository {
+  async findById(id: string): Promise<Client | null> {
+    return null;
+  }
+}
+
+@Injectable()
+class CryptoService {
+  async hmacSha256(secret: string, data: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
+    return Array.from(new Uint8Array(signature))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  timingSafeEqual(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+    let result = 0;
+    for (let i = 0; i < a.length; i++) {
+      result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return result === 0;
+  }
+}
+
+@Middleware
+export class HmacAuthMiddleware {
+  constructor(
+    private clientRepo = inject(ClientRepository),
+    private cryptoService = inject(CryptoService)
+  ) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const signature = c.req.header('X-Signature');
+    const timestamp = c.req.header('X-Timestamp');
+    const clientId = c.req.header('X-Client-ID');
+
+    if (!signature || !timestamp || !clientId) {
+      await next();
+      return undefined;
+    }
+
+    // Check timestamp (5 minute window)
+    const now = Date.now();
+    const requestTime = parseInt(timestamp, 10);
+    if (Math.abs(now - requestTime) > 5 * 60 * 1000) {
+      throw new HTTPException(401, { message: 'Request expired' });
+    }
+
+    // Get client secret
+    const client = await this.clientRepo.findById(clientId);
+    if (!client) {
+      throw new HTTPException(401, { message: 'Unknown client' });
+    }
+
+    // Verify signature
+    const body = await c.req.text();
+    const payload = `${timestamp}.${body}`;
+    const expected = await this.cryptoService.hmacSha256(client.secret, payload);
+
+    if (!this.cryptoService.timingSafeEqual(signature, expected)) {
+      throw new HTTPException(401, { message: 'Invalid signature' });
+    }
+
+    setUser({ id: client.id, name: client.name }, client.permissions);
     await next();
-    return;
+    return undefined;
   }
-  
-  // Check timestamp (5 minute window)
-  const now = Date.now();
-  const requestTime = parseInt(timestamp, 10);
-  if (Math.abs(now - requestTime) > 5 * 60 * 1000) {
-    throw new HTTPException(401, { message: 'Request expired' });
-  }
-  
-  // Get client secret
-  const client = await db.clients.findById(clientId);
-  if (!client) {
-    throw new HTTPException(401, { message: 'Unknown client' });
-  }
-  
-  // Verify signature
-  const body = await c.req.text();
-  const payload = `${timestamp}.${body}`;
-  const expected = createHmac('sha256', client.secret)
-    .update(payload)
-    .digest('hex');
-  
-  if (!timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
-    throw new HTTPException(401, { message: 'Invalid signature' });
-  }
-  
-  setUser({ id: client.id, name: client.name }, client.permissions);
-  await next();
-};
+}
 ```
 
 ## Testing Custom Auth

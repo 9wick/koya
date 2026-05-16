@@ -203,21 +203,27 @@ interface RequestContextSchemaBad {
 Use the user ID to fetch more data in specific handlers:
 
 ```typescript
-import { Controller, Get, Authorized, currentUser } from '@zeltjs/core';
+import { Controller, Get, Authorized, Injectable, inject, currentUser } from '@zeltjs/core';
+
 interface User { id: string; }
-declare const db: {
-  users: {
-    findById(id: string): Promise<{ preferences: object }>;
-  };
-};
-// ---cut---
+type FullUser = { preferences: object };
+
+@Injectable()
+class UserRepository {
+  async findById(id: string): Promise<FullUser> {
+    return { preferences: {} };
+  }
+}
+
 @Controller('/settings')
 class SettingsController {
+  constructor(private userRepo = inject(UserRepository)) {}
+
   @Authorized()
   @Get('/')
   async getSettings() {
     const user = currentUser() as User;
-    const fullUser = await db.users.findById(user.id);
+    const fullUser = await this.userRepo.findById(user.id);
     return { preferences: fullUser.preferences };
   }
 }
