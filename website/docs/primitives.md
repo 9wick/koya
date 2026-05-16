@@ -207,6 +207,9 @@ export class ApiController {
 | `redirect(url, status?)` | HTTP redirect (default: 302) |
 | `body(data, status?)` | Raw body response |
 | `header(name, value)` | Set a response header (chainable) |
+| `stream(cb, onError?)` | Stream binary data |
+| `streamText(cb, onError?)` | Stream text data |
+| `sse(cb, onError?)` | Server-Sent Events stream |
 
 ### Setting Cookies
 
@@ -247,6 +250,109 @@ export class AuthController {
 | `path` | `string` | Cookie path |
 | `secure` | `boolean` | Secure flag |
 | `sameSite` | `'Strict' \| 'Lax' \| 'None'` | SameSite attribute |
+
+## Streaming Responses
+
+Zelt provides streaming capabilities for real-time data delivery.
+
+### Basic Streaming
+
+Use `stream()` for binary data or `streamText()` for text data:
+
+```typescript
+import { Controller, Get, response } from '@zeltjs/core';
+
+@Controller('/stream')
+export class StreamController {
+  @Get('/data')
+  streamData(res = response()) {
+    return res.stream(async (stream) => {
+      await stream.write('chunk 1');
+      await stream.sleep(100);
+      await stream.write('chunk 2');
+      await stream.close();
+    });
+  }
+
+  @Get('/lines')
+  streamLines(res = response()) {
+    return res.streamText(async (stream) => {
+      await stream.writeln('line 1');
+      await stream.writeln('line 2');
+      await stream.close();
+    });
+  }
+}
+```
+
+### Server-Sent Events (SSE)
+
+Use `sse()` for Server-Sent Events:
+
+```typescript
+import { Controller, Get, response } from '@zeltjs/core';
+
+@Controller('/events')
+export class EventController {
+  @Get('/updates')
+  streamUpdates(res = response()) {
+    return res.sse(async (stream) => {
+      await stream.writeSSE({ data: 'connected', event: 'open' });
+
+      for (let i = 0; i < 5; i++) {
+        await stream.sleep(1000);
+        await stream.writeSSE({
+          data: JSON.stringify({ count: i }),
+          event: 'update',
+          id: String(i),
+        });
+      }
+
+      await stream.close();
+    });
+  }
+}
+```
+
+### Stream Writer Methods
+
+| Method | Description |
+|--------|-------------|
+| `write(input)` | Write `Uint8Array` or `string` to stream |
+| `writeln(input)` | Write string with newline |
+| `writeSSE(message)` | Write SSE message (SSE streams only) |
+| `sleep(ms)` | Pause for specified milliseconds |
+| `pipe(body)` | Pipe a `ReadableStream` |
+| `close()` | Close the stream |
+| `abort()` | Abort the stream |
+| `onAbort(listener)` | Register abort handler |
+
+### SSE Message Format
+
+```typescript
+type SSEMessage = {
+  data: string | Promise<string>;
+  event?: string;
+  id?: string;
+  retry?: number;
+};
+```
+
+### Error Handling
+
+Both streaming methods accept an optional error handler:
+
+```typescript
+res.stream(
+  async (stream) => {
+    // ... stream logic
+  },
+  async (error, stream) => {
+    await stream.write(`Error: ${error.message}`);
+    await stream.close();
+  }
+);
+```
 
 ## Chaining Response Methods
 
