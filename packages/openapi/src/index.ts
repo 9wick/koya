@@ -2,3 +2,4 @@ export type { GenerateOpenApiOptions, GenerateOpenApiResult } from './generate-o
 export { generateOpenApi } from './generate-openapi';
 export type { OpenApiPluginOptions } from './plugin';
 export { openapiPlugin } from './plugin';
+export type { JsonSchema, SchemaAdapter } from './schema-adapter';
