@@ -14,7 +14,7 @@ Use `@Authorized()` without arguments to require any authenticated user:
 
 ```typescript
 import { Controller, Get, Authorized } from '@zeltjs/core';
-
+// ---cut---
 @Controller('/dashboard')
 class DashboardController {
   @Authorized()
@@ -39,6 +39,8 @@ If no user is set, returns `401 Unauthorized`:
 Pass role names to restrict access:
 
 ```typescript
+import { Controller, Get, Authorized } from '@zeltjs/core';
+// ---cut---
 @Controller('/admin')
 class AdminController {
   @Authorized(['admin'])
@@ -65,10 +67,15 @@ If the user lacks required roles, returns `403 Forbidden`:
 By default, access is granted if the user has **any** of the specified roles:
 
 ```typescript
-@Authorized(['admin', 'moderator'])
-@Delete('/posts/:id')
-removePost() {
-  // User needs 'admin' OR 'moderator'
+import { Controller, Authorized, Delete } from '@zeltjs/core';
+// ---cut---
+@Controller('/admin')
+class AdminController {
+  @Authorized(['admin', 'moderator'])
+  @Delete('/posts/:id')
+  removePost() {
+    // User needs 'admin' OR 'moderator'
+  }
 }
 ```
 
@@ -77,24 +84,35 @@ removePost() {
 For AND logic, use multiple `@Authorized` decorators:
 
 ```typescript
-@Authorized(['verified'])
-@Authorized(['premium'])
-@Get('/exclusive-content')
-exclusiveContent() {
-  // User needs 'verified' AND 'premium'
+import { Controller, Authorized, Get } from '@zeltjs/core';
+// ---cut---
+@Controller('/content')
+class ContentController {
+  @Authorized(['verified'])
+  @Authorized(['premium'])
+  @Get('/exclusive-content')
+  exclusiveContent() {
+    // User needs 'verified' AND 'premium'
+  }
 }
 ```
 
 Or check in the handler:
 
 ```typescript
-@Authorized()
-@Get('/exclusive-content')
-exclusiveContent(roles = currentRoles()) {
-  if (!roles.includes('verified') || !roles.includes('premium')) {
-    throw new HTTPException(403, { message: 'Premium verified users only' });
+import { Controller, Authorized, Get, currentRoles } from '@zeltjs/core';
+import { HTTPException } from 'hono/http-exception';
+// ---cut---
+@Controller('/content')
+class ContentController {
+  @Authorized()
+  @Get('/exclusive-content')
+  exclusiveContent(roles = currentRoles()) {
+    if (!roles.includes('verified') || !roles.includes('premium')) {
+      throw new HTTPException(403, { message: 'Premium verified users only' });
+    }
+    return { content: '...' };
   }
-  return { content: '...' };
 }
 ```
 
@@ -105,6 +123,8 @@ exclusiveContent(roles = currentRoles()) {
 Apply to specific routes:
 
 ```typescript
+import { Controller, Get, Post, Delete, Authorized } from '@zeltjs/core';
+// ---cut---
 @Controller('/posts')
 class PostController {
   @Get('/')
@@ -131,11 +151,21 @@ class PostController {
 `@Authorized` works with other method decorators:
 
 ```typescript
-@Authorized()
-@UseMiddleware(rateLimitMiddleware)
-@Post('/posts')
-create(body = bodyParam(CreatePostSchema)) {
-  return { created: true };
+import { Controller, Authorized, Post } from '@zeltjs/core';
+import { validated } from '@zeltjs/validator-valibot';
+import { RateLimit } from '@zeltjs/rate-limit';
+import * as v from 'valibot';
+
+const CreatePostSchema = v.object({ title: v.string(), content: v.string() });
+// ---cut---
+@Controller('/api')
+class ApiController {
+  @Authorized()
+  @RateLimit({ limit: 100, windowSec: 60, key: 'posts' })
+  @Post('/posts')
+  create(data = validated(CreatePostSchema)) {
+    return { created: true };
+  }
 }
 ```
 
@@ -151,13 +181,25 @@ create(body = bodyParam(CreatePostSchema)) {
 Handle authorization errors in your error handler:
 
 ```typescript
-import { createApp, isHttpException } from '@zeltjs/core';
+import { createApp, Controller, Get, Authorized, HTTPException, type RequestContext } from '@zeltjs/core';
 
+@Controller('/dashboard')
+class DashboardController {
+  @Authorized() @Get('/')
+  index() { return { stats: [] }; }
+}
+
+@Controller('/admin')
+class AdminController {
+  @Authorized(['admin']) @Get('/users')
+  listUsers() { return { users: [] }; }
+}
+// ---cut---
 const app = createApp({
   http: {
-    controllers: [...],
-    onError: (error, c) => {
-      if (isHttpException(error)) {
+    controllers: [DashboardController, AdminController],
+    onError: (error: Error, c: RequestContext) => {
+      if (error instanceof HTTPException) {
         if (error.status === 401) {
           return c.json({
             error: 'Please log in to continue',
@@ -184,14 +226,32 @@ const app = createApp({
 Don't use `@Authorized` — check the user manually:
 
 ```typescript
-@Get('/posts/:id')
-getPost(id = pathParam('id'), user = currentUser()) {
-  const post = await db.posts.findById(id);
-  
-  return {
-    ...post,
-    canEdit: user?.id === post.authorId,
-  };
+import { Controller, Get, Injectable, inject, pathParam, currentUser } from '@zeltjs/core';
+
+type Post = { authorId: string };
+type User = { id: string };
+
+@Injectable()
+class PostRepository {
+  async findById(id: string): Promise<Post> {
+    return { authorId: '' };
+  }
+}
+// ---cut---
+@Controller('/posts')
+class PostController {
+  constructor(private postRepo = inject(PostRepository)) {}
+
+  @Get('/:id')
+  async getPost(id = pathParam('id')) {
+    const user = currentUser() as User | undefined;
+    const post = await this.postRepo.findById(id);
+
+    return {
+      ...post,
+      canEdit: user?.id === post.authorId,
+    };
+  }
 }
 ```
 
@@ -200,17 +260,43 @@ getPost(id = pathParam('id'), user = currentUser()) {
 Combine `@Authorized` with ownership checks:
 
 ```typescript
-@Authorized()
-@Put('/posts/:id')
-async updatePost(id = pathParam('id'), body = bodyParam(UpdateSchema)) {
-  const user = currentUser();
-  const post = await db.posts.findById(id);
-  
-  if (post.authorId !== user.id && !currentRoles().includes('admin')) {
-    throw new HTTPException(403, { message: 'Not your post' });
+import { Controller, Authorized, Put, Injectable, inject, pathParam, currentUser, currentRoles } from '@zeltjs/core';
+import { validated } from '@zeltjs/validator-valibot';
+import { HTTPException } from 'hono/http-exception';
+import * as v from 'valibot';
+
+const UpdateSchema = v.object({ title: v.string(), content: v.string() });
+
+type Post = { authorId: string };
+type User = { id: string };
+
+@Injectable()
+class PostRepository {
+  async findById(id: string): Promise<Post> {
+    return { authorId: '' };
   }
-  
-  return db.posts.update(id, body);
+
+  async update(id: string, _data: unknown): Promise<Post> {
+    return { authorId: '' };
+  }
+}
+// ---cut---
+@Controller('/posts')
+class PostController {
+  constructor(private postRepo = inject(PostRepository)) {}
+
+  @Authorized()
+  @Put('/:id')
+  async updatePost(id = pathParam('id'), data = validated(UpdateSchema)) {
+    const user = currentUser() as User;
+    const post = await this.postRepo.findById(id);
+
+    if (post.authorId !== user.id && !currentRoles().includes('admin')) {
+      throw new HTTPException(403, { message: 'Not your post' });
+    }
+
+    return this.postRepo.update(id, data);
+  }
 }
 ```
 
@@ -219,16 +305,22 @@ async updatePost(id = pathParam('id'), body = bodyParam(UpdateSchema)) {
 Check for any role in a hierarchy:
 
 ```typescript
+import { Controller, Authorized, Put, currentRoles } from '@zeltjs/core';
+import { HTTPException } from 'hono/http-exception';
+// ---cut---
 const isEditor = (roles: string[]) =>
   roles.some(r => ['admin', 'editor'].includes(r));
 
-@Authorized()
-@Put('/posts/:id')
-updatePost(roles = currentRoles()) {
-  if (!isEditor(roles)) {
-    throw new HTTPException(403, { message: 'Editors only' });
+@Controller('/posts')
+class PostController {
+  @Authorized()
+  @Put('/:id')
+  updatePost(roles = currentRoles()) {
+    if (!isEditor(roles)) {
+      throw new HTTPException(403, { message: 'Editors only' });
+    }
+    // ...
   }
-  // ...
 }
 ```
 
@@ -237,21 +329,37 @@ updatePost(roles = currentRoles()) {
 For complex scenarios, move logic to a service:
 
 ```typescript
-class PostAuthService {
+import { Controller, Delete, Authorized, Injectable, inject, pathParam, currentUser, currentRoles } from '@zeltjs/core';
+import { HTTPException } from 'hono/http-exception';
+
+type Post = { isPublic: boolean; authorId: string };
+type User = { id: string };
+
+@Injectable()
+class PostRepository {
+  async findById(id: string): Promise<Post> {
+    return { isPublic: false, authorId: '' };
+  }
+
+  async delete(_id: string): Promise<void> {}
+}
+// ---cut---
+@Injectable()
+class PostAuthorizationService {
   canView(post: Post): boolean {
     if (post.isPublic) return true;
-    const user = currentUser();
+    const user = currentUser() as User | undefined;
     return user?.id === post.authorId;
   }
 
   canEdit(post: Post): boolean {
-    const user = currentUser();
+    const user = currentUser() as User | undefined;
     const roles = currentRoles();
     if (roles.includes('admin')) return true;
     return user?.id === post.authorId;
   }
 
-  canDelete(post: Post): boolean {
+  canDelete(): boolean {
     const roles = currentRoles();
     return roles.includes('admin');
   }
@@ -259,18 +367,21 @@ class PostAuthService {
 
 @Controller('/posts')
 class PostController {
-  constructor(private auth = inject(PostAuthService)) {}
+  constructor(
+    private postRepo = inject(PostRepository),
+    private authService = inject(PostAuthorizationService)
+  ) {}
 
   @Authorized()
   @Delete('/:id')
   async delete(id = pathParam('id')) {
-    const post = await db.posts.findById(id);
-    
-    if (!this.auth.canDelete(post)) {
+    const post = await this.postRepo.findById(id);
+
+    if (!this.authService.canDelete()) {
       throw new HTTPException(403, { message: 'Cannot delete this post' });
     }
-    
-    await db.posts.delete(id);
+
+    await this.postRepo.delete(id);
     return { deleted: true };
   }
 }
@@ -281,9 +392,19 @@ class PostController {
 ### Without Authentication
 
 ```typescript
+import { it, expect } from 'vitest';
+import { createApp, Controller, Get, Authorized } from '@zeltjs/core';
+
+@Controller('/dashboard')
+class DashboardController {
+  @Authorized() @Get('/')
+  index() { return { stats: [] }; }
+}
+
+const app = createApp({ http: { controllers: [DashboardController] } });
+// ---cut---
 it('returns 401 for unauthenticated requests', async () => {
-  const client = createTestClient(app);
-  const res = await client.get('/dashboard');
+  const res = await app.request('/dashboard');
   
   expect(res.status).toBe(401);
 });
@@ -292,13 +413,22 @@ it('returns 401 for unauthenticated requests', async () => {
 ### With Authentication
 
 ```typescript
+import { it, expect } from 'vitest';
+import { createApp, Controller, Get, Authorized, setUser } from '@zeltjs/core';
+
+@Controller('/dashboard')
+class DashboardController {
+  @Authorized() @Get('/')
+  index() { return { stats: [] }; }
+}
+
+const app = createApp({ http: { controllers: [DashboardController] } });
+// ---cut---
 it('returns data for authenticated users', async () => {
-  const client = createTestClient(app);
-  
   // Set up authentication context
   setUser({ id: '123', name: 'Test' }, ['user']);
   
-  const res = await client.get('/dashboard');
+  const res = await app.request('/dashboard');
   expect(res.status).toBe(200);
 });
 ```
@@ -306,21 +436,28 @@ it('returns data for authenticated users', async () => {
 ### Testing Role Requirements
 
 ```typescript
+import { it, expect } from 'vitest';
+import { createApp, Controller, Get, Authorized, setUser } from '@zeltjs/core';
+
+@Controller('/admin')
+class AdminController {
+  @Authorized(['admin']) @Get('/users')
+  listUsers() { return { users: [] }; }
+}
+
+const app = createApp({ http: { controllers: [AdminController] } });
+// ---cut---
 it('returns 403 for non-admin users', async () => {
-  const client = createTestClient(app);
-  
   setUser({ id: '123', name: 'Test' }, ['user']);  // Not admin
   
-  const res = await client.get('/admin/users');
+  const res = await app.request('/admin/users');
   expect(res.status).toBe(403);
 });
 
 it('allows admin access', async () => {
-  const client = createTestClient(app);
-  
   setUser({ id: '123', name: 'Test' }, ['admin']);
   
-  const res = await client.get('/admin/users');
+  const res = await app.request('/admin/users');
   expect(res.status).toBe(200);
 });
 ```

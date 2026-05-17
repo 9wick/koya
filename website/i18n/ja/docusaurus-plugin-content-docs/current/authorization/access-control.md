@@ -2,19 +2,19 @@
 sidebar_position: 2
 ---
 
-# アクセス制御
+# Access Control
 
-`@Authorized`デコレータはルートに認証とロール要件を強制します。
+The `@Authorized` decorator enforces authentication and role requirements on routes.
 
-## 基本的な使い方
+## Basic Usage
 
-### 認証を要求
+### Require Authentication
 
-引数なしの`@Authorized()`で認証済みユーザーを要求：
+Use `@Authorized()` without arguments to require any authenticated user:
 
 ```typescript
 import { Controller, Get, Authorized } from '@zeltjs/core';
-
+// ---cut---
 @Controller('/dashboard')
 class DashboardController {
   @Authorized()
@@ -25,7 +25,7 @@ class DashboardController {
 }
 ```
 
-ユーザーが設定されていない場合、`401 Unauthorized`を返します：
+If no user is set, returns `401 Unauthorized`:
 
 ```json
 {
@@ -34,11 +34,13 @@ class DashboardController {
 }
 ```
 
-### 特定のロールを要求
+### Require Specific Roles
 
-ロール名を渡してアクセスを制限：
+Pass role names to restrict access:
 
 ```typescript
+import { Controller, Get, Authorized } from '@zeltjs/core';
+// ---cut---
 @Controller('/admin')
 class AdminController {
   @Authorized(['admin'])
@@ -49,7 +51,7 @@ class AdminController {
 }
 ```
 
-ユーザーが必要なロールを持っていない場合、`403 Forbidden`を返します：
+If the user lacks required roles, returns `403 Forbidden`:
 
 ```json
 {
@@ -58,115 +60,155 @@ class AdminController {
 }
 ```
 
-## ロールマッチング
+## Role Matching
 
-### OR論理（いずれかのロール）
+### OR Logic (Any Role)
 
-デフォルトでは、ユーザーが指定されたロールの**いずれか**を持っていればアクセスが許可されます：
-
-```typescript
-@Authorized(['admin', 'moderator'])
-@Delete('/posts/:id')
-removePost() {
-  // ユーザーは 'admin' または 'moderator' が必要
-}
-```
-
-### AND論理（すべてのロール）
-
-AND論理の場合、複数の`@Authorized`デコレータを使用：
+By default, access is granted if the user has **any** of the specified roles:
 
 ```typescript
-@Authorized(['verified'])
-@Authorized(['premium'])
-@Get('/exclusive-content')
-exclusiveContent() {
-  // ユーザーは 'verified' かつ 'premium' が必要
-}
-```
-
-またはハンドラー内でチェック：
-
-```typescript
-@Authorized()
-@Get('/exclusive-content')
-exclusiveContent(roles = currentRoles()) {
-  if (!roles.includes('verified') || !roles.includes('premium')) {
-    throw new HTTPException(403, { message: 'プレミアム認証済みユーザー限定' });
+import { Controller, Authorized, Delete } from '@zeltjs/core';
+// ---cut---
+@Controller('/admin')
+class AdminController {
+  @Authorized(['admin', 'moderator'])
+  @Delete('/posts/:id')
+  removePost() {
+    // User needs 'admin' OR 'moderator'
   }
-  return { content: '...' };
 }
 ```
 
-## デコレータの配置
+### AND Logic (All Roles)
 
-### メソッドレベル
-
-特定のルートに適用：
+For AND logic, use multiple `@Authorized` decorators:
 
 ```typescript
+import { Controller, Authorized, Get } from '@zeltjs/core';
+// ---cut---
+@Controller('/content')
+class ContentController {
+  @Authorized(['verified'])
+  @Authorized(['premium'])
+  @Get('/exclusive-content')
+  exclusiveContent() {
+    // User needs 'verified' AND 'premium'
+  }
+}
+```
+
+Or check in the handler:
+
+```typescript
+import { Controller, Authorized, Get, currentRoles } from '@zeltjs/core';
+import { HTTPException } from 'hono/http-exception';
+// ---cut---
+@Controller('/content')
+class ContentController {
+  @Authorized()
+  @Get('/exclusive-content')
+  exclusiveContent(roles = currentRoles()) {
+    if (!roles.includes('verified') || !roles.includes('premium')) {
+      throw new HTTPException(403, { message: 'Premium verified users only' });
+    }
+    return { content: '...' };
+  }
+}
+```
+
+## Decorator Placement
+
+### Method Level
+
+Apply to specific routes:
+
+```typescript
+import { Controller, Get, Post, Delete, Authorized } from '@zeltjs/core';
+// ---cut---
 @Controller('/posts')
 class PostController {
   @Get('/')
   list() {
-    // パブリック — 認証不要
+    // Public — no auth required
   }
 
   @Authorized()
   @Post('/')
   create() {
-    // 認証が必要
+    // Requires authentication
   }
 
   @Authorized(['admin'])
   @Delete('/:id')
   delete() {
-    // adminロールが必要
+    // Requires admin role
   }
 }
 ```
 
-### 他のデコレータと組み合わせ
+### With Other Decorators
 
-`@Authorized`は他のメソッドデコレータと連携：
+`@Authorized` works with other method decorators:
 
 ```typescript
-@Authorized()
-@UseMiddleware(rateLimitMiddleware)
-@Post('/posts')
-create(body = bodyParam(CreatePostSchema)) {
-  return { created: true };
+import { Controller, Authorized, Post } from '@zeltjs/core';
+import { validated } from '@zeltjs/validator-valibot';
+import { RateLimit } from '@zeltjs/rate-limit';
+import * as v from 'valibot';
+
+const CreatePostSchema = v.object({ title: v.string(), content: v.string() });
+// ---cut---
+@Controller('/api')
+class ApiController {
+  @Authorized()
+  @RateLimit({ limit: 100, windowSec: 60, key: 'posts' })
+  @Post('/posts')
+  create(data = validated(CreatePostSchema)) {
+    return { created: true };
+  }
 }
 ```
 
-## エラーレスポンス
+## Error Responses
 
-| ステータス | コード | 条件 |
-|------------|--------|------|
-| 401 | `UNAUTHORIZED` | ユーザーが設定されていない（未認証） |
-| 403 | `FORBIDDEN` | ユーザーに必要なロールがない |
+| Status | Code | Condition |
+|--------|------|-----------|
+| 401 | `UNAUTHORIZED` | No user set (not authenticated) |
+| 403 | `FORBIDDEN` | User lacks required roles |
 
-### エラーメッセージのカスタマイズ
+### Customizing Error Messages
 
-エラーハンドラーで認可エラーを処理：
+Handle authorization errors in your error handler:
 
 ```typescript
-import { createApp, isHttpException } from '@zeltjs/core';
+import { createApp, Controller, Get, Authorized, HTTPException, type RequestContext } from '@zeltjs/core';
 
+@Controller('/dashboard')
+class DashboardController {
+  @Authorized() @Get('/')
+  index() { return { stats: [] }; }
+}
+
+@Controller('/admin')
+class AdminController {
+  @Authorized(['admin']) @Get('/users')
+  listUsers() { return { users: [] }; }
+}
+// ---cut---
 const app = createApp({
   http: {
-    controllers: [...],
-    onError: (error, c) => {
-      if (isHttpException(error)) {
+    controllers: [DashboardController, AdminController],
+    onError: (error: Error, c: RequestContext) => {
+      if (error instanceof HTTPException) {
         if (error.status === 401) {
           return c.json({
-            error: '続行するにはログインしてください',
+            error: 'Please log in to continue',
             loginUrl: '/auth/login',
           }, 401);
         }
         if (error.status === 403) {
           return c.json({
-            error: 'このリソースにアクセスする権限がありません',
+            error: 'You do not have permission to access this resource',
             requiredRoles: error.message,
           }, 403);
         }
@@ -177,81 +219,147 @@ const app = createApp({
 });
 ```
 
-## 一般的なパターン
+## Common Patterns
 
-### オプショナル認証のパブリックルート
+### Public Routes with Optional Auth
 
-`@Authorized`を使用せず、ユーザーを手動でチェック：
-
-```typescript
-@Get('/posts/:id')
-getPost(id = pathParam('id'), user = currentUser()) {
-  const post = await db.posts.findById(id);
-  
-  return {
-    ...post,
-    canEdit: user?.id === post.authorId,
-  };
-}
-```
-
-### オーナー限定アクセス
-
-`@Authorized`と所有権チェックを組み合わせ：
+Don't use `@Authorized` — check the user manually:
 
 ```typescript
-@Authorized()
-@Put('/posts/:id')
-async updatePost(id = pathParam('id'), body = bodyParam(UpdateSchema)) {
-  const user = currentUser();
-  const post = await db.posts.findById(id);
-  
-  if (post.authorId !== user.id && !currentRoles().includes('admin')) {
-    throw new HTTPException(403, { message: 'あなたの投稿ではありません' });
+import { Controller, Get, Injectable, inject, pathParam, currentUser } from '@zeltjs/core';
+
+type Post = { authorId: string };
+type User = { id: string };
+
+@Injectable()
+class PostRepository {
+  async findById(id: string): Promise<Post> {
+    return { authorId: '' };
   }
-  
-  return db.posts.update(id, body);
+}
+// ---cut---
+@Controller('/posts')
+class PostController {
+  constructor(private postRepo = inject(PostRepository)) {}
+
+  @Get('/:id')
+  async getPost(id = pathParam('id')) {
+    const user = currentUser() as User | undefined;
+    const post = await this.postRepo.findById(id);
+
+    return {
+      ...post,
+      canEdit: user?.id === post.authorId,
+    };
+  }
 }
 ```
 
-### ロール階層
+### Owner-Only Access
 
-階層内の任意のロールをチェック：
+Combine `@Authorized` with ownership checks:
 
 ```typescript
+import { Controller, Authorized, Put, Injectable, inject, pathParam, currentUser, currentRoles } from '@zeltjs/core';
+import { validated } from '@zeltjs/validator-valibot';
+import { HTTPException } from 'hono/http-exception';
+import * as v from 'valibot';
+
+const UpdateSchema = v.object({ title: v.string(), content: v.string() });
+
+type Post = { authorId: string };
+type User = { id: string };
+
+@Injectable()
+class PostRepository {
+  async findById(id: string): Promise<Post> {
+    return { authorId: '' };
+  }
+
+  async update(id: string, _data: unknown): Promise<Post> {
+    return { authorId: '' };
+  }
+}
+// ---cut---
+@Controller('/posts')
+class PostController {
+  constructor(private postRepo = inject(PostRepository)) {}
+
+  @Authorized()
+  @Put('/:id')
+  async updatePost(id = pathParam('id'), data = validated(UpdateSchema)) {
+    const user = currentUser() as User;
+    const post = await this.postRepo.findById(id);
+
+    if (post.authorId !== user.id && !currentRoles().includes('admin')) {
+      throw new HTTPException(403, { message: 'Not your post' });
+    }
+
+    return this.postRepo.update(id, data);
+  }
+}
+```
+
+### Role Hierarchy
+
+Check for any role in a hierarchy:
+
+```typescript
+import { Controller, Authorized, Put, currentRoles } from '@zeltjs/core';
+import { HTTPException } from 'hono/http-exception';
+// ---cut---
 const isEditor = (roles: string[]) =>
   roles.some(r => ['admin', 'editor'].includes(r));
 
-@Authorized()
-@Put('/posts/:id')
-updatePost(roles = currentRoles()) {
-  if (!isEditor(roles)) {
-    throw new HTTPException(403, { message: '編集者のみ' });
+@Controller('/posts')
+class PostController {
+  @Authorized()
+  @Put('/:id')
+  updatePost(roles = currentRoles()) {
+    if (!isEditor(roles)) {
+      throw new HTTPException(403, { message: 'Editors only' });
+    }
+    // ...
   }
-  // ...
 }
 ```
 
-### リソーススコープ認可
+### Resource-Scoped Authorization
 
-複雑なシナリオでは、ロジックをサービスに移動：
+For complex scenarios, move logic to a service:
 
 ```typescript
-class PostAuthService {
+import { Controller, Delete, Authorized, Injectable, inject, pathParam, currentUser, currentRoles } from '@zeltjs/core';
+import { HTTPException } from 'hono/http-exception';
+
+type Post = { isPublic: boolean; authorId: string };
+type User = { id: string };
+
+@Injectable()
+class PostRepository {
+  async findById(id: string): Promise<Post> {
+    return { isPublic: false, authorId: '' };
+  }
+
+  async delete(_id: string): Promise<void> {}
+}
+// ---cut---
+@Injectable()
+class PostAuthorizationService {
   canView(post: Post): boolean {
     if (post.isPublic) return true;
-    const user = currentUser();
+    const user = currentUser() as User | undefined;
     return user?.id === post.authorId;
   }
 
   canEdit(post: Post): boolean {
-    const user = currentUser();
+    const user = currentUser() as User | undefined;
     const roles = currentRoles();
     if (roles.includes('admin')) return true;
     return user?.id === post.authorId;
   }
 
-  canDelete(post: Post): boolean {
+  canDelete(): boolean {
     const roles = currentRoles();
     return roles.includes('admin');
   }
@@ -259,80 +367,109 @@ class PostAuthService {
 
 @Controller('/posts')
 class PostController {
-  constructor(private auth = inject(PostAuthService)) {}
+  constructor(
+    private postRepo = inject(PostRepository),
+    private authService = inject(PostAuthorizationService)
+  ) {}
 
   @Authorized()
   @Delete('/:id')
   async delete(id = pathParam('id')) {
-    const post = await db.posts.findById(id);
-    
-    if (!this.auth.canDelete(post)) {
-      throw new HTTPException(403, { message: 'この投稿を削除できません' });
+    const post = await this.postRepo.findById(id);
+
+    if (!this.authService.canDelete()) {
+      throw new HTTPException(403, { message: 'Cannot delete this post' });
     }
-    
-    await db.posts.delete(id);
+
+    await this.postRepo.delete(id);
     return { deleted: true };
   }
 }
 ```
 
-## 保護されたルートのテスト
+## Testing Protected Routes
 
-### 認証なし
+### Without Authentication
 
 ```typescript
-it('未認証リクエストに401を返す', async () => {
-  const client = createTestClient(app);
-  const res = await client.get('/dashboard');
+import { it, expect } from 'vitest';
+import { createApp, Controller, Get, Authorized } from '@zeltjs/core';
+
+@Controller('/dashboard')
+class DashboardController {
+  @Authorized() @Get('/')
+  index() { return { stats: [] }; }
+}
+
+const app = createApp({ http: { controllers: [DashboardController] } });
+// ---cut---
+it('returns 401 for unauthenticated requests', async () => {
+  const res = await app.request('/dashboard');
   
   expect(res.status).toBe(401);
 });
 ```
 
-### 認証あり
+### With Authentication
 
 ```typescript
-it('認証済みユーザーにデータを返す', async () => {
-  const client = createTestClient(app);
-  
-  // 認証コンテキストを設定
+import { it, expect } from 'vitest';
+import { createApp, Controller, Get, Authorized, setUser } from '@zeltjs/core';
+
+@Controller('/dashboard')
+class DashboardController {
+  @Authorized() @Get('/')
+  index() { return { stats: [] }; }
+}
+
+const app = createApp({ http: { controllers: [DashboardController] } });
+// ---cut---
+it('returns data for authenticated users', async () => {
+  // Set up authentication context
   setUser({ id: '123', name: 'Test' }, ['user']);
   
-  const res = await client.get('/dashboard');
+  const res = await app.request('/dashboard');
   expect(res.status).toBe(200);
 });
 ```
 
-### ロール要件のテスト
+### Testing Role Requirements
 
 ```typescript
-it('非adminユーザーに403を返す', async () => {
-  const client = createTestClient(app);
+import { it, expect } from 'vitest';
+import { createApp, Controller, Get, Authorized, setUser } from '@zeltjs/core';
+
+@Controller('/admin')
+class AdminController {
+  @Authorized(['admin']) @Get('/users')
+  listUsers() { return { users: [] }; }
+}
+
+const app = createApp({ http: { controllers: [AdminController] } });
+// ---cut---
+it('returns 403 for non-admin users', async () => {
+  setUser({ id: '123', name: 'Test' }, ['user']);  // Not admin
   
-  setUser({ id: '123', name: 'Test' }, ['user']);  // adminではない
-  
-  const res = await client.get('/admin/users');
+  const res = await app.request('/admin/users');
   expect(res.status).toBe(403);
 });
 
-it('adminアクセスを許可', async () => {
-  const client = createTestClient(app);
-  
+it('allows admin access', async () => {
   setUser({ id: '123', name: 'Test' }, ['admin']);
   
-  const res = await client.get('/admin/users');
+  const res = await app.request('/admin/users');
   expect(res.status).toBe(200);
 });
 ```
 
-## ベストプラクティス
+## Best Practices
 
-1. **保護されたルートには`@Authorized()`を使用** — 基本的な認証要件のために手動で`currentUser()`をチェックしない
+1. **Use `@Authorized()` for protected routes** — Don't manually check `currentUser()` for basic auth requirements
 
-2. **ロールチェックは粗く保つ** — `@Authorized`は機能レベルのアクセスに、サービスはリソースレベルのロジックに
+2. **Keep role checks coarse** — Use `@Authorized` for feature-level access, services for resource-level logic
 
-3. **フェイルクローズ** — 迷ったらアクセスを拒否。許可するより取り消す方が難しい
+3. **Fail closed** — When in doubt, deny access; it's easier to grant than revoke
 
-4. **認可失敗をログ** — セキュリティ監視のために失敗したアクセス試行を追跡
+4. **Log authorization failures** — Track failed access attempts for security monitoring
 
-5. **両方のパスをテスト** — 常に認証済みと未認証のシナリオをテスト
+5. **Test both paths** — Always test authenticated and unauthenticated scenarios

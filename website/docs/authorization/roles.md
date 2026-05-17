@@ -11,14 +11,17 @@ Roles are the foundation of Zelt's authorization system. They define what a user
 A role is a simple string that represents a permission level or capability:
 
 ```typescript
-['admin', 'editor', 'viewer']
-['owner', 'member', 'guest']
-['read:users', 'write:users', 'delete:users']
+const adminRoles = ['admin', 'editor', 'viewer'];
+const teamRoles = ['owner', 'member', 'guest'];
+const permissionRoles = ['read:users', 'write:users', 'delete:users'];
 ```
 
 Roles are assigned during authentication via `setUser()`:
 
 ```typescript
+import { setUser } from '@zeltjs/core';
+declare const user: { id: string; name: string };
+// ---cut---
 setUser(
   { id: user.id, name: user.name },
   ['admin', 'user']  // ← roles
@@ -30,6 +33,10 @@ setUser(
 Use `RequestContextSchema` to type your roles:
 
 ```typescript
+// @noErrors
+// Reason: module augmentation requires full module resolution unavailable in Twoslash VFS
+import '@zeltjs/core';
+// ---cut---
 declare module '@zeltjs/core' {
   interface RequestContextSchema {
     user: { id: string; name: string };
@@ -50,6 +57,9 @@ This provides:
 Define roles that imply other roles:
 
 ```typescript
+import { setUser } from '@zeltjs/core';
+declare const user: { id: string; name: string; primaryRole: 'admin' | 'editor' | 'viewer' };
+// ---cut---
 type Role = 'admin' | 'editor' | 'viewer';
 
 const roleHierarchy: Record<Role, Role[]> = {
@@ -67,6 +77,9 @@ setUser(user, roleHierarchy[user.primaryRole]);
 Include resource context in role names:
 
 ```typescript
+import { setUser } from '@zeltjs/core';
+declare const user: { id: string; name: string };
+// ---cut---
 type Role = 
   | 'admin'
   | `project:${string}:owner`
@@ -104,19 +117,36 @@ const rolePermissions: Record<string, Permission[]> = {
 Store roles with the user record:
 
 ```typescript
-// User table
-interface User {
-  id: string;
-  name: string;
-  roles: string[];  // ['admin', 'user']
-}
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
+import { JwtService } from '@zeltjs/auth-jwt';
 
-// In authentication middleware
-const user = await db.users.findById(payload.sub);
-setUser(
-  { id: user.id, name: user.name },
-  user.roles
-);
+type User = { id: string; name: string; roles: string[] };
+
+@Injectable()
+class UserRepository {
+  async findById(id: string): Promise<User> {
+    return { id, name: '', roles: [] };
+  }
+}
+// ---cut---
+@Middleware
+class AuthMiddleware {
+  constructor(
+    private jwtService = inject(JwtService),
+    private userRepo = inject(UserRepository)
+  ) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const token = c.req.header('Authorization')?.replace('Bearer ', '');
+    if (token) {
+      const payload = await this.jwtService.verify(token);
+      const user = await this.userRepo.findById(payload.sub!);
+      setUser({ id: user.id, name: user.name }, user.roles);
+    }
+    await next();
+    return undefined;
+  }
+}
 ```
 
 ### JWT Claims
@@ -124,18 +154,33 @@ setUser(
 Include roles in the JWT payload:
 
 ```typescript
-// When signing
-const token = await jwtService.sign({
-  sub: user.id,
-  roles: user.roles,
-});
+import { Controller, Post, Config, inject } from '@zeltjs/core';
+import { JwtService, JwtConfig, type JwtPayload, type ResolveUserResult } from '@zeltjs/auth-jwt';
 
-// When verifying (in JwtConfig.resolveUser)
-override get resolveUser() {
-  return async (payload: JwtPayload) => ({
-    user: { id: payload.sub },
-    roles: payload.roles as string[],
-  });
+type User = { id: string; roles: string[] };
+// ---cut---
+@Controller('/auth')
+class AuthController {
+  constructor(private jwtService = inject(JwtService)) {}
+
+  @Post('/login')
+  async login(user: User) {
+    const token = await this.jwtService.sign({
+      sub: user.id,
+      roles: user.roles,
+    });
+    return { token };
+  }
+}
+
+@Config
+class MyJwtConfig extends JwtConfig {
+  override get resolveUser(): (payload: JwtPayload) => Promise<ResolveUserResult> {
+    return async (payload) => ({
+      user: { id: payload.sub! },
+      roles: payload.roles as string[],
+    });
+  }
 }
 ```
 
@@ -144,14 +189,43 @@ override get resolveUser() {
 Store roles in the session:
 
 ```typescript
-// At login
-setSession({ userId: user.id, roles: user.roles });
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
 
-// In auth middleware
-const session = getSession();
-if (session) {
-  const user = await db.users.findById(session.userId);
-  setUser(user, session.roles);
+type Session = { userId: string; roles: string[] };
+type User = { id: string; name: string };
+
+@Injectable()
+class SessionService {
+  getSession(): Session | null {
+    return null;
+  }
+
+  setSession(_data: Session): void {}
+}
+
+@Injectable()
+class UserRepository {
+  async findById(id: string): Promise<User> {
+    return { id, name: '' };
+  }
+}
+// ---cut---
+@Middleware
+class SessionAuthMiddleware {
+  constructor(
+    private sessionService = inject(SessionService),
+    private userRepo = inject(UserRepository)
+  ) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const session = this.sessionService.getSession();
+    if (session) {
+      const user = await this.userRepo.findById(session.userId);
+      setUser(user, session.roles);
+    }
+    await next();
+    return undefined;
+  }
 }
 ```
 
@@ -160,12 +234,38 @@ if (session) {
 Fetch roles from an identity provider:
 
 ```typescript
-const userInfo = await identityProvider.getUserInfo(token);
-const roles = await identityProvider.getRoles(userInfo.sub);
-setUser(
-  { id: userInfo.sub, name: userInfo.name },
-  roles
-);
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
+
+type UserInfo = { sub: string; name: string };
+
+@Injectable()
+class IdentityProviderService {
+  async getUserInfo(token: string): Promise<UserInfo> {
+    return { sub: '', name: '' };
+  }
+
+  async getRoles(sub: string): Promise<string[]> {
+    return [];
+  }
+}
+// ---cut---
+@Middleware
+class ExternalAuthMiddleware {
+  constructor(private idp = inject(IdentityProviderService)) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const token = c.req.header('Authorization')?.replace('Bearer ', '');
+
+    if (token) {
+      const userInfo = await this.idp.getUserInfo(token);
+      const roles = await this.idp.getRoles(userInfo.sub);
+      setUser({ id: userInfo.sub, name: userInfo.name }, roles);
+    }
+
+    await next();
+    return undefined;
+  }
+}
 ```
 
 ## Role Assignment Strategies
@@ -175,12 +275,27 @@ setUser(
 Roles are set once and rarely change:
 
 ```typescript
-// Admin assigns roles via API
-@Authorized(['admin'])
-@Post('/users/:id/roles')
-async assignRoles(id = pathParam('id'), body = bodyParam(RolesSchema)) {
-  await db.users.update(id, { roles: body.roles });
-  return { success: true };
+import { Controller, Authorized, Post, Injectable, inject, pathParam } from '@zeltjs/core';
+import { validated } from '@zeltjs/validator-valibot';
+import * as v from 'valibot';
+
+const RolesSchema = v.object({ roles: v.array(v.string()) });
+
+@Injectable()
+class UserRepository {
+  async updateRoles(id: string, roles: string[]): Promise<void> {}
+}
+// ---cut---
+@Controller('/users')
+class UserRolesController {
+  constructor(private userRepo = inject(UserRepository)) {}
+
+  @Authorized(['admin'])
+  @Post('/:id/roles')
+  async assignRoles(id = pathParam('id'), data = validated(RolesSchema)) {
+    await this.userRepo.updateRoles(id, data.roles);
+    return { success: true };
+  }
 }
 ```
 
@@ -189,18 +304,44 @@ async assignRoles(id = pathParam('id'), body = bodyParam(RolesSchema)) {
 Roles are computed based on context:
 
 ```typescript
-// Roles depend on resource ownership
-const project = await db.projects.findById(projectId);
-const roles = [];
+import { Middleware, Injectable, inject, setUser, currentUser, type RequestContext, type Next } from '@zeltjs/core';
 
-if (project.ownerId === user.id) {
-  roles.push('project:owner');
-}
-if (project.memberIds.includes(user.id)) {
-  roles.push('project:member');
-}
+type Project = { ownerId: string; memberIds: string[] };
+type User = { id: string; name: string };
 
-setUser(user, roles);
+@Injectable()
+class ProjectRepository {
+  async findById(id: string): Promise<Project> {
+    return { ownerId: '', memberIds: [] };
+  }
+}
+// ---cut---
+@Middleware
+class ProjectRolesMiddleware {
+  constructor(private projectRepo = inject(ProjectRepository)) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const user = currentUser() as User | undefined;
+    const projectId = c.req.param('projectId');
+
+    if (user && projectId) {
+      const project = await this.projectRepo.findById(projectId);
+      const roles: string[] = [];
+
+      if (project.ownerId === user.id) {
+        roles.push('project:owner');
+      }
+      if (project.memberIds.includes(user.id)) {
+        roles.push('project:member');
+      }
+
+      setUser(user, roles);
+    }
+
+    await next();
+    return undefined;
+  }
+}
 ```
 
 ### Time-Based Roles
@@ -208,6 +349,14 @@ setUser(user, roles);
 Roles expire or activate based on time:
 
 ```typescript
+import { setUser } from '@zeltjs/core';
+declare const user: {
+  id: string;
+  name: string;
+  roles: string[];
+  roleGrants: Array<{ role: string; startsAt?: number; expiresAt?: number }>;
+};
+// ---cut---
 const roles = user.roles.filter(role => {
   const grant = user.roleGrants.find(g => g.role === role);
   if (!grant) return true;
@@ -226,26 +375,33 @@ setUser(user, roles);
 ### In Handlers
 
 ```typescript
-import { currentRoles } from '@zeltjs/core';
-
-@Get('/dashboard')
-dashboard() {
-  const roles = currentRoles();
-  
-  return {
-    canManageUsers: roles.includes('admin'),
-    canEditContent: roles.includes('editor') || roles.includes('admin'),
-  };
+import { Controller, currentRoles, Get } from '@zeltjs/core';
+// ---cut---
+@Controller('/app')
+class AppController {
+  @Get('/dashboard')
+  dashboard() {
+    const roles = currentRoles();
+    
+    return {
+      canManageUsers: roles.includes('admin'),
+      canEditContent: roles.includes('editor') || roles.includes('admin'),
+    };
+  }
 }
 ```
 
 ### In Services
 
 ```typescript
+import { currentRoles, currentUser } from '@zeltjs/core';
+type Post = { authorId: string };
+interface User { id: string; }
+// ---cut---
 class PostService {
   canDelete(post: Post): boolean {
     const roles = currentRoles();
-    const user = currentUser();
+    const user = currentUser() as User | undefined;
     
     if (roles.includes('admin')) return true;
     if (post.authorId === user?.id) return true;
@@ -262,10 +418,10 @@ Use flat strings, not nested objects:
 
 ```typescript
 // ✅ Good
-['admin', 'editor', 'viewer']
+const goodRoles = ['admin', 'editor', 'viewer'];
 
 // ❌ Avoid
-[{ name: 'admin', level: 10, permissions: [...] }]
+const badRoles = [{ name: 'admin', level: 10, permissions: [] }];
 ```
 
 ### Use Roles for Coarse Access
@@ -273,9 +429,15 @@ Use flat strings, not nested objects:
 Roles answer "can this user access this feature area?" not "can this user edit this specific record?":
 
 ```typescript
+import { Controller, Authorized, Get } from '@zeltjs/core';
+// ---cut---
 // ✅ Role-based: "Can access admin section"
-@Authorized(['admin'])
-@Get('/admin/dashboard')
+@Controller('/admin')
+class AdminController {
+  @Authorized(['admin'])
+  @Get('/dashboard')
+  adminDashboard() {}
+}
 
 // ❌ Not a role: "Can edit post #123"
 // → Handle in service logic instead
@@ -287,10 +449,10 @@ Don't create roles for every action:
 
 ```typescript
 // ❌ Too many roles
-['can_view_users', 'can_create_users', 'can_edit_users', 'can_delete_users', ...]
+const tooManyRoles = ['can_view_users', 'can_create_users', 'can_edit_users', 'can_delete_users'];
 
 // ✅ Group into meaningful roles
-['admin', 'user_manager', 'viewer']
+const meaningfulRoles = ['admin', 'user_manager', 'viewer'];
 ```
 
 ### Document Your Roles

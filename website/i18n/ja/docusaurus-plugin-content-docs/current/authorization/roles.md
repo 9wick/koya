@@ -2,34 +2,41 @@
 sidebar_position: 1
 ---
 
-# ロール
+# Roles
 
-ロールはZeltの認可システムの基盤です。ユーザーが何をできるかを定義します。
+Roles are the foundation of Zelt's authorization system. They define what a user can do.
 
-## ロールとは
+## What is a Role?
 
-ロールは権限レベルや能力を表すシンプルな文字列です：
+A role is a simple string that represents a permission level or capability:
 
 ```typescript
-['admin', 'editor', 'viewer']
-['owner', 'member', 'guest']
-['read:users', 'write:users', 'delete:users']
+const adminRoles = ['admin', 'editor', 'viewer'];
+const teamRoles = ['owner', 'member', 'guest'];
+const permissionRoles = ['read:users', 'write:users', 'delete:users'];
 ```
 
-ロールは認証時に`setUser()`で割り当てられます：
+Roles are assigned during authentication via `setUser()`:
 
 ```typescript
+import { setUser } from '@zeltjs/core';
+declare const user: { id: string; name: string };
+// ---cut---
 setUser(
   { id: user.id, name: user.name },
-  ['admin', 'user']  // ← ロール
+  ['admin', 'user']  // ← roles
 );
 ```
 
-## ロール型の定義
+## Defining Role Types
 
-`RequestContextSchema`を使用してロールを型付け：
+Use `RequestContextSchema` to type your roles:
 
 ```typescript
+// @noErrors
+// Reason: module augmentation requires full module resolution unavailable in Twoslash VFS
+import '@zeltjs/core';
+// ---cut---
 declare module '@zeltjs/core' {
   interface RequestContextSchema {
     user: { id: string; name: string };
@@ -38,18 +45,21 @@ declare module '@zeltjs/core' {
 }
 ```
 
-これにより以下が提供されます：
-- `setUser()`呼び出し時の自動補完
-- `@Authorized(['...'])`での型チェック
-- 型安全な`currentRoles()`の戻り値
+This provides:
+- Autocomplete when calling `setUser()`
+- Type checking in `@Authorized(['...'])`
+- Type-safe `currentRoles()` return value
 
-## ロール設計パターン
+## Role Design Patterns
 
-### 階層型ロール
+### Hierarchical Roles
 
-他のロールを暗示するロールを定義：
+Define roles that imply other roles:
 
 ```typescript
+import { setUser } from '@zeltjs/core';
+declare const user: { id: string; name: string; primaryRole: 'admin' | 'editor' | 'viewer' };
+// ---cut---
 type Role = 'admin' | 'editor' | 'viewer';
 
 const roleHierarchy: Record<Role, Role[]> = {
@@ -58,28 +68,31 @@ const roleHierarchy: Record<Role, Role[]> = {
   viewer: ['viewer'],
 };
 
-// ユーザー設定時にロールを展開
+// When setting user, expand roles
 setUser(user, roleHierarchy[user.primaryRole]);
 ```
 
-### リソーススコープ付きロール
+### Resource-Scoped Roles
 
-ロール名にリソースコンテキストを含める：
+Include resource context in role names:
 
 ```typescript
+import { setUser } from '@zeltjs/core';
+declare const user: { id: string; name: string };
+// ---cut---
 type Role = 
   | 'admin'
   | `project:${string}:owner`
   | `project:${string}:member`
   | `team:${string}:admin`;
 
-// ユーザーはproject-123のオーナー、team-456の管理者
+// User is owner of project-123, member of team-456
 setUser(user, ['project:123:owner', 'team:456:admin']);
 ```
 
-### 権限ベースロール
+### Permission-Based Roles
 
-きめ細かい権限文字列を使用：
+Use fine-grained permission strings:
 
 ```typescript
 type Permission = 
@@ -89,7 +102,7 @@ type Permission =
   | 'read:posts'
   | 'write:posts';
 
-// ロールは権限にマップ
+// Roles map to permissions
 const rolePermissions: Record<string, Permission[]> = {
   admin: ['read:users', 'write:users', 'delete:users', 'read:posts', 'write:posts'],
   editor: ['read:users', 'read:posts', 'write:posts'],
@@ -97,117 +110,253 @@ const rolePermissions: Record<string, Permission[]> = {
 };
 ```
 
-## ロールの取得元
+## Where Roles Come From
 
-### データベース
+### Database
 
-ユーザーレコードとともにロールを保存：
+Store roles with the user record:
 
 ```typescript
-// Userテーブル
-interface User {
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
+import { JwtService } from '@zeltjs/auth-jwt';
+
+type User = { id: string; name: string; roles: string[] };
+
+@Injectable()
+class UserRepository {
+  async findById(id: string): Promise<User> {
+    return { id, name: '', roles: [] };
+  }
+}
+// ---cut---
+@Middleware
+class AuthMiddleware {
+  constructor(
+    private jwtService = inject(JwtService),
+    private userRepo = inject(UserRepository)
+  ) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const token = c.req.header('Authorization')?.replace('Bearer ', '');
+    if (token) {
+      const payload = await this.jwtService.verify(token);
+      const user = await this.userRepo.findById(payload.sub!);
+      setUser({ id: user.id, name: user.name }, user.roles);
+    }
+    await next();
+    return undefined;
+  }
+}
+```
+
+### JWT Claims
+
+Include roles in the JWT payload:
+
+```typescript
+import { Controller, Post, Config, inject } from '@zeltjs/core';
+import { JwtService, JwtConfig, type JwtPayload, type ResolveUserResult } from '@zeltjs/auth-jwt';
+
+type User = { id: string; roles: string[] };
+// ---cut---
+@Controller('/auth')
+class AuthController {
+  constructor(private jwtService = inject(JwtService)) {}
+
+  @Post('/login')
+  async login(user: User) {
+    const token = await this.jwtService.sign({
+      sub: user.id,
+      roles: user.roles,
+    });
+    return { token };
+  }
+}
+
+@Config
+class MyJwtConfig extends JwtConfig {
+  override get resolveUser(): (payload: JwtPayload) => Promise<ResolveUserResult> {
+    return async (payload) => ({
+      user: { id: payload.sub! },
+      roles: payload.roles as string[],
+    });
+  }
+}
+```
+
+### Session Data
+
+Store roles in the session:
+
+```typescript
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
+
+type Session = { userId: string; roles: string[] };
+type User = { id: string; name: string };
+
+@Injectable()
+class SessionService {
+  getSession(): Session | null {
+    return null;
+  }
+
+  setSession(_data: Session): void {}
+}
+
+@Injectable()
+class UserRepository {
+  async findById(id: string): Promise<User> {
+    return { id, name: '' };
+  }
+}
+// ---cut---
+@Middleware
+class SessionAuthMiddleware {
+  constructor(
+    private sessionService = inject(SessionService),
+    private userRepo = inject(UserRepository)
+  ) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const session = this.sessionService.getSession();
+    if (session) {
+      const user = await this.userRepo.findById(session.userId);
+      setUser(user, session.roles);
+    }
+    await next();
+    return undefined;
+  }
+}
+```
+
+### External Service
+
+Fetch roles from an identity provider:
+
+```typescript
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
+
+type UserInfo = { sub: string; name: string };
+
+@Injectable()
+class IdentityProviderService {
+  async getUserInfo(token: string): Promise<UserInfo> {
+    return { sub: '', name: '' };
+  }
+
+  async getRoles(sub: string): Promise<string[]> {
+    return [];
+  }
+}
+// ---cut---
+@Middleware
+class ExternalAuthMiddleware {
+  constructor(private idp = inject(IdentityProviderService)) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const token = c.req.header('Authorization')?.replace('Bearer ', '');
+
+    if (token) {
+      const userInfo = await this.idp.getUserInfo(token);
+      const roles = await this.idp.getRoles(userInfo.sub);
+      setUser({ id: userInfo.sub, name: userInfo.name }, roles);
+    }
+
+    await next();
+    return undefined;
+  }
+}
+```
+
+## Role Assignment Strategies
+
+### Static Assignment
+
+Roles are set once and rarely change:
+
+```typescript
+import { Controller, Authorized, Post, Injectable, inject, pathParam } from '@zeltjs/core';
+import { validated } from '@zeltjs/validator-valibot';
+import * as v from 'valibot';
+
+const RolesSchema = v.object({ roles: v.array(v.string()) });
+
+@Injectable()
+class UserRepository {
+  async updateRoles(id: string, roles: string[]): Promise<void> {}
+}
+// ---cut---
+@Controller('/users')
+class UserRolesController {
+  constructor(private userRepo = inject(UserRepository)) {}
+
+  @Authorized(['admin'])
+  @Post('/:id/roles')
+  async assignRoles(id = pathParam('id'), data = validated(RolesSchema)) {
+    await this.userRepo.updateRoles(id, data.roles);
+    return { success: true };
+  }
+}
+```
+
+### Dynamic Assignment
+
+Roles are computed based on context:
+
+```typescript
+import { Middleware, Injectable, inject, setUser, currentUser, type RequestContext, type Next } from '@zeltjs/core';
+
+type Project = { ownerId: string; memberIds: string[] };
+type User = { id: string; name: string };
+
+@Injectable()
+class ProjectRepository {
+  async findById(id: string): Promise<Project> {
+    return { ownerId: '', memberIds: [] };
+  }
+}
+// ---cut---
+@Middleware
+class ProjectRolesMiddleware {
+  constructor(private projectRepo = inject(ProjectRepository)) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const user = currentUser() as User | undefined;
+    const projectId = c.req.param('projectId');
+
+    if (user && projectId) {
+      const project = await this.projectRepo.findById(projectId);
+      const roles: string[] = [];
+
+      if (project.ownerId === user.id) {
+        roles.push('project:owner');
+      }
+      if (project.memberIds.includes(user.id)) {
+        roles.push('project:member');
+      }
+
+      setUser(user, roles);
+    }
+
+    await next();
+    return undefined;
+  }
+}
+```
+
+### Time-Based Roles
+
+Roles expire or activate based on time:
+
+```typescript
+import { setUser } from '@zeltjs/core';
+declare const user: {
   id: string;
   name: string;
-  roles: string[];  // ['admin', 'user']
-}
-
-// 認証ミドルウェアで
-const user = await db.users.findById(payload.sub);
-setUser(
-  { id: user.id, name: user.name },
-  user.roles
-);
-```
-
-### JWTクレーム
-
-JWTペイロードにロールを含める：
-
-```typescript
-// 署名時
-const token = await jwtService.sign({
-  sub: user.id,
-  roles: user.roles,
-});
-
-// 検証時（JwtConfig.resolveUserで）
-override get resolveUser() {
-  return async (payload: JwtPayload) => ({
-    user: { id: payload.sub },
-    roles: payload.roles as string[],
-  });
-}
-```
-
-### セッションデータ
-
-セッションにロールを保存：
-
-```typescript
-// ログイン時
-setSession({ userId: user.id, roles: user.roles });
-
-// 認証ミドルウェアで
-const session = getSession();
-if (session) {
-  const user = await db.users.findById(session.userId);
-  setUser(user, session.roles);
-}
-```
-
-### 外部サービス
-
-IDプロバイダーからロールを取得：
-
-```typescript
-const userInfo = await identityProvider.getUserInfo(token);
-const roles = await identityProvider.getRoles(userInfo.sub);
-setUser(
-  { id: userInfo.sub, name: userInfo.name },
-  roles
-);
-```
-
-## ロール割り当て戦略
-
-### 静的割り当て
-
-ロールは一度設定され、めったに変更されない：
-
-```typescript
-// 管理者がAPIでロールを割り当て
-@Authorized(['admin'])
-@Post('/users/:id/roles')
-async assignRoles(id = pathParam('id'), body = bodyParam(RolesSchema)) {
-  await db.users.update(id, { roles: body.roles });
-  return { success: true };
-}
-```
-
-### 動的割り当て
-
-ロールはコンテキストに基づいて計算される：
-
-```typescript
-// ロールはリソースの所有権に依存
-const project = await db.projects.findById(projectId);
-const roles = [];
-
-if (project.ownerId === user.id) {
-  roles.push('project:owner');
-}
-if (project.memberIds.includes(user.id)) {
-  roles.push('project:member');
-}
-
-setUser(user, roles);
-```
-
-### 時間ベースロール
-
-ロールは時間に基づいて期限切れまたは有効化：
-
-```typescript
+  roles: string[];
+  roleGrants: Array<{ role: string; startsAt?: number; expiresAt?: number }>;
+};
+// ---cut---
 const roles = user.roles.filter(role => {
   const grant = user.roleGrants.find(g => g.role === role);
   if (!grant) return true;
@@ -221,31 +370,38 @@ const roles = user.roles.filter(role => {
 setUser(user, roles);
 ```
 
-## ロールへのアクセス
+## Accessing Roles
 
-### ハンドラー内で
+### In Handlers
 
 ```typescript
-import { currentRoles } from '@zeltjs/core';
-
-@Get('/dashboard')
-dashboard() {
-  const roles = currentRoles();
-  
-  return {
-    canManageUsers: roles.includes('admin'),
-    canEditContent: roles.includes('editor') || roles.includes('admin'),
-  };
+import { Controller, currentRoles, Get } from '@zeltjs/core';
+// ---cut---
+@Controller('/app')
+class AppController {
+  @Get('/dashboard')
+  dashboard() {
+    const roles = currentRoles();
+    
+    return {
+      canManageUsers: roles.includes('admin'),
+      canEditContent: roles.includes('editor') || roles.includes('admin'),
+    };
+  }
 }
 ```
 
-### サービス内で
+### In Services
 
 ```typescript
+import { currentRoles, currentUser } from '@zeltjs/core';
+type Post = { authorId: string };
+interface User { id: string; }
+// ---cut---
 class PostService {
   canDelete(post: Post): boolean {
     const roles = currentRoles();
-    const user = currentUser();
+    const user = currentUser() as User | undefined;
     
     if (roles.includes('admin')) return true;
     if (post.authorId === user?.id) return true;
@@ -254,57 +410,63 @@ class PostService {
 }
 ```
 
-## ベストプラクティス
+## Best Practices
 
-### ロールはシンプルに
+### Keep Roles Simple
 
-フラットな文字列を使用し、ネストしたオブジェクトは避ける：
-
-```typescript
-// ✅ 良い
-['admin', 'editor', 'viewer']
-
-// ❌ 避ける
-[{ name: 'admin', level: 10, permissions: [...] }]
-```
-
-### ロールは粗いアクセスに使用
-
-ロールは「このユーザーはこの機能エリアにアクセスできるか？」を答える、「このユーザーはこの特定のレコードを編集できるか？」ではない：
+Use flat strings, not nested objects:
 
 ```typescript
-// ✅ ロールベース: 「管理セクションにアクセスできる」
-@Authorized(['admin'])
-@Get('/admin/dashboard')
+// ✅ Good
+const goodRoles = ['admin', 'editor', 'viewer'];
 
-// ❌ ロールではない: 「投稿#123を編集できる」
-// → 代わりにサービスロジックで処理
+// ❌ Avoid
+const badRoles = [{ name: 'admin', level: 10, permissions: [] }];
 ```
 
-### ロール爆発を避ける
+### Use Roles for Coarse Access
 
-すべてのアクションに対してロールを作成しない：
+Roles answer "can this user access this feature area?" not "can this user edit this specific record?":
 
 ```typescript
-// ❌ ロールが多すぎる
-['can_view_users', 'can_create_users', 'can_edit_users', 'can_delete_users', ...]
+import { Controller, Authorized, Get } from '@zeltjs/core';
+// ---cut---
+// ✅ Role-based: "Can access admin section"
+@Controller('/admin')
+class AdminController {
+  @Authorized(['admin'])
+  @Get('/dashboard')
+  adminDashboard() {}
+}
 
-// ✅ 意味のあるロールにグループ化
-['admin', 'user_manager', 'viewer']
+// ❌ Not a role: "Can edit post #123"
+// → Handle in service logic instead
 ```
 
-### ロールをドキュメント化
+### Avoid Role Explosion
 
-中央リファレンスを維持：
+Don't create roles for every action:
+
+```typescript
+// ❌ Too many roles
+const tooManyRoles = ['can_view_users', 'can_create_users', 'can_edit_users', 'can_delete_users'];
+
+// ✅ Group into meaningful roles
+const meaningfulRoles = ['admin', 'user_manager', 'viewer'];
+```
+
+### Document Your Roles
+
+Maintain a central reference:
 
 ```typescript
 /**
- * アプリケーションロール
+ * Application Roles
  * 
- * - admin: システム全体へのフルアクセス
- * - editor: コンテンツの作成・編集が可能
- * - viewer: 読み取り専用アクセス
- * - moderator: ユーザー生成コンテンツの管理が可能
+ * - admin: Full system access
+ * - editor: Can create and modify content
+ * - viewer: Read-only access
+ * - moderator: Can manage user-generated content
  */
 type Role = 'admin' | 'editor' | 'viewer' | 'moderator';
 ```

@@ -31,7 +31,7 @@ Create a custom config that provides a KV store for session data:
 import { Config, inject } from '@zeltjs/core';
 import { MemoryKVService } from '@zeltjs/kv';
 import { SessionConfig } from '@zeltjs/auth-session';
-
+// ---cut---
 @Config
 class MySessionConfig extends SessionConfig {
   private kv = inject(MemoryKVService);
@@ -45,10 +45,36 @@ class MySessionConfig extends SessionConfig {
 ### 3. Register Middleware
 
 ```typescript
-import { createApp } from '@zeltjs/core';
+import { createApp, Config, Controller, Post, Get, inject } from '@zeltjs/core';
 import { MemoryKVService } from '@zeltjs/kv';
-import { SessionMiddleware } from '@zeltjs/auth-session';
+import { SessionMiddleware, SessionConfig, getSession, setSession, destroySession } from '@zeltjs/auth-session';
+import { HTTPException } from 'hono/http-exception';
 
+@Config
+class MySessionConfig extends SessionConfig {
+  private kv = inject(MemoryKVService);
+  override get store() { return this.kv.namespace('sessions'); }
+}
+
+@Controller('/auth')
+class AuthController {
+  @Post('/login')
+  login() { setSession({ userId: '1' }); return { success: true }; }
+  @Get('/me')
+  me() {
+    const session = getSession();
+    if (!session) throw new HTTPException(401, { message: 'Not logged in' });
+    return session;
+  }
+  @Post('/logout')
+  logout() { destroySession(); return { success: true }; }
+}
+
+@Controller('/users')
+class UserController {
+  @Get('/') findAll() { return { users: [] }; }
+}
+// ---cut---
 const app = createApp({
   http: {
     controllers: [AuthController, UserController],
@@ -64,13 +90,18 @@ const app = createApp({
 Use session functions in your handlers:
 
 ```typescript
-import { Controller, Post, Get, bodyParam } from '@zeltjs/core';
+import { Controller, Post, Get } from '@zeltjs/core';
+import { validated } from '@zeltjs/validator-valibot';
 import { getSession, setSession, destroySession } from '@zeltjs/auth-session';
-
+import { HTTPException } from 'hono/http-exception';
+import * as v from 'valibot';
+const LoginSchema = v.object({ email: v.string(), password: v.string() });
+declare function validateCredentials(email: string, password: string): Promise<{ id: string; name: string } | null>;
+// ---cut---
 @Controller('/auth')
 class AuthController {
   @Post('/login')
-  async login(body = bodyParam(LoginSchema)) {
+  async login(body = validated(LoginSchema)) {
     const user = await validateCredentials(body.email, body.password);
     if (!user) {
       throw new HTTPException(401, { message: 'Invalid credentials' });
@@ -113,6 +144,8 @@ class AuthController {
 Create or replace the session:
 
 ```typescript
+import { setSession } from '@zeltjs/auth-session';
+// ---cut---
 setSession({
   userId: '123',
   name: 'Alice',
@@ -125,6 +158,8 @@ setSession({
 Partially update the session:
 
 ```typescript
+import { updateSession } from '@zeltjs/auth-session';
+// ---cut---
 updateSession((session) => ({
   ...session,
   lastActivity: Date.now(),
@@ -136,6 +171,8 @@ updateSession((session) => ({
 Clear the session and cookie (for logout):
 
 ```typescript
+import { destroySession } from '@zeltjs/auth-session';
+// ---cut---
 destroySession();
 ```
 
@@ -144,6 +181,9 @@ destroySession();
 Extend `SessionSchema` for type-safe session access:
 
 ```typescript
+import { SessionSchema } from '@zeltjs/auth-session';
+interface CartItem { productId: string; qty: number; }
+// ---cut---
 declare module '@zeltjs/auth-session' {
   interface SessionSchema {
     userId?: string;
@@ -157,6 +197,8 @@ declare module '@zeltjs/auth-session' {
 Now all session functions are typed:
 
 ```typescript
+import { getSession, setSession } from '@zeltjs/auth-session';
+// ---cut---
 const session = getSession();
 // TypeScript knows: session?.userId, session?.name, session?.cart
 
@@ -170,12 +212,12 @@ Extend `SessionConfig` to customize behavior:
 
 ```typescript
 import { Config, inject } from '@zeltjs/core';
-import { RedisKVService } from '@zeltjs/kv-redis';
+import { MemoryKVService } from '@zeltjs/kv';
 import { SessionConfig } from '@zeltjs/auth-session';
-
+// ---cut---
 @Config
 class MySessionConfig extends SessionConfig {
-  private kv = inject(RedisKVService);
+  private kv = inject(MemoryKVService);
 
   override get store() {
     return this.kv.namespace('sessions');
@@ -213,11 +255,21 @@ class MySessionConfig extends SessionConfig {
 ### Default Cookie Options
 
 ```typescript
-{
-  httpOnly: true,
-  secure: env.get('NODE_ENV') === 'production',
-  sameSite: 'Lax',
-  path: '/',
+import { Config, EnvService, inject } from '@zeltjs/core';
+import { SessionConfig } from '@zeltjs/auth-session';
+
+@Config
+class MySessionConfig extends SessionConfig {
+  constructor(private env = inject(EnvService)) { super(); }
+// ---cut---
+  override get cookieOptions() {
+    return {
+      httpOnly: true,
+      secure: this.env.getString('NODE_ENV', '') === 'production',
+      sameSite: 'Lax' as const,
+      path: '/',
+    };
+  }
 }
 ```
 
@@ -226,8 +278,10 @@ class MySessionConfig extends SessionConfig {
 ### Memory (Development)
 
 ```typescript
+import { Config, inject } from '@zeltjs/core';
 import { MemoryKVService } from '@zeltjs/kv';
-
+import { SessionConfig } from '@zeltjs/auth-session';
+// ---cut---
 @Config
 class MySessionConfig extends SessionConfig {
   private kv = inject(MemoryKVService);
@@ -240,8 +294,11 @@ class MySessionConfig extends SessionConfig {
 ### Redis (Production)
 
 ```typescript
-import { RedisKVService } from '@zeltjs/kv-redis';
-
+import { Config, inject } from '@zeltjs/core';
+import { MemoryKVService } from '@zeltjs/kv';
+import { SessionConfig } from '@zeltjs/auth-session';
+declare class RedisKVService extends MemoryKVService {}
+// ---cut---
 @Config
 class MySessionConfig extends SessionConfig {
   private kv = inject(RedisKVService);
@@ -254,8 +311,11 @@ class MySessionConfig extends SessionConfig {
 ### Cloudflare KV
 
 ```typescript
-import { CloudflareKVService } from '@zeltjs/kv-cloudflare';
-
+import { Config, inject } from '@zeltjs/core';
+import { MemoryKVService } from '@zeltjs/kv';
+import { SessionConfig } from '@zeltjs/auth-session';
+declare class CloudflareKVService extends MemoryKVService {}
+// ---cut---
 @Config
 class MySessionConfig extends SessionConfig {
   private kv = inject(CloudflareKVService);
@@ -270,32 +330,84 @@ class MySessionConfig extends SessionConfig {
 Sessions don't automatically set the user context. Add middleware to bridge them:
 
 ```typescript
-import type { FunctionMiddleware } from '@zeltjs/core';
-import { setUser } from '@zeltjs/core';
+import { Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
 import { getSession } from '@zeltjs/auth-session';
 
-export const sessionAuthMiddleware: FunctionMiddleware = async (c, next) => {
-  const session = getSession();
-  
-  if (session?.userId) {
-    const user = await db.users.findById(session.userId);
-    setUser(
-      { id: user.id, name: user.name, email: user.email },
-      user.roles
-    );
+type User = { id: string; name: string; email: string; roles: string[] };
+
+@Injectable()
+class UserRepository {
+  async findById(id: string): Promise<User> {
+    return { id, name: '', email: '', roles: [] };
   }
-  
-  await next();
-};
+}
+// ---cut---
+@Middleware
+export class SessionAuthMiddleware {
+  constructor(private userRepo = inject(UserRepository)) {}
+
+  async use(c: RequestContext, next: Next): Promise<Response | undefined> {
+    const session = getSession() as { userId?: string } | undefined;
+
+    if (session?.userId) {
+      const user = await this.userRepo.findById(session.userId);
+      setUser(
+        { id: user.id, name: user.name, email: user.email },
+        user.roles
+      );
+    }
+
+    await next();
+    return undefined;
+  }
+}
 ```
 
 Register after `SessionMiddleware`:
 
 ```typescript
+import { createApp, Config, Controller, Get, Middleware, Injectable, inject, setUser, type RequestContext, type Next } from '@zeltjs/core';
+import { MemoryKVService } from '@zeltjs/kv';
+import { SessionMiddleware, SessionConfig, getSession } from '@zeltjs/auth-session';
+
+type User = { id: string; name: string; email: string; roles: string[] };
+
+@Injectable()
+class UserRepository {
+  async findById(id: string): Promise<User> {
+    return { id, name: '', email: '', roles: [] };
+  }
+}
+
+@Config
+class MySessionConfig extends SessionConfig {
+  private kv = inject(MemoryKVService);
+  override get store() { return this.kv.namespace('sessions'); }
+}
+
+@Middleware
+class SessionAuthMiddleware {
+  constructor(private userRepo = inject(UserRepository)) {}
+  async use(c: RequestContext, next: Next) {
+    const session = getSession() as { userId?: string } | undefined;
+    if (session?.userId) {
+      const user = await this.userRepo.findById(session.userId);
+      setUser({ id: user.id, name: user.name, email: user.email }, user.roles);
+    }
+    await next();
+    return undefined;
+  }
+}
+
+@Controller('/users')
+class UserController {
+  @Get('/') findAll() { return { users: [] }; }
+}
+// ---cut---
 const app = createApp({
   http: {
     controllers: [UserController],
-    middlewares: [SessionMiddleware, sessionAuthMiddleware],
+    middlewares: [SessionMiddleware, SessionAuthMiddleware],
   },
   configs: [MySessionConfig],
   injectables: [MemoryKVService],
@@ -317,14 +429,24 @@ Session-based authentication requires CSRF protection. Consider using:
 Always regenerate the session ID after login:
 
 ```typescript
-@Post('/login')
-async login(body = bodyParam(LoginSchema)) {
-  const user = await validateCredentials(body.email, body.password);
-  
-  destroySession();  // Clear old session
-  setSession({ userId: user.id, name: user.name });  // Creates new ID
-  
-  return { success: true };
+import { Controller, Post } from '@zeltjs/core';
+import { validated } from '@zeltjs/validator-valibot';
+import { destroySession, setSession } from '@zeltjs/auth-session';
+import * as v from 'valibot';
+const LoginSchema = v.object({ email: v.string(), password: v.string() });
+declare function validateCredentials(email: string, password: string): Promise<{ id: string; name: string }>;
+// ---cut---
+@Controller('/auth')
+class AuthController {
+  @Post('/login')
+  async login(body = validated(LoginSchema)) {
+    const user = await validateCredentials(body.email, body.password);
+    
+    destroySession();  // Clear old session
+    setSession({ userId: user.id, name: user.name });  // Creates new ID
+    
+    return { success: true };
+  }
 }
 ```
 
@@ -333,12 +455,13 @@ async login(body = bodyParam(LoginSchema)) {
 In production, always use secure cookies:
 
 ```typescript
-override get cookieOptions() {
-  return {
-    httpOnly: true,
-    secure: true,  // HTTPS only
-    sameSite: 'Strict' as const,
-    path: '/',
-  };
-}
+import { SessionConfig } from '@zeltjs/auth-session';
+declare const _: SessionConfig;
+// ---cut---
+const cookieOptions = {
+  httpOnly: true,
+  secure: true,  // HTTPS only
+  sameSite: 'Strict' as const,
+  path: '/',
+};
 ```

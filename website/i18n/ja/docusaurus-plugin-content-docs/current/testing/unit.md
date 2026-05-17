@@ -18,24 +18,32 @@ Import from the adapter for your test runner. This auto-registers cleanup via `a
 ### Vitest
 
 ```typescript
+// @noErrors
+// Reason: import-only example for test framework setup
 import { onTest, createTestTarget } from '@zeltjs/testing/vitest';
 ```
 
 ### Jest
 
 ```typescript
+// @noErrors
+// Reason: import-only example for test framework setup
 import { onTest, createTestTarget } from '@zeltjs/testing/jest';
 ```
 
 ### Bun
 
 ```typescript
+// @noErrors
+// Reason: import-only example for test framework setup
 import { onTest, createTestTarget } from '@zeltjs/testing/bun';
 ```
 
 ### Node.js Test Runner
 
 ```typescript
+// @noErrors
+// Reason: import-only example for test framework setup
 import { onTest, createTestTarget } from '@zeltjs/testing/node';
 ```
 
@@ -44,6 +52,8 @@ import { onTest, createTestTarget } from '@zeltjs/testing/node';
 If you prefer manual control or use a different test runner, import from the base package and call `shutdownAll()` yourself:
 
 ```typescript
+// @noErrors
+// Reason: import-only example for test framework setup
 import { onTest, createTestTarget, shutdownAll } from '@zeltjs/testing';
 import { afterAll } from 'your-test-runner';
 
@@ -56,13 +66,18 @@ afterAll(shutdownAll);
 
 ```typescript
 import { describe, it, expect } from 'vitest';
-import { createTestTarget } from '@zeltjs/testing/vitest';
-import { UserService } from './user.service';
-import { ProcessEnvConfig } from '@zeltjs/core';
+import { createTestTarget } from '@zeltjs/testing';
+import { ProcessEnvConfig } from '@zeltjs/adapter-node';
+import { Injectable } from '@zeltjs/core';
 
+@Injectable()
+class UserService {
+  async create(data: { name: string }) { return data; }
+}
+// ---cut---
 describe('UserService', () => {
   it('should create user', async () => {
-    const { target, shutdown } = await createTestTarget(UserService, {
+    const { target } = await createTestTarget(UserService, {
       configs: [ProcessEnvConfig],
     });
 
@@ -92,10 +107,23 @@ describe('UserService', () => {
 Use `overrides` to replace real implementations with mocks (Solitary Unit Test):
 
 ```typescript
-import { createTestTarget } from '@zeltjs/testing/vitest';
-import { UserService } from './user.service';
-import { EmailService } from './email.service';
+import { describe, it, expect, vi } from 'vitest';
+import { createTestTarget } from '@zeltjs/testing';
+import { Injectable, inject } from '@zeltjs/core';
 
+@Injectable()
+class EmailService {
+  async send(to: string, subject: string) { return { to, subject }; }
+}
+
+@Injectable()
+class UserService {
+  constructor(private emailService = inject(EmailService)) {}
+  async register(data: { email: string }) {
+    await this.emailService.send(data.email, 'Welcome!');
+  }
+}
+// ---cut---
 describe('UserService', () => {
   it('should send welcome email', async () => {
     const mockEmailService = {
