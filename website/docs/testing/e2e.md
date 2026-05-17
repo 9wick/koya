@@ -64,13 +64,13 @@ For complete E2E tests with real dependencies, combine with [Integration Testing
 ```typescript
 import { createApp, Controller, Get, Post, pathParam, response, HttpApp, ConfigClass } from '@zeltjs/core';
 import { validated } from '@zeltjs/validator-valibot';
+import { RedisTestContainerConfig } from '@zeltjs/testing/redis';
 import * as v from 'valibot';
 declare function hc<T>(baseUrl: string, options?: { fetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> }): T;
 declare function describe(name: string, fn: () => void): void;
 declare function it(name: string, fn: () => void | Promise<void>): void;
 declare function beforeAll(fn: () => void | Promise<void>): void;
 declare function expect<T>(value: T): { toBe(expected: T): void; };
-declare const RedisTestContainerConfig: ConfigClass<object>;
 const UserBody = v.object({ name: v.string(), email: v.pipe(v.string(), v.email()) });
 @Controller('/users') class UserController {
   @Get('/:id') findOne(id = pathParam('id')) { return { id, name: 'Alice', email: 'alice@example.com' }; }
