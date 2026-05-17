@@ -57,7 +57,7 @@ For complete E2E tests with real dependencies, combine with [Integration Testing
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { hc } from 'hono/client';
 import { createApp } from './app';
-import { RedisTestContainerConfig } from '@zeltjs/testing/redis';
+import { RedisTestContainerConfig } from '@zeltjs/redis/testing';
 import type { AppType } from './generated/app.gen';
 
 describe('API E2E', () => {

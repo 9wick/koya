@@ -16,7 +16,7 @@ pnpm add -D @zeltjs/testing testcontainers
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { createTestTarget } from '@zeltjs/testing/vitest';
-import { RedisTestContainerConfig } from '@zeltjs/testing/redis';
+import { RedisTestContainerConfig } from '@zeltjs/redis/testing';
 import { CacheService } from './cache.service';
 
 describe('CacheService', () => {
@@ -87,7 +87,7 @@ Integration tests with Testcontainers are ideal for "Sociable Unit Tests" — te
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { createTestTarget } from '@zeltjs/testing/vitest';
-import { RedisTestContainerConfig } from '@zeltjs/testing/redis';
+import { RedisTestContainerConfig } from '@zeltjs/redis/testing';
 import { SessionService } from './session.service';
 import { UserService } from './user.service';
 
