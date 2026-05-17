@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
 import type { PluginOptions as SearchPluginOptions } from '@easyops-cn/docusaurus-search-local';
 import rehypeShiki from '@shikijs/rehype';
-import { transformerTwoslash } from '@shikijs/twoslash';
+import { rendererRich, transformerTwoslash } from '@shikijs/twoslash';
 import { createTwoslasher } from 'twoslash';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -68,7 +68,7 @@ const shikiBaseConfig = {
 
 const shikiWithTwoslash = {
   ...shikiBaseConfig,
-  transformers: [transformerTwoslash({ twoslasher })],
+  transformers: [transformerTwoslash({ twoslasher, renderer: rendererRich() })],
 };
 
 const shikiOnly = {
