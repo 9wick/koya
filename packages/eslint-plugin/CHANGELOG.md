@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/zeltjs/zelt/compare/eslint-plugin-v0.3.0...eslint-plugin-v0.4.0) (2026-05-17)
+
+
+### Bug Fixes
+
+* **eslint-plugin:** add repository field for npm provenance ([4db0ddc](https://github.com/zeltjs/zelt/commit/4db0ddc90fbe7d1e3f9453c559986170d019352e))
+* **eslint-plugin:** add repository field for npm provenance ([ec5a31e](https://github.com/zeltjs/zelt/commit/ec5a31eae322c9b6dab1270e8104354fb984dfd7))
+
 ## [0.3.0](https://github.com/zeltjs/zelt/compare/eslint-plugin-v0.2.1...eslint-plugin-v0.3.0) (2026-05-17)
 
 
