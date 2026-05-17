@@ -70,10 +70,10 @@ declare function describe(name: string, fn: () => void): void;
 declare function it(name: string, fn: () => void | Promise<void>): void;
 declare function beforeAll(fn: () => void | Promise<void>): void;
 declare function expect<T>(value: T): { toBe(expected: T): void; };
-declare const RedisConfig: ConfigClass<object>;
-declare const RedisTestContainerConfig: ConfigClass<object>;
-type TestApp = { fetch: (req: Request) => Promise<Response>; request: (input: string | Request, init?: RequestInit) => Promise<Response> };
-declare function onTest(app: { overrideConfig: (cls: ConfigClass<object>) => void; ready: () => Promise<void>; fetch: (req: Request) => Promise<Response>; request: (input: string | Request, init?: RequestInit) => Promise<Response> }, opts?: { configs?: readonly ConfigClass<object>[] }): Promise<TestApp>;
+import { onTest } from '@zeltjs/testing/vitest';
+import { RedisConfig } from '@zeltjs/redis';
+import { RedisTestContainerConfig } from '@zeltjs/redis/testing';
+type TestApp = Awaited<ReturnType<typeof onTest>>;
 const UserBody = v.object({ name: v.string(), email: v.pipe(v.string(), v.email()) });
 @Controller('/users') class UserController {
   @Get('/:id') findOne(id = pathParam('id')) { return { id, name: 'Alice', email: 'alice@example.com' }; }
