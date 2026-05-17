@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/zeltjs/zelt/compare/decorator-metadata-v0.5.0...decorator-metadata-v0.6.0) (2026-05-17)
+
+
+### Miscellaneous Chores
+
+* **decorator-metadata:** Synchronize zeltjs versions
+
 ## [0.5.0](https://github.com/zeltjs/zelt/compare/decorator-metadata-v0.4.0...decorator-metadata-v0.5.0) (2026-05-17)
 
 

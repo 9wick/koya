@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.6.0](https://github.com/zeltjs/zelt/compare/redis-v0.5.0...redis-v0.6.0) (2026-05-17)
+
+
+### Miscellaneous Chores
+
+* **redis:** Synchronize zeltjs versions
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @zeltjs/core bumped to 0.6.0
+    * @zeltjs/testing bumped to 0.6.0
+  * peerDependencies
+    * @zeltjs/core bumped to 0.6.0
+    * @zeltjs/testing bumped to 0.6.0
+
 ## [0.5.0](https://github.com/zeltjs/zelt/compare/redis-v0.4.0...redis-v0.5.0) (2026-05-17)
 
 

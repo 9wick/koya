@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.0](https://github.com/zeltjs/zelt/compare/adapter-cloudflare-workers-v0.5.0...adapter-cloudflare-workers-v0.6.0) (2026-05-17)
+
+
+### Miscellaneous Chores
+
+* **adapter-cloudflare-workers:** Synchronize zeltjs versions
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @zeltjs/core bumped to 0.6.0
+
 ## [0.5.0](https://github.com/zeltjs/zelt/compare/adapter-cloudflare-workers-v0.4.0...adapter-cloudflare-workers-v0.5.0) (2026-05-17)
 
 

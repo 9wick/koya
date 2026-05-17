@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/zeltjs/zelt/compare/eslint-plugin-v0.5.0...eslint-plugin-v0.6.0) (2026-05-17)
+
+
+### Miscellaneous Chores
+
+* **eslint-plugin:** Synchronize zeltjs versions
+
 ## [0.5.0](https://github.com/zeltjs/zelt/compare/eslint-plugin-v0.4.0...eslint-plugin-v0.5.0) (2026-05-17)
 
 

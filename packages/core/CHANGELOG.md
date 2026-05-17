@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/zeltjs/zelt/compare/core-v0.5.0...core-v0.6.0) (2026-05-17)
+
+
+### Miscellaneous Chores
+
+* **core:** Synchronize zeltjs versions
+
 ## [0.5.0](https://github.com/zeltjs/zelt/compare/core-v0.4.0...core-v0.5.0) (2026-05-17)
 
 
