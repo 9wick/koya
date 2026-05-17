@@ -100,6 +100,7 @@ const config: KnipConfig = {
         '@zeltjs/redis',
         '@zeltjs/testing',
         '@zeltjs/validator-valibot',
+        '@floating-ui/react',
         'better-sqlite3',
         'bullmq',
         'clsx',
