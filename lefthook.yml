@@ -35,3 +35,5 @@ pre-push:
             fi
           fi
         done
+    check-release-please:
+      run: ./scripts/check-release-please-config.sh
