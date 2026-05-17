@@ -68,7 +68,9 @@ const shikiBaseConfig = {
 
 const shikiWithTwoslash = {
   ...shikiBaseConfig,
-  transformers: [transformerTwoslash({ twoslasher, renderer: rendererRich() })],
+  transformers: [
+    transformerTwoslash({ twoslasher, renderer: rendererRich(), explicitTrigger: false }),
+  ],
 };
 
 const shikiOnly = {
