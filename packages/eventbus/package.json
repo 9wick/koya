@@ -1,6 +1,6 @@
 {
   "name": "@zeltjs/eventbus",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -47,5 +47,8 @@
     "@zeltjs/redis": "workspace:*",
     "@types/node": "22.19.17",
     "ioredis": "5.10.1"
+  },
+  "volta": {
+    "extends": "../../package.json"
   }
 }

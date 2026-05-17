@@ -1,6 +1,6 @@
 {
   "name": "@zeltjs/redis",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -50,5 +50,8 @@
     "@zeltjs/testing": "workspace:*",
     "@types/node": "22.19.17",
     "testcontainers": "10.25.0"
+  },
+  "volta": {
+    "extends": "../../package.json"
   }
 }

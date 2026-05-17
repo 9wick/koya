@@ -1,6 +1,6 @@
 {
   "name": "@zeltjs/auth-session",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -35,5 +35,8 @@
     "@zeltjs/core": "workspace:*",
     "@zeltjs/kv": "workspace:*",
     "hono": "4.12.16"
+  },
+  "volta": {
+    "extends": "../../package.json"
   }
 }
