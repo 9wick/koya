@@ -62,17 +62,18 @@ describe('Hello API', () => {
 For complete E2E tests with real dependencies, use `onTest()` to apply test config overrides to your production app:
 
 ```typescript
-import { createApp, Controller, Get, Post, pathParam, response, ConfigClass } from '@zeltjs/core';
+// @noErrors
+import { createApp, Controller, Get, Post, pathParam, response } from '@zeltjs/core';
 import { validated } from '@zeltjs/validator-valibot';
+import { onTest } from '@zeltjs/testing/vitest';
+import { RedisConfig } from '@zeltjs/redis';
+import { RedisTestContainerConfig } from '@zeltjs/redis/testing';
 import * as v from 'valibot';
 declare function hc<T>(baseUrl: string, options?: { fetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> }): T;
 declare function describe(name: string, fn: () => void): void;
 declare function it(name: string, fn: () => void | Promise<void>): void;
 declare function beforeAll(fn: () => void | Promise<void>): void;
 declare function expect<T>(value: T): { toBe(expected: T): void; };
-import { onTest } from '@zeltjs/testing/vitest';
-import { RedisConfig } from '@zeltjs/redis';
-import { RedisTestContainerConfig } from '@zeltjs/redis/testing';
 type TestApp = Awaited<ReturnType<typeof onTest>>;
 const UserBody = v.object({ name: v.string(), email: v.pipe(v.string(), v.email()) });
 @Controller('/users') class UserController {
