@@ -153,3 +153,112 @@ describe('UserService', () => {
 2. **Shutdown**: Call `shutdownAll()` in your test runner's global teardown (handled automatically by adapter imports)
 
 This ensures resources are properly cleaned up even if tests fail.
+
+## Testing Commands
+
+When testing CLI commands, you need to create a fresh app instance for each test. App instances cannot be reused after `ready()` is called.
+
+### The Problem
+
+Reusing a global app instance causes errors:
+
+```typescript
+import { describe, it } from 'vitest';
+import { createApp, Command, cliSchema } from '@zeltjs/core';
+import { onNode } from '@zeltjs/adapter-node';
+
+@Command({ name: 'greet' })
+class GreetCommand {
+  static schema = cliSchema({});
+  run() { console.log('Hello!'); }
+}
+
+const app = createApp({ commands: [GreetCommand] });
+// ---cut---
+describe('GreetCommand', () => {
+  it('test 1', async () => {
+    const nodeApp = await onNode(app);
+    await nodeApp.execCommand(['greet']);
+    // works
+  });
+
+  it('test 2', async () => {
+    const nodeApp = await onNode(app);
+    // ❌ ZeltLifecycleStateError: Cannot addFallbackConfig() after ready()
+  });
+});
+```
+
+Once `onNode()` is called, the app transitions to `ready` state. Calling `onNode()` again on the same instance fails because lifecycle hooks cannot be re-registered.
+
+### The Solution
+
+Create a new app instance for each test:
+
+```typescript
+import { describe, it, afterEach } from 'vitest';
+import { createApp, Command, cliSchema } from '@zeltjs/core';
+import { onNode } from '@zeltjs/adapter-node';
+
+@Command({ name: 'greet' })
+class GreetCommand {
+  static schema = cliSchema({});
+  run() { console.log('Hello!'); }
+}
+// ---cut---
+describe('GreetCommand', () => {
+  let nodeApp: Awaited<ReturnType<typeof onNode>> | undefined;
+
+  afterEach(async () => {
+    await nodeApp?.shutdown();
+  });
+
+  it('test 1', async () => {
+    const app = createApp({ commands: [GreetCommand] });
+    nodeApp = await onNode(app);
+    await nodeApp.execCommand(['greet']);
+    // works
+  });
+
+  it('test 2', async () => {
+    const app = createApp({ commands: [GreetCommand] });
+    nodeApp = await onNode(app);
+    await nodeApp.execCommand(['greet']);
+    // works — fresh app instance
+  });
+});
+```
+
+### Using a Factory Function
+
+For cleaner tests, extract app creation into a factory:
+
+```typescript
+import { describe, it, afterEach } from 'vitest';
+import { createApp, Command, cliSchema } from '@zeltjs/core';
+import { onNode } from '@zeltjs/adapter-node';
+
+@Command({ name: 'greet' })
+class GreetCommand {
+  static schema = cliSchema({});
+  run() { console.log('Hello!'); }
+}
+// ---cut---
+function createTestApp() {
+  return createApp({ commands: [GreetCommand] });
+}
+
+describe('GreetCommand', () => {
+  let nodeApp: Awaited<ReturnType<typeof onNode>> | undefined;
+
+  afterEach(async () => {
+    await nodeApp?.shutdown();
+  });
+
+  it('executes successfully', async () => {
+    nodeApp = await onNode(createTestApp());
+    const result = await nodeApp.execCommand(['greet']);
+    // assert result
+  });
+});
+```
