@@ -28,11 +28,11 @@ jobs:
       - name: Build all packages (required for twoslash type resolution)
         run: pnpm build
 
-      - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@1.5.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: website
-          packageManager: 'pnpm'
-          command: deploy
+          projectName: zelt
+          directory: website/build
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
