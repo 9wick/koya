@@ -21,4 +21,4 @@ serve(app, { port: 3000 });
 
 ## Documentation
 
-See [zeltjs.dev](https://zeltjs.dev) for full documentation.
+See [zeltjs.com](https://zeltjs.com) for full documentation.
