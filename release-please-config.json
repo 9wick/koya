@@ -11,6 +11,32 @@
     {
       "type": "node-workspace",
       "merge": false
+    },
+    {
+      "type": "linked-versions",
+      "groupName": "zeltjs",
+      "components": [
+        "adapter-bun",
+        "adapter-cloudflare-workers",
+        "adapter-electron",
+        "adapter-lambda",
+        "adapter-node",
+        "auth-jwt",
+        "auth-session",
+        "cli",
+        "core",
+        "db",
+        "decorator-metadata",
+        "eslint-plugin",
+        "eventbus",
+        "hono-client",
+        "kv",
+        "openapi",
+        "rate-limit",
+        "redis",
+        "testing",
+        "validator-valibot"
+      ]
     }
   ]
 }
