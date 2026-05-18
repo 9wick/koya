@@ -13,6 +13,7 @@ export type { ControllerClass, HttpMetadata } from './app/modules/http-module';
 export type { CommandContextStore } from './command/command-context';
 export { runInCommandContext } from './command/command-context';
 export { Command } from './command/decorator';
+export type { ExecResult } from './command/exec-result';
 export type { CommandMetadata } from './command/metadata';
 export { getCommandMetadata, setCommandMetadata } from './command/metadata';
 export { args } from './command/primitives/args';
@@ -41,6 +42,7 @@ export {
   defineHttpException,
   ZeltAppConfigurationError,
   ZeltCommandArgumentError,
+  ZeltCommandExecutionError,
   ZeltContextNotAvailableError,
   ZeltDecoratorUsageError,
   ZeltLifecycleStateError,
