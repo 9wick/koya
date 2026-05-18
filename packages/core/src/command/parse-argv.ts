@@ -66,6 +66,9 @@ const parsePositionalArgs = (
     const value = positionals[i];
 
     if (value === undefined) {
+      if (!def.optional) {
+        return { ok: false, error: `Missing required argument: ${def.name} (position ${i + 1})` };
+      }
       result[def.name] = undefined;
       continue;
     }

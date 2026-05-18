@@ -83,9 +83,8 @@ export class CommandModule implements Lifecycle {
       };
     }
 
-    const instance = resolve(this.container, CommandClass);
-
     try {
+      const instance = resolve(this.container, CommandClass);
       const result = runInCommandContext({ parsedArgs: parseResult.parsed }, () => instance.run());
       await Promise.resolve(result);
       return { exitCode: 0 as const };

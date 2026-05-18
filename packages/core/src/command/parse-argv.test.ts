@@ -56,6 +56,15 @@ describe('parseArgv', () => {
       expect(result.ok).toBe(true);
       if (result.ok) expect(result.parsed['target']).toBeUndefined();
     });
+
+    it('returns error for missing required arg', () => {
+      const schema = cliSchema({
+        args: [{ name: 'target', type: 'string' }],
+      });
+      const result = parseArgv([], schema);
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toContain('Missing required argument: target');
+    });
   });
 
   describe('options', () => {

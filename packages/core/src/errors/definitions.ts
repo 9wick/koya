@@ -73,10 +73,10 @@ export const coreErrorDefinitions = {
     details?: string;
   }): string =>
     match(ctx.reason)
-      .with('command_not_found', () => `Command not found: ${ctx.commandName}`)
+      .with('command_not_found', () => `Command not found: ${ctx.commandName ?? '<unknown>'}`)
       .with('no_command_specified', () => 'No command specified')
-      .with('argv_parse_error', () => `Failed to parse arguments: ${ctx.details}`)
-      .with('run_error', () => `Command execution failed: ${ctx.details}`)
+      .with('argv_parse_error', () => `Failed to parse arguments: ${ctx.details ?? ''}`)
+      .with('run_error', () => `Command execution failed: ${ctx.details ?? ''}`)
       .exhaustive(),
 } as const;
 
