@@ -1,7 +1,4 @@
-import swcImport from 'unplugin-swc';
-
-// Handle ESM/CJS interop differences across esbuild versions
-const swc = (swcImport as unknown as { default: typeof swcImport }).default ?? swcImport;
+import swc from 'unplugin-swc';
 export const sharedConfig = {
   plugins: [
     swc.vite({
