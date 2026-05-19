@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { glob } from 'node:fs/promises';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const SKIP_PACKAGES = new Set([
@@ -17,7 +18,7 @@ let failed = false;
 let skipped = 0;
 
 for (const entry of entries) {
-  const pkg = entry.split('/')[1];
+  const pkg = path.normalize(entry).split(path.sep)[1];
   
   if (SKIP_PACKAGES.has(pkg)) {
     console.log(`- ${pkg} (skipped: runtime-specific)`);
