@@ -570,12 +570,6 @@ importers:
       docusaurus-plugin-llms:
         specifier: 0.4.0
         version: 0.4.0(@docusaurus/core@3.10.1(@docusaurus/faster@3.10.1(@docusaurus/types@3.10.1(@swc/core@1.15.33)(esbuild@0.17.19)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(esbuild@0.17.19))(@mdx-js/react@3.1.1(@types/react@19.2.14)(react@19.2.5))(@rspack/core@1.7.11)(@swc/core@1.15.33)(esbuild@0.17.19)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.2))
-      hast-util-to-html:
-        specifier: 9.0.5
-        version: 9.0.5
-      hast-util-to-string:
-        specifier: 3.0.1
-        version: 3.0.1
       prism-react-renderer:
         specifier: ^2.3.0
         version: 2.4.1(react@19.2.5)
@@ -604,15 +598,9 @@ importers:
       '@docusaurus/types':
         specifier: 3.10.1
         version: 3.10.1(@swc/core@1.15.33)(esbuild@0.17.19)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
-      '@types/hast':
-        specifier: 3.0.4
-        version: 3.0.4
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.14
-      '@types/unist':
-        specifier: 3.0.3
-        version: 3.0.3
       '@zeltjs/adapter-cloudflare-workers':
         specifier: workspace:*
         version: link:../packages/adapter-cloudflare-workers

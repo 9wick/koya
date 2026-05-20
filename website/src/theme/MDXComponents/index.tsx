@@ -12,7 +12,7 @@ import Admonition from '@theme/Admonition';
 import Mermaid from '@theme/Mermaid';
 
 import type { MDXComponentsObject } from '@theme/MDXComponents';
-import TwoslashBlock from '../TwoslashBlock';
+import { TwoslashBlock } from '../TwoslashBlock';
 
 const MDXComponents: MDXComponentsObject = {
   Head,

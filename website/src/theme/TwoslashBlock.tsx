@@ -50,4 +50,3 @@ export const TwoslashBlock = (props: TwoslashBlockProps): ReactNode => {
   );
 };
 
-export default TwoslashBlock;

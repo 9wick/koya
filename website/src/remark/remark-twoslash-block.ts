@@ -196,5 +196,3 @@ const extractPlainText = (element: Node): string => {
   }
   return text;
 };
-
-export default remarkTwoslashBlock;
