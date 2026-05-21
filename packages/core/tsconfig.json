@@ -11,5 +11,6 @@
     "erasableSyntaxOnly": false,
     "types": ["node"]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "references": [{ "path": "../decorator-metadata" }]
 }
