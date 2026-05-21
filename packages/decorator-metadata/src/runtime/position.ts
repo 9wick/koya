@@ -8,8 +8,13 @@ export type GetCallerPositionOptions = {
   readonly isFrameworkPath?: (path: string) => boolean;
 };
 
-const defaultIsFrameworkPath = (path: string): boolean =>
-  path.includes('/node_modules/') || path.includes('/packages/decorator-metadata/src/runtime/');
+const defaultIsFrameworkPath = (path: string): boolean => {
+  const normalized = path.replace(/\\/g, '/');
+  return (
+    normalized.includes('/node_modules/') ||
+    normalized.includes('/packages/decorator-metadata/src/runtime/')
+  );
+};
 
 const tryParseMatch = (
   match: RegExpMatchArray | null,
